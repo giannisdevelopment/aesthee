@@ -363,7 +363,8 @@ function initAtmosphere() {
     if (!target) return;
     setActive(slides.indexOf(target));
     syncing = true;
-    target.scrollIntoView({ behavior, inline: "center", block: "nearest" });
+    const left = target.offsetLeft - (stage.clientWidth - target.offsetWidth) / 2;
+    stage.scrollTo({ left: Math.max(0, left), behavior });
     window.setTimeout(() => {
       syncing = false;
     }, behavior === "smooth" ? 500 : 0);
