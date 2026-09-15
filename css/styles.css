@@ -576,6 +576,20 @@ body:has(.header.is-scrolled) .nav {
   background: linear-gradient(180deg, rgba(28, 22, 16, 0.02) 10%, rgba(28, 22, 16, 0.84) 100%);
 }
 
+.highlight-card--placeholder {
+  background:
+    radial-gradient(120% 90% at 80% 10%, rgba(196, 163, 106, 0.35), transparent 55%),
+    linear-gradient(160deg, #3a3026 0%, #2c241c 48%, #1f1914 100%);
+}
+
+.highlight-card--placeholder::after {
+  background: linear-gradient(180deg, rgba(28, 22, 16, 0.08) 20%, rgba(28, 22, 16, 0.72) 100%);
+}
+
+.highlight-card--placeholder:hover img {
+  transform: none;
+}
+
 .svc-hero {
   position: relative;
   min-height: min(92svh, 820px);
@@ -723,6 +737,20 @@ body:has(.header.is-scrolled) .nav {
   transition: background 320ms var(--ease);
 }
 
+.svc-hub--placeholder .svc-hub-media {
+  background:
+    radial-gradient(120% 90% at 80% 10%, rgba(196, 163, 106, 0.35), transparent 55%),
+    linear-gradient(160deg, #3a3026 0%, #2c241c 48%, #1f1914 100%);
+}
+
+.svc-hub--placeholder::after {
+  background: linear-gradient(180deg, rgba(28, 22, 16, 0.08) 20%, rgba(28, 22, 16, 0.72) 100%);
+}
+
+.svc-hub--placeholder:hover img {
+  transform: none;
+}
+
 .svc-hub-copy {
   position: relative;
   z-index: 1;
@@ -781,7 +809,7 @@ body:has(.header.is-scrolled) .nav {
 
 .svc-results {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 10px;
   margin-top: 18px;
 }
