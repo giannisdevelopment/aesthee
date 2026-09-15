@@ -2,7 +2,6 @@
   "name": "aesthee",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/write-supabase-config.js",
     "build": "node scripts/write-supabase-config.js"
   }
 }
