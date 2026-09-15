@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Κλείστε ραντεβού — Aesthée Beauty &amp; Tanning Bar</title>
+  <meta name="description" content="Κλείστε ραντεβού online στο Aesthée. Δευτέρα έως Παρασκευή, 10:00–21:00." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="page-booking" data-page="booking">
+  <header class="header" id="header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Aesthée Beauty &amp; Tanning Bar">
+        <img class="brand-emblem" src="images/logo-emblem.svg" alt="" />
+        <img class="brand-wordmark" src="images/logo-wordmark.svg" alt="Aesthée Beauty &amp; Tanning Bar" />
+      </a>
+      <a class="btn btn-gold header-cta" href="booking.html">Κλείστε Ραντεβού</a>
+      <button class="menu-toggle" id="menuToggle" aria-label="Μενού" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav" id="nav" aria-label="Κύριο μενού">
+    <div class="nav-track">
+      <span class="nav-pill" id="navPill" hidden></span>
+      <a href="index.html" data-nav="home">Αρχική</a>
+      <a href="services.html" data-nav="services">Υπηρεσίες</a>
+      <a href="booking.html" data-nav="booking">Ραντεβού</a>
+      <a href="location.html" data-nav="location">Τοποθεσία</a>
+      <a href="contact.html" data-nav="contact">Επικοινωνία</a>
+    </div>
+  </nav>
+
+  <main class="page-main">
+    <section class="section booking" id="booking">
+      <div class="container">
+        <span class="section-kicker">Κράτηση</span>
+        <h2 class="section-title">Κλείστε σε λιγότερο από ένα λεπτό.</h2>
+        <!-- PLACEHOLDER: replace with real copy -->
+        <p class="section-lead">Επιλέξτε υπηρεσία, ημέρα και ώρα — και το ραντεβού καταχωρείται αμέσως.</p>
+
+        <div class="booking-shell">
+          <aside class="booking-copy">
+            <h3>Το ραντεβού σας,<br />στον χρόνο σας.</h3>
+            <p>Δευτέρα έως Παρασκευή, 10:00–21:00. Σάββατο και Κυριακή κλειστά.</p>
+          </aside>
+          <form class="booking-form" id="bookingForm">
+            <div class="field">
+              <label for="service">Υπηρεσία</label>
+              <select id="service" name="service" required>
+                <option value="">Επιλέξτε υπηρεσία</option>
+                <optgroup label="Θεραπείες προσώπου">
+                  <option>Βαθύς καθαρισμός προσώπου</option>
+                  <option>Υδροδερμοαπόξεση</option>
+                  <option>Δερμοαπόξεση με διαμάντι</option>
+                  <option>Οξέα</option>
+                  <option>Χημικό peeling</option>
+                  <option>Φυτικό peeling</option>
+                  <option>Φωτοθεραπεία</option>
+                  <option>Μεσοθεραπεία</option>
+                  <option>Ραδιοσυχνότητες</option>
+                  <option>Θεραπεία βιταμίνης C</option>
+                  <option>Θεραπεία υαλουρονικού οξέος (μη ενέσιμη)</option>
+                  <option>Θεραπεία λεύκανσης</option>
+                  <option>HIFU</option>
+                  <option>RF Microneedling προσώπου</option>
+                  <option>Carbon peel</option>
+                  <option>Θεραπεία εξωσωμάτων (μη ενέσιμη)</option>
+                  <option>Θεραπεία PDRN (μη ενέσιμη)</option>
+                  <option>Αφαίρεση τατουάζ / ημιμόνιμου μακιγιάζ</option>
+                </optgroup>
+                <optgroup label="Θεραπείες σώματος">
+                  <option>Vacutherm Treadmill &amp; Bike</option>
+                  <option>Endospheres</option>
+                  <option>Cavitation</option>
+                  <option>Vacuum BBL</option>
+                  <option>Πρεσσοθεραπεία</option>
+                  <option>Κρυολιπόλυση</option>
+                  <option>RF Microneedling σώματος</option>
+                  <option>Μαδεροθεραπεία</option>
+                  <option>Μασάζ</option>
+                  <option>Stand Up Solarium XXXL</option>
+                  <option>Lay Down Solarium XXL</option>
+                </optgroup>
+                <optgroup label="Φρύδια &amp; βλεφαρίδες">
+                  <option>Brow Lamination &amp; Tint</option>
+                  <option>Lash Lift &amp; Tint</option>
+                  <option>Brow Shape</option>
+                  <option>Brow Shape &amp; Tint</option>
+                  <option>Τοποθέτηση βλεφαρίδων extensions</option>
+                  <option>Συντήρηση βλεφαρίδων extensions</option>
+                </optgroup>
+                <optgroup label="Θεραπείες αποτρίχωσης">
+                  <option>Laser αποτρίχωση — Διοδικό</option>
+                  <option>Laser αποτρίχωση — Αλεξανδρίτης</option>
+                  <option>Αποτρίχωση με κερί</option>
+                  <option>Ριζική αποτρίχωση προσώπου &amp; λαιμού</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="field">
+              <label for="bookingDate">Ημερομηνία</label>
+              <div class="date-picker" id="datePicker" data-date-picker>
+                <div class="date-picker-head">
+                  <button type="button" class="date-nav" data-date-prev aria-label="Προηγούμενος μήνας">‹</button>
+                  <p class="date-picker-month" data-date-label></p>
+                  <button type="button" class="date-nav" data-date-next aria-label="Επόμενος μήνας">›</button>
+                </div>
+                <div class="date-picker-weekdays" aria-hidden="true">
+                  <span>Δε</span><span>Τρ</span><span>Τε</span><span>Πε</span><span>Πα</span><span class="is-muted">Σα</span><span class="is-muted">Κυ</span>
+                </div>
+                <div class="date-picker-grid" data-date-grid role="grid" aria-label="Επιλογή ημερομηνίας"></div>
+                <p class="date-picker-hint">Διαθέσιμο Δευ–Παρ, έως 3 μήνες μπροστά.</p>
+              </div>
+              <input type="hidden" id="bookingDate" name="date" value="" />
+            </div>
+            <div class="field">
+              <label>Ώρα</label>
+              <div class="times" id="times"></div>
+            </div>
+            <div class="field">
+              <label for="guestName">Ονοματεπώνυμο</label>
+              <input id="guestName" name="name" type="text" autocomplete="name" required placeholder="π.χ. Μαρία Παπαδοπούλου" />
+            </div>
+            <div class="field">
+              <label for="guestPhone">Τηλέφωνο</label>
+              <input id="guestPhone" name="phone" type="tel" autocomplete="tel" required placeholder="69xxxxxxxx" />
+            </div>
+            <button class="btn btn-gold" type="submit">Κλείστε Ραντεβού</button>
+          </form>
+        </div>
+      </div>
+    </section>
+<section class="section why" id="why">
+      <div class="container">
+        <span class="section-kicker">Γιατί online</span>
+        <h2 class="section-title">Γιατί να κλείσετε απευθείας.</h2>
+        <div class="why-grid">
+          <article class="why-item">
+            <div class="why-num">01</div>
+            <h3>Άμεσα, χωρίς αναμονή</h3>
+            <!-- PLACEHOLDER: replace with real copy -->
+            <p>Δεν περιμένετε απάντηση στο Instagram. Η ώρα κλείνει τη στιγμή που την επιλέγετε.</p>
+          </article>
+          <article class="why-item">
+            <div class="why-num">02</div>
+            <h3>Εσείς διαλέγετε την ώρα</h3>
+            <!-- PLACEHOLDER: replace with real copy -->
+            <p>Δείτε τις διαθέσιμες ώρες και κρατήστε αυτή που ταιριάζει στο πρόγραμμά σας.</p>
+          </article>
+          <article class="why-item">
+            <div class="why-num">03</div>
+            <h3>Ίδιο Aesthée, πιο εύκολα</h3>
+            <!-- PLACEHOLDER: replace with real copy -->
+            <p>Ο χώρος και οι υπηρεσίες που ήδη γνωρίζετε — με κράτηση που σέβεται τον χρόνο σας.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-cta">
+        <p class="footer-tagline">Where beauty becomes an experience.</p>
+        <a class="btn btn-gold" href="booking.html">Κλείστε Ραντεβού</a>
+      </div>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="index.html" aria-label="Aesthée Beauty &amp; Tanning Bar">
+            <img class="brand-emblem" src="images/logo-emblem.svg" alt="" />
+            <img class="brand-wordmark" src="images/logo-wordmark.svg" alt="Aesthée Beauty &amp; Tanning Bar" />
+          </a>
+          <p class="footer-blurb">Beauty &amp; Tanning Bar στην Αρτέμιδα. Laser, solarium και θεραπείες προσώπου &amp; σώματος.</p>
+          <a class="footer-social" href="https://www.instagram.com/aesthee_beautyandtan/" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="17.3" cy="6.7" r="0.85" fill="currentColor" stroke="none"/></svg>
+            @aesthee_beautyandtan
+          </a>
+        </div>
+        <div class="footer-col">
+          <h3>Επίσκεψη</h3>
+          <address>
+            <a href="https://maps.google.com/?q=Leof.+Vravronos+45,+Artemis+190+16" target="_blank" rel="noopener">
+              Λεωφ. Βραυρώνος 45<br />Αρτέμιδα 190 16
+            </a>
+          </address>
+          <a class="footer-phone" href="tel:+302294152510">2294 152510</a>
+          <p class="footer-proof">4,9 ★ στο Google · 130 αξιολογήσεις</p>
+        </div>
+        <div class="footer-col">
+          <h3>Ωράριο</h3>
+          <dl class="footer-hours">
+            <div>
+              <dt>Δευτέρα – Παρασκευή</dt>
+              <dd>10:00–21:00</dd>
+            </div>
+            <div>
+              <dt>Σάββατο – Κυριακή</dt>
+              <dd>Κλειστά</dd>
+            </div>
+          </dl>
+        </div>
+        <nav class="footer-col footer-menu" aria-label="Υποσέλιδο">
+          <h3>Μενού</h3>
+          <a href="index.html">Αρχική</a>
+          <a href="services.html">Υπηρεσίες</a>
+          <a href="booking.html">Ραντεβού</a>
+          <a href="location.html">Τοποθεσία</a>
+          <a href="contact.html">Επικοινωνία</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Aesthée Beauty &amp; Tanning Bar</p>
+        <a href="contact.html">Πείτε μας τι χρειάζεστε</a>
+      </div>
+    </div>
+  </footer>
+  <div class="mobile-cta">
+    <a class="btn btn-gold" href="booking.html">Κλείστε Ραντεβού</a>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>

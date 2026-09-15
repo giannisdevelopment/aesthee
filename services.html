@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Υπηρεσίες — Aesthée Beauty &amp; Tanning Bar</title>
+  <meta name="description" content="Θεραπείες προσώπου, σώματος, φρυδιών &amp; βλεφαρίδων και αποτρίχωσης στο Aesthée στην Αρτέμιδα." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="page-services" data-page="services">
+  <header class="header" id="header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Aesthée Beauty &amp; Tanning Bar">
+        <img class="brand-emblem" src="images/logo-emblem.svg" alt="" />
+        <img class="brand-wordmark" src="images/logo-wordmark.svg" alt="Aesthée Beauty &amp; Tanning Bar" />
+      </a>
+      <a class="btn btn-gold header-cta" href="booking.html">Κλείστε Ραντεβού</a>
+      <button class="menu-toggle" id="menuToggle" aria-label="Μενού" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav" id="nav" aria-label="Κύριο μενού">
+    <div class="nav-track">
+      <span class="nav-pill" id="navPill" hidden></span>
+      <a href="index.html" data-nav="home">Αρχική</a>
+      <a href="services.html" data-nav="services">Υπηρεσίες</a>
+      <a href="booking.html" data-nav="booking">Ραντεβού</a>
+      <a href="location.html" data-nav="location">Τοποθεσία</a>
+      <a href="contact.html" data-nav="contact">Επικοινωνία</a>
+    </div>
+  </nav>
+
+  <main>
+    <section class="svc-hero">
+      <div class="svc-hero-media" aria-hidden="true">
+        <img src="images/services/hero-services.jpg" alt="" />
+      </div>
+      <div class="svc-hero-content">
+        <p class="svc-hero-brand reveal">Aesthée</p>
+        <h1 class="reveal" data-delay="1">Οι Υπηρεσίες μας</h1>
+        <p class="svc-hero-lead reveal" data-delay="2">Πληροφορίες για όλες τις θεραπείες μας</p>
+        <div class="svc-hero-actions reveal" data-delay="3">
+          <a class="btn btn-gold" href="#svc-explore">Εξερευνήστε</a>
+          <a class="btn btn-ghost" href="booking.html">Κλείστε Ραντεβού</a>
+        </div>
+      </div>
+      <div class="svc-hero-meta" aria-hidden="true">
+        <span>18 πρόσωπο</span>
+        <span>11 σώμα</span>
+        <span>6 βλέμμα</span>
+        <span>4 αποτρίχωση</span>
+      </div>
+    </section>
+
+    <section class="svc-explore" id="svc-explore">
+      <div class="container">
+        <div class="svc-explore-head">
+          <span class="section-kicker">Κατηγορίες</span>
+          <h2 class="section-title">Ξεκινήστε από αυτό που σας αφορά.</h2>
+          <p class="section-lead">Επιλέξτε κατηγορία για να δείτε τις θεραπείες, τι προσφέρουν και σε ποιους απευθύνονται.</p>
+        </div>
+
+        <div class="svc-hubs">
+          <a class="svc-hub" href="#cat-face" data-hub="face">
+            <div class="svc-hub-media">
+              <img src="images/services/result-face-01.jpg" alt="" />
+            </div>
+            <div class="svc-hub-copy">
+              <span class="svc-hub-count">18 θεραπείες</span>
+              <h3>Πρόσωπο</h3>
+              <p>Καθαρισμός, ανάπλαση, σύσφιξη και προηγμένες θεραπείες επιδερμίδας.</p>
+              <span class="svc-hub-go">Δείτε τις θεραπείες</span>
+            </div>
+          </a>
+          <a class="svc-hub" href="#cat-body" data-hub="body">
+            <div class="svc-hub-media">
+              <img src="images/services/ba-cryolipolysis.jpg" alt="" />
+            </div>
+            <div class="svc-hub-copy">
+              <span class="svc-hub-count">11 θεραπείες</span>
+              <h3>Σώμα</h3>
+              <p>Σμίλευση, αποσυμφόρηση, μασάζ και τεχνητό μαύρισμα.</p>
+              <span class="svc-hub-go">Δείτε τις θεραπείες</span>
+            </div>
+          </a>
+          <a class="svc-hub" href="#cat-brows" data-hub="brows">
+            <div class="svc-hub-media">
+              <img src="images/services/result-lashes-01.jpg" alt="" />
+            </div>
+            <div class="svc-hub-copy">
+              <span class="svc-hub-count">6 θεραπείες</span>
+              <h3>Φρύδια &amp; βλεφαρίδες</h3>
+              <p>Σχήμα, χρώμα, lift και extensions για ένα πιο έντονο βλέμμα.</p>
+              <span class="svc-hub-go">Δείτε τις θεραπείες</span>
+            </div>
+          </a>
+          <a class="svc-hub" href="#cat-hair" data-hub="hair">
+            <div class="svc-hub-media">
+              <img src="images/services/ba-pico-laser.jpg" alt="" />
+            </div>
+            <div class="svc-hub-copy">
+              <span class="svc-hub-count">4 θεραπείες</span>
+              <h3>Αποτρίχωση</h3>
+              <p>Laser, κερί και ριζική αποτρίχωση για πρόσωπο και σώμα.</p>
+              <span class="svc-hub-go">Δείτε τις θεραπείες</span>
+            </div>
+          </a>
+        </div>
+
+        <div class="svc-results" aria-label="Αποτελέσματα από το Aesthée">
+          <figure><img src="images/services/result-lashes-04.jpg" alt="Αποτέλεσμα βλεφαρίδων στο Aesthée" /></figure>
+          <figure><img src="images/services/result-brows-01.jpg" alt="Αποτέλεσμα φρυδιών στο Aesthée" /></figure>
+          <figure><img src="images/services/result-lashes-02.jpg" alt="Lash extensions στο Aesthée" /></figure>
+          <figure><img src="images/services/result-lashes-05.jpg" alt="Αποτέλεσμα βλέμματος στο Aesthée" /></figure>
+          <figure><img src="images/services/result-brows-02.jpg" alt="Brow shaping στο Aesthée" /></figure>
+          <figure><img src="images/services/result-lashes-03.jpg" alt="Lash lift στο Aesthée" /></figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="svc-catalog" id="svc-catalog" aria-label="Κατάλογος θεραπειών">
+      <div class="container svc-catalog-layout">
+        <nav class="svc-rail" id="svcRail" aria-label="Κατηγορίες υπηρεσιών">
+          <a href="#cat-face" data-rail="face" class="is-active">Πρόσωπο <em>18</em></a>
+          <a href="#cat-body" data-rail="body">Σώμα <em>11</em></a>
+          <a href="#cat-brows" data-rail="brows">Βλέμμα <em>6</em></a>
+          <a href="#cat-hair" data-rail="hair">Αποτρίχωση <em>4</em></a>
+        </nav>
+
+        <div class="svc-panels">
+          <article class="svc-panel" id="cat-face" data-panel="face">
+            <header class="svc-panel-head">
+              <div>
+                <span class="section-kicker">01 — Πρόσωπο</span>
+                <h2>Θεραπείες προσώπου</h2>
+                <p>Από βαθύ καθαρισμό έως RF Microneedling, HIFU και pico laser — επιλέξτε θεραπεία και κλείστε απευθείας.</p>
+              </div>
+            </header>
+            <div class="svc-list">
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Βαθύς καθαρισμός προσώπου</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%92%CE%B1%CE%B8%CF%8D%CF%82%20%CE%BA%CE%B1%CE%B8%CE%B1%CF%81%CE%B9%CF%83%CE%BC%CF%8C%CF%82%20%CF%80%CF%81%CE%BF%CF%83%CF%8E%CF%80%CE%BF%CF%85" data-book="Βαθύς καθαρισμός προσώπου">Κλείστε</a>
+                </div>
+                <figure class="svc-proof">
+                  <img src="images/services/ba-deep-cleanse.jpg" alt="Πριν και μετά — βαθύς καθαρισμός προσώπου" loading="lazy" />
+                </figure>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Υδροδερμοαπόξεση</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%A5%CE%B4%CF%81%CE%BF%CE%B4%CE%B5%CF%81%CE%BC%CE%BF%CE%B1%CF%80%CF%8C%CE%BE%CE%B5%CF%83%CE%B7" data-book="Υδροδερμοαπόξεση">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Δερμοαπόξεση με διαμάντι</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%94%CE%B5%CF%81%CE%BC%CE%BF%CE%B1%CF%80%CF%8C%CE%BE%CE%B5%CF%83%CE%B7%20%CE%BC%CE%B5%20%CE%B4%CE%B9%CE%B1%CE%BC%CE%AC%CE%BD%CF%84%CE%B9" data-book="Δερμοαπόξεση με διαμάντι">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Οξέα</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%9F%CE%BE%CE%AD%CE%B1" data-book="Οξέα">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Χημικό peeling</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%A7%CE%B7%CE%BC%CE%B9%CE%BA%CF%8C%20peeling" data-book="Χημικό peeling">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Φυτικό peeling</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%A6%CF%85%CF%84%CE%B9%CE%BA%CF%8C%20peeling" data-book="Φυτικό peeling">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Φωτοθεραπεία</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%A6%CF%89%CF%84%CE%BF%CE%B8%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1" data-book="Φωτοθεραπεία">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Μεσοθεραπεία</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%9C%CE%B5%CF%83%CE%BF%CE%B8%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1" data-book="Μεσοθεραπεία">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Ραδιοσυχνότητες</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%A1%CE%B1%CE%B4%CE%B9%CE%BF%CF%83%CF%85%CF%87%CE%BD%CF%8C%CF%84%CE%B7%CF%84%CE%B5%CF%82" data-book="Ραδιοσυχνότητες">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Θεραπεία βιταμίνης C</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%98%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1%20%CE%B2%CE%B9%CF%84%CE%B1%CE%BC%CE%AF%CE%BD%CE%B7%CF%82%20C" data-book="Θεραπεία βιταμίνης C">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Θεραπεία υαλουρονικού οξέος (μη ενέσιμη)</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%98%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1%20%CF%85%CE%B1%CE%BB%CE%BF%CF%85%CF%81%CE%BF%CE%BD%CE%B9%CE%BA%CE%BF%CF%8D%20%CE%BF%CE%BE%CE%AD%CE%BF%CF%82%20%28%CE%BC%CE%B7%20%CE%B5%CE%BD%CE%AD%CF%83%CE%B9%CE%BC%CE%B7%29" data-book="Θεραπεία υαλουρονικού οξέος (μη ενέσιμη)">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Θεραπεία λεύκανσης</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%98%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1%20%CE%BB%CE%B5%CF%8D%CE%BA%CE%B1%CE%BD%CF%83%CE%B7%CF%82" data-book="Θεραπεία λεύκανσης">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>HIFU</h3>
+                  <a class="svc-book" href="booking.html?service=HIFU" data-book="HIFU">Κλείστε</a>
+                </div>
+                <div class="svc-proof-grid">
+                  <figure class="svc-proof">
+                    <img src="images/services/ba-hifu-front.jpg" alt="Πριν και μετά — HIFU πρόσωπο" loading="lazy" />
+                  </figure>
+                  <figure class="svc-proof">
+                    <img src="images/services/ba-hifu-profile.jpg" alt="Πριν και μετά — HIFU προφίλ" loading="lazy" />
+                  </figure>
+                </div>
+              </div>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">RF Microneedling</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <figure class="svc-proof">
+                    <img src="images/services/ba-rf-jawline.jpg" alt="Πριν και μετά — RF Microneedling προσώπου" loading="lazy" />
+                  </figure>
+                  <p>Το RF Microneedling είναι μια προηγμένη, ελάχιστα επεμβατική θεραπεία που συνδυάζει μικροβελόνες με ραδιοσυχνότητες (RF). Οι μικροβελόνες διεισδύουν σε ελεγχόμενο βάθος στο δέρμα και μεταφέρουν ενέργεια ραδιοσυχνοτήτων στους βαθύτερους ιστούς, ενεργοποιώντας τους φυσικούς μηχανισμούς ανάπλασης και την παραγωγή κολλαγόνου και ελαστίνης.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Συμβάλλει στη σύσφιξη και ανανέωση του δέρματος, στη βελτίωση της υφής και των διεσταλμένων πόρων, καθώς και στην αντιμετώπιση λεπτών γραμμών, ουλών ακμής και ατροφικών ουλών. Μπορεί επίσης να εφαρμοστεί στο σώμα για τη βελτίωση της όψης των ραγάδων και της χαλάρωσης.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Είναι κατάλληλο για γυναίκες και άνδρες που επιθυμούν πιο σφριγηλό, λείο και ανανεωμένο δέρμα, βελτίωση ουλών ή ραγάδων και συνολική αναβάθμιση της ποιότητας της επιδερμίδας, χωρίς χειρουργική επέμβαση.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=RF%20Microneedling%20%CF%80%CF%81%CE%BF%CF%83%CF%8E%CF%80%CE%BF%CF%85" data-book="RF Microneedling προσώπου">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Carbon peel</h3>
+                  <a class="svc-book" href="booking.html?service=Carbon%20peel" data-book="Carbon peel">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Θεραπεία εξωσωμάτων (μη ενέσιμη)</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%98%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1%20%CE%B5%CE%BE%CF%89%CF%83%CF%89%CE%BC%CE%AC%CF%84%CF%89%CE%BD%20%28%CE%BC%CE%B7%20%CE%B5%CE%BD%CE%AD%CF%83%CE%B9%CE%BC%CE%B7%29" data-book="Θεραπεία εξωσωμάτων (μη ενέσιμη)">Κλείστε</a>
+                </div>
+              </div>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Θεραπεία PDRN (μη ενέσιμη)</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%98%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1%20PDRN%20%28%CE%BC%CE%B7%20%CE%B5%CE%BD%CE%AD%CF%83%CE%B9%CE%BC%CE%B7%29" data-book="Θεραπεία PDRN (μη ενέσιμη)">Κλείστε</a>
+                </div>
+              </div>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Αφαίρεση τατουάζ / ημιμόνιμου μακιγιάζ</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <figure class="svc-proof">
+                    <img src="images/services/ba-pico-laser.jpg" alt="Πριν και μετά — Pico Laser αφαίρεση ημιμόνιμου" loading="lazy" />
+                  </figure>
+                  <p>Η αφαίρεση τατουάζ και ημιμόνιμου μακιγιάζ με pico laser βασίζεται στην εκπομπή εξαιρετικά σύντομων παλμών ενέργειας, οι οποίοι στοχεύουν επιλεκτικά τη χρωστική και τη διασπούν σε μικρότερα σωματίδια. Στη συνέχεια, ο οργανισμός τα απομακρύνει σταδιακά μέσω των φυσικών του μηχανισμών.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Χρησιμοποιείται για τη σταδιακή εξασθένηση ή αφαίρεση ανεπιθύμητων τατουάζ, καθώς και για παλιό, αλλοιωμένο ή ανεπιθύμητο ημιμόνιμο μακιγιάζ φρυδιών ή και χειλιών. Ο αριθμός των συνεδριών εξαρτάται από το χρώμα, το βάθος, την ποσότητα και το είδος της χρωστικής.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Σε όσους επιθυμούν να αφαιρέσουν ή να ξεθωριάσουν ένα τατουάζ ή ημιμόνιμο μακιγιάζ, είτε με στόχο την πλήρη απομάκρυνσή του είτε για να προετοιμαστεί η περιοχή για νέα εφαρμογή.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=%CE%91%CF%86%CE%B1%CE%AF%CF%81%CE%B5%CF%83%CE%B7%20%CF%84%CE%B1%CF%84%CE%BF%CF%85%CE%AC%CE%B6%20%2F%20%CE%B7%CE%BC%CE%B9%CE%BC%CF%8C%CE%BD%CE%B9%CE%BC%CE%BF%CF%85%20%CE%BC%CE%B1%CE%BA%CE%B9%CE%B3%CE%B9%CE%AC%CE%B6" data-book="Αφαίρεση τατουάζ / ημιμόνιμου μακιγιάζ">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+            </div>
+          </article>
+
+          <article class="svc-panel" id="cat-body" data-panel="body">
+            <header class="svc-panel-head">
+              <div>
+                <span class="section-kicker">02 — Σώμα</span>
+                <h2>Θεραπείες σώματος</h2>
+                <p>Τεχνολογία σώματος, λεμφική αποσυμφόρηση, μασάζ και solarium — ανοίξτε κάθε θεραπεία για πλήρη ενημέρωση.</p>
+              </div>
+            </header>
+            <div class="svc-list">
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Vacutherm Treadmill &amp; Bike</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Το Vacutherm συνδυάζει την άσκηση σε διάδρομο ή ποδήλατο με την τεχνολογία κενού αέρος (αναρρόφηση) και υπέρυθρης θερμότητας, με στόχο την ενεργοποίηση του μεταβολισμού, την απώλεια βάρους, την μείωση πόντων και την λεμφική παροχέτευση του σώματος.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Συμβάλλει στην αύξηση της σωματικής δραστηριότητας και της ενεργειακής κατανάλωσης, στη βελτίωση της φυσικής κατάστασης και της κυκλοφορίας, ενώ αποτελεί ιδανική επιλογή για προγράμματα που στοχεύουν στη μείωση ή διατήρηση βάρους, στη μείωση πόντων και στη βελτίωση της όψης του σώματος.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Σε γυναίκες και άνδρες που θέλουν να συνδυάσουν άσκηση και τεχνολογία σε μία ολοκληρωμένη συνεδρία, με έμφαση σε κοιλιά, γλουτούς, μηρούς και πόδια. Επίσης, η μισάωρη προπόνηση εξυπηρετεί τους γρήγορους ρυθμούς ζωής και το μειωμένο ελεύθερο χρόνο του ασκούμενου. Το πρόγραμμα και η ένταση προσαρμόζονται στο επίπεδο φυσικής κατάστασης και στους προσωπικούς στόχους κάθε ατόμου.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Vacutherm%20Treadmill%20%26%20Bike" data-book="Vacutherm Treadmill &amp; Bike">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Endospheres</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Το ENDOSPHERES είναι μια μη επεμβατική θεραπεία σώματος που βασίζεται στην τεχνολογία Compressive Microvibration®. Μέσω ενός ειδικού κυλίνδρου με περιστρεφόμενες σφαίρες, εφαρμόζει ελεγχόμενη μηχανική πίεση και μικροδονήσεις στους ιστούς, προσφέροντας ταυτόχρονα αισθητική φροντίδα και αίσθηση μασάζ.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Συμβάλλει στη βελτίωση της όψης φλοιού πορτοκαλιού, στη λεμφική αποσυμφόρηση και στην αντιμετώπιση της κατακράτησης υγρών. Παράλληλα, βοηθά στη βελτίωση της όψης και της υφής του δέρματος, στη σμίλευση του περιγράμματος και στην αίσθηση ελαφρύτερων, ξεκούραστων ποδιών.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Είναι ιδανική επιλογή για γυναίκες και άνδρες που επιθυμούν να αντιμετωπίσουν κυτταρίτιδα, πρήξιμο και κατακράτηση, να βελτιώσουν την εικόνα του σώματός τους και να αποκτήσουν πιο ομοιόμορφη και λεία όψη δέρματος, χωρίς επεμβατική διαδικασία.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Endospheres" data-book="Endospheres">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Cavitation</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Το Cavitation είναι μια μη επεμβατική θεραπεία σώματος που πραγματοποιείται με ειδικές κεφαλές και ελεγχόμενη αναρρόφηση, προσφέροντας ένα έντονο μηχανικό μασάζ στους ιστούς. Η εφαρμογή επικεντρώνεται στις περιοχές όπου υπάρχει κυτταρίτιδα, κατακράτηση και ανομοιομορφία στην όψη του δέρματος.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Η αναρρόφηση διεγείρει μηχανικά τους ιστούς και συμβάλλει στη βελτίωση της τοπικής κυκλοφορίας, στην αποσυμφόρηση και στη βελτίωση της όψης της κυτταρίτιδας. Παράλληλα, βοηθά στη λείανση της όψης του δέρματος και στη βελτίωση του περιγράμματος του σώματος.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Απευθύνεται σε γυναίκες και άνδρες που αντιμετωπίζουν κυτταρίτιδα, κατακράτηση, πρήξιμο ή ανομοιόμορφη όψη του δέρματος και επιθυμούν μια μη επεμβατική θεραπεία για πιο λεία και ομοιόμορφη εικόνα σώματος.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Cavitation" data-book="Cavitation">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Vacuum BBL</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Το Vacuum BBL είναι μια μη επεμβατική θεραπεία διαμόρφωσης των γλουτών που βασίζεται στην εφαρμογή ελεγχόμενης αναρρόφησης μέσω ειδικών βεντουζών. Η θεραπεία δρα μηχανικά στην περιοχή, με στόχο να προσφέρει άμεσα μια πιο ανορθωμένη και τονισμένη εικόνα.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Συμβάλλει στη βελτίωση της όψης και του σχήματος των γλουτών, στην ενίσχυση της εικόνας ανόρθωσης και όγκου, καθώς και στη διέγερση της τοπικής κυκλοφορίας. Παράλληλα, μπορεί να βοηθήσει στη βελτίωση της όψης της κυτταρίτιδας και της υφής του δέρματος.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Απευθύνεται σε όσους επιθυμούν πιο ανορθωμένους, καλοσχηματισμένους και οπτικά πιο γεμάτους γλουτούς, χωρίς χειρουργική επέμβαση ή ενέσιμες τεχνικές. Μπορεί να ενταχθεί σε ένα ολοκληρωμένο πρόγραμμα σύσφιξης και διαμόρφωσης σώματος.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Vacuum%20BBL" data-book="Vacuum BBL">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Πρεσσοθεραπεία</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Η Πρεσσοθεραπεία είναι μια μη επεμβατική μέθοδος μηχανικής συμπίεσης, κατά την οποία ειδικές αεροθαλάμες ασκούν διαδοχική και ελεγχόμενη πίεση σε όλο το σώμα. Η ρυθμική συμπίεση δημιουργεί μια ευχάριστη αίσθηση μασάζ και υποστηρίζει τη λεμφική και φλεβική κυκλοφορία.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Συμβάλλει στη λεμφική αποσυμφόρηση, στη μείωση της κατακράτησης υγρών και του αισθήματος πρηξίματος και βάρους στα πόδια. Παράλληλα, μπορεί να χρησιμοποιηθεί συμπληρωματικά σε προγράμματα αντιμετώπισης της όψης της φλοιού πορτοκαλιού και της αθλητικής αποκατάστασης.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Είναι ιδανική για άτομα που παρουσιάζουν κατακράτηση, πρήξιμο ή αίσθημα κουρασμένων και βαριών ποδιών, καθώς και για όσους επιθυμούν μια χαλαρωτική θεραπεία αποσυμφόρησης και ευεξίας.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=%CE%A0%CF%81%CE%B5%CF%83%CF%83%CE%BF%CE%B8%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1" data-book="Πρεσσοθεραπεία">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Κρυολιπόλυση</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%9A%CF%81%CF%85%CE%BF%CE%BB%CE%B9%CF%80%CF%8C%CE%BB%CF%85%CF%83%CE%B7" data-book="Κρυολιπόλυση">Κλείστε</a>
+                </div>
+                <figure class="svc-proof">
+                  <img src="images/services/ba-cryolipolysis.jpg" alt="Πριν και μετά — κρυολιπόλυση" loading="lazy" />
+                </figure>
+              </div>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">RF Microneedling</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <div class="svc-proof-grid">
+                    <figure class="svc-proof">
+                      <img src="images/services/ba-rf-stretchmarks.jpg" alt="Πριν και μετά — RF Microneedling ραγάδες" loading="lazy" />
+                    </figure>
+                    <figure class="svc-proof">
+                      <img src="images/services/ba-rf-arm.jpg" alt="Πριν και μετά — RF Microneedling χέρι" loading="lazy" />
+                    </figure>
+                    <figure class="svc-proof">
+                      <img src="images/services/ba-rf-abdomen.jpg" alt="Πριν και μετά — RF Microneedling κοιλιά" loading="lazy" />
+                    </figure>
+                    <figure class="svc-proof">
+                      <img src="images/services/ba-rf-decollete.jpg" alt="Πριν και μετά — RF Microneedling ντεκολτέ" loading="lazy" />
+                    </figure>
+                  </div>
+                  <p>Το RF Microneedling είναι μια προηγμένη, ελάχιστα επεμβατική θεραπεία που συνδυάζει μικροβελόνες με ραδιοσυχνότητες (RF). Οι μικροβελόνες διεισδύουν σε ελεγχόμενο βάθος στο δέρμα και μεταφέρουν ενέργεια ραδιοσυχνοτήτων στους βαθύτερους ιστούς, ενεργοποιώντας τους φυσικούς μηχανισμούς ανάπλασης και την παραγωγή κολλαγόνου και ελαστίνης.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Συμβάλλει στη σύσφιξη και ανανέωση του δέρματος, στη βελτίωση της υφής και των διεσταλμένων πόρων, καθώς και στην αντιμετώπιση λεπτών γραμμών, ουλών ακμής και ατροφικών ουλών. Μπορεί επίσης να εφαρμοστεί στο σώμα για τη βελτίωση της όψης των ραγάδων και της χαλάρωσης.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Είναι κατάλληλο για γυναίκες και άνδρες που επιθυμούν πιο σφριγηλό, λείο και ανανεωμένο δέρμα, βελτίωση ουλών ή ραγάδων και συνολική αναβάθμιση της ποιότητας της επιδερμίδας, χωρίς χειρουργική επέμβαση.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=RF%20Microneedling%20%CF%83%CF%8E%CE%BC%CE%B1%CF%84%CE%BF%CF%82" data-book="RF Microneedling σώματος">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Μαδεροθεραπεία</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <figure class="svc-proof">
+                    <img src="images/services/ba-maderotherapy.jpg" alt="Πριν και μετά — μαδεροθεραπεία" loading="lazy" />
+                  </figure>
+                  <p>Η Μαδεροθεραπεία (Maderotherapy) είναι μια μη επεμβατική τεχνική έντονου μασάζ σώματος που πραγματοποιείται με ειδικά σχεδιασμένα ξύλινα εργαλεία, τα οποία εφαρμόζονται με συγκεκριμένες κινήσεις και πιέσεις στις περιοχές του σώματος που χρειάζονται μεγαλύτερη έμφαση.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Συμβάλλει στη βελτίωση της όψης της κυτταρίτιδας, στην τόνωση της τοπικής κυκλοφορίας και στη λεμφική αποσυμφόρηση. Παράλληλα, βοηθά στη μείωση της κατακράτησης και στη βελτίωση της υφής και του περιγράμματος του σώματος.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Είναι ιδανική για γυναίκες και άνδρες που επιθυμούν να αντιμετωπίσουν κυτταρίτιδα, κατακράτηση και ανομοιομορφία στην όψη του δέρματος και να αποκτήσουν μια πιο λεία, τονωμένη και σμιλεμένη εικόνα σώματος.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=%CE%9C%CE%B1%CE%B4%CE%B5%CF%81%CE%BF%CE%B8%CE%B5%CF%81%CE%B1%CF%80%CE%B5%CE%AF%CE%B1" data-book="Μαδεροθεραπεία">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Μασάζ</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Το μασάζ αποτελεί μια ολοκληρωμένη εμπειρία χαλάρωσης και ευεξίας, με διαφορετικές τεχνικές που προσαρμόζονται στις ανάγκες του σώματος και του κάθε ατόμου.</p>
+                  <div class="svc-subs">
+                    <div>
+                      <h4>Χαλαρωτικό μασάζ</h4>
+                      <p>Ήπιες και ρυθμικές κινήσεις που βοηθούν στη χαλάρωση, την αποφόρτιση από το στρες και τη μείωση της σωματικής έντασης. Ιδανικό για όσους αναζητούν ηρεμία και ευεξία.</p>
+                    </div>
+                    <div>
+                      <h4>Μυοχαλαρωτικό μασάζ</h4>
+                      <p>Πιο στοχευμένες και βαθιές πιέσεις σε σημεία μυϊκής έντασης. Βοηθά στη χαλάρωση των καταπονημένων μυών και στην ανακούφιση από πιάσιμο και μυϊκή δυσκαμψία.</p>
+                    </div>
+                    <div>
+                      <h4>Αθλητικό μασάζ</h4>
+                      <p>Δυναμική τεχνική σχεδιασμένη για άτομα με αυξημένη σωματική δραστηριότητα. Συμβάλλει στη μυϊκή αποκατάσταση, την αποφόρτιση και την προετοιμασία του σώματος πριν ή μετά την άσκηση.</p>
+                    </div>
+                    <div>
+                      <h4>Μασάζ με βεντούζες</h4>
+                      <p>Εφαρμόζεται με ειδικές βεντούζες που δημιουργούν ελεγχόμενη αναρρόφηση στο δέρμα. Χρησιμοποιείται για μυϊκή αποσυμφόρηση, χαλάρωση της έντασης και τόνωση της τοπικής κυκλοφορίας.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=%CE%9C%CE%B1%CF%83%CE%AC%CE%B6" data-book="Μασάζ">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+
+              <p class="svc-group">Τεχνητό μαύρισμα</p>
+
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Stand Up Solarium XXXL</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <div class="svc-proof-grid">
+                    <figure class="svc-proof">
+                      <img src="images/services/ba-solarium-ultrasun.jpg" alt="Πριν και μετά — Stand Up Solarium" loading="lazy" />
+                    </figure>
+                    <figure class="svc-proof">
+                      <img src="images/services/ba-solarium-pityriasis.jpg" alt="Solarium — ομοιόμορφο μαύρισμα" loading="lazy" />
+                    </figure>
+                  </div>
+                  <p>Το Stand Up Solarium προσφέρει τεχνητό μαύρισμα σε όρθια θέση μέσω ελεγχόμενης έκθεσης σε υπεριώδη ακτινοβολία (UV). Η όρθια καμπίνα επιτρέπει την έκθεση του σώματος χωρίς επαφή με επιφάνειες και βοηθά στην επίτευξη ομοιόμορφου χρώματος.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Τι προσφέρει</h4>
+                      <p>Προσφέρει σταδιακό, ομοιόμορφο μαύρισμα και δυνατότητα διατήρησης της μαυρισμένης όψης ανεξάρτητα από την εποχή. Η διάρκεια κάθε συνεδρίας καθορίζεται ανάλογα με τον φωτότυπο και το ιστορικό έκθεσης.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Σε όσους επιθυμούν μαυρισμένη επιδερμίδα όλο τον χρόνο και είναι κατάλληλοι για έκθεση σε UV ακτινοβολία. Πριν από την πρώτη συνεδρία πραγματοποιείται αξιολόγηση του φωτότυπου και ακολουθούνται οι απαραίτητες οδηγίες προστασίας.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Stand%20Up%20Solarium%20XXXL" data-book="Stand Up Solarium XXXL">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Lay Down Solarium XXL</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <figure class="svc-proof">
+                    <img src="images/services/ba-solarium-ultrasun.jpg" alt="Πριν και μετά — Lay Down Solarium" loading="lazy" />
+                  </figure>
+                  <p>Το Lay Down Solarium προσφέρει τεχνητό μαύρισμα σε ξαπλωτή θέση, μέσω ελεγχόμενης έκθεσης σε υπεριώδη ακτινοβολία (UV). Αποτελεί μια άνετη επιλογή για όσους θέλουν να συνδυάσουν τη συνεδρία μαυρίσματος με στιγμές χαλάρωσης.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Τι προσφέρει</h4>
+                      <p>Προσφέρει σταδιακό και ομοιόμορφο μαύρισμα σε όλο το σώμα και δυνατότητα διατήρησης της μαυρισμένης όψης καθ’ όλη τη διάρκεια του χρόνου. Η διάρκεια της συνεδρίας προσαρμόζεται στον φωτότυπο και στο ιστορικό έκθεσης κάθε ατόμου.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Σε όσους επιθυμούν μαυρισμένο δέρμα όλο τον χρόνο και προτιμούν την άνεση της ξαπλωτής καμπίνας. Πριν από την πρώτη εφαρμογή αξιολογείται ο φωτότυπος και δίνονται οι απαραίτητες οδηγίες για την έκθεση σε UV.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Lay%20Down%20Solarium%20XXL" data-book="Lay Down Solarium XXL">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+            </div>
+          </article>
+
+          <article class="svc-panel" id="cat-brows" data-panel="brows">
+            <header class="svc-panel-head">
+              <div>
+                <span class="section-kicker">03 — Βλέμμα</span>
+                <h2>Φρύδια &amp; βλεφαρίδες</h2>
+                <p>Σχήμα, χρώμα, lift και extensions — για φυσικό ή πιο έντονο αποτέλεσμα.</p>
+              </div>
+            </header>
+            <div class="svc-list">
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Brow Lamination &amp; Tint</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <figure class="svc-proof">
+                    <img src="images/services/ba-brow-lamination.jpg" alt="Πριν και μετά — Brow Lamination &amp; Tint" loading="lazy" />
+                  </figure>
+                  <p>Το Brow Lamination &amp; Tint είναι μια ολοκληρωμένη θεραπεία σχηματισμού και ανάδειξης των φρυδιών. Το Brow Lamination τιθασεύει και σταθεροποιεί τις τρίχες προς την επιθυμητή κατεύθυνση, ενώ η ειδική υποαλλεργική &amp; vegan βαφή προσθέτει χρώμα και μεγαλύτερη ένταση στο αποτέλεσμα.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Τι προσφέρει</h4>
+                      <p>Δημιουργεί την εικόνα πιο γεμάτων, συμμετρικών και καλοσχηματισμένων φρυδιών, καλύπτοντας οπτικά μικρά κενά και αναδεικνύοντας το φυσικό τους σχήμα.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Ιδανικό για όσους έχουν ατίθασες, λεπτές ή αραιές τρίχες, φρύδια που αναπτύσσονται προς διαφορετικές κατευθύνσεις ή απλώς επιθυμούν ένα πιο περιποιημένο και έντονο αποτέλεσμα χωρίς ημιμόνιμο μακιγιάζ.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Brow%20Lamination%20%26%20Tint" data-book="Brow Lamination &amp; Tint">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Lash Lift &amp; Tint</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <figure class="svc-proof">
+                    <img src="images/services/result-lashes-04.jpg" alt="Αποτέλεσμα Lash Lift &amp; Tint" loading="lazy" />
+                  </figure>
+                  <p>Το Lash Lift &amp; Tint είναι μια θεραπεία που αναδεικνύει τις φυσικές βλεφαρίδες, προσφέροντας ανόρθωση, καμπύλη και πιο έντονο χρώμα, χωρίς extensions.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Τι προσφέρει</h4>
+                      <p>Οι βλεφαρίδες αποκτούν πιο ανορθωμένη, μακριά και έντονη όψη, ενώ η vegan &amp; υποαλλεργική βαφή σκουραίνει ακόμη και τις πιο ανοιχτόχρωμες άκρες τους, δημιουργώντας ένα φυσικά τονισμένο βλέμμα.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Ιδανικό για όσους επιθυμούν περιποιημένες και εντυπωσιακές φυσικές βλεφαρίδες με αποτέλεσμα που διαρκεί για εβδομάδες και μειώνει την ανάγκη καθημερινής χρήσης ψαλιδιού βλεφαρίδων και mascara.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Lash%20Lift%20%26%20Tint" data-book="Lash Lift &amp; Tint">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Brow Shape</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <figure class="svc-proof">
+                    <img src="images/services/ba-brow-shape.jpg" alt="Πριν και μετά — Brow Shape" loading="lazy" />
+                  </figure>
+                  <p>Το Brow Shape είναι ο επαγγελματικός σχηματισμός των φρυδιών με βάση τα χαρακτηριστικά, τις αναλογίες και τη φυσική γραμμή του προσώπου, με στόχο ένα αρμονικό και περιποιημένο αποτέλεσμα.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Η διαδικασία</h4>
+                      <p>Ο σχηματισμός πραγματοποιείται με συνδυασμό αποτρίχωσης με κερί και τσιμπιδάκι, ενώ όπου χρειάζεται γίνεται προσεκτικό ψαλίδισμα των τριχών για ένα καθαρό και ομοιόμορφο αποτέλεσμα.</p>
+                    </div>
+                    <div>
+                      <h4>Τι προσφέρει</h4>
+                      <p>Αναδεικνύει το φυσικό σχήμα των φρυδιών, δημιουργώντας καθαρή γραμμή, καλύτερη συμμετρία και πιο περιποιημένη εικόνα του βλέμματος.</p>
+                    </div>
+                    <div class="svc-facts-span">
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Σε όσους επιθυμούν καλοσχηματισμένα και φυσικά φρύδια, είτε πρόκειται για αρχικό σχεδιασμό είτε για τακτική συντήρηση του υπάρχοντος σχήματος.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Brow%20Shape" data-book="Brow Shape">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Brow Shape &amp; Tint</h3>
+                  <a class="svc-book" href="booking.html?service=Brow%20Shape%20%26%20Tint" data-book="Brow Shape &amp; Tint">Κλείστε</a>
+                </div>
+              </div>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Τοποθέτηση βλεφαρίδων extensions</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <figure class="svc-proof">
+                    <img src="images/services/result-lashes-05.jpg" alt="Αποτέλεσμα lash extensions" loading="lazy" />
+                  </figure>
+                  <p>Τα Lash Extensions είναι η εφαρμογή τεχνητών βλεφαρίδων πάνω στις φυσικές, μία προς μία ή σε ειδικά διαμορφωμένα τουφάκια, με στόχο να προσφέρουν μήκος, πυκνότητα και ένταση στο βλέμμα.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Τι προσφέρουν</h4>
+                      <p>Ανάλογα με την τεχνική και το επιθυμητό αποτέλεσμα, μπορούν να δημιουργήσουν από ένα φυσικό και διακριτικό look έως ένα πιο έντονο και εντυπωσιακό αποτέλεσμα, προσαρμοσμένο στο σχήμα των ματιών και τις φυσικές βλεφαρίδες.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνονται</h4>
+                      <p>Σε όσους επιθυμούν πιο μακριές, πυκνές και έντονες βλεφαρίδες χωρίς καθημερινή χρήση mascara. Για τη διατήρηση του αποτελέσματος συνιστάται συντήρηση, ανάλογα με τον φυσικό κύκλο ανανέωσης των βλεφαρίδων.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=%CE%A4%CE%BF%CF%80%CE%BF%CE%B8%CE%AD%CF%84%CE%B7%CF%83%CE%B7%20%CE%B2%CE%BB%CE%B5%CF%86%CE%B1%CF%81%CE%AF%CE%B4%CF%89%CE%BD%20extensions" data-book="Τοποθέτηση βλεφαρίδων extensions">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <div class="svc-item">
+                <div class="svc-item-row">
+                  <h3>Συντήρηση βλεφαρίδων extensions</h3>
+                  <a class="svc-book" href="booking.html?service=%CE%A3%CF%85%CE%BD%CF%84%CE%AE%CF%81%CE%B7%CF%83%CE%B7%20%CE%B2%CE%BB%CE%B5%CF%86%CE%B1%CF%81%CE%AF%CE%B4%CF%89%CE%BD%20extensions" data-book="Συντήρηση βλεφαρίδων extensions">Κλείστε</a>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="svc-panel" id="cat-hair" data-panel="hair">
+            <header class="svc-panel-head">
+              <div>
+                <span class="section-kicker">04 — Αποτρίχωση</span>
+                <h2>Θεραπείες αποτρίχωσης</h2>
+                <p>Διοδικό και Αλεξανδρίτης laser, κερί και ριζική αποτρίχωση — με σαφή ενημέρωση για κάθε μέθοδο.</p>
+              </div>
+            </header>
+            <div class="svc-list">
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Laser αποτρίχωση — Διοδικό</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Η Laser Αποτρίχωση με Διοδικό Laser αποτελεί μια σύγχρονη μέθοδο για τη μακροχρόνια μείωση της ανεπιθύμητης τριχοφυΐας. Η ενέργεια του laser στοχεύει επιλεκτικά τη μελανίνη της τρίχας και μεταφέρεται στον θύλακα, προκαλώντας σταδιακή εξασθένηση της τριχοφυΐας.</p>
+                  <div class="svc-callout">
+                    <h4>12 μήνες τον χρόνο — ακόμα και σε μαυρισμένες επιδερμίδες</h4>
+                    <p>Ένα από τα σημαντικότερα πλεονεκτήματα του διοδικού laser είναι η δυνατότητα εφαρμογής του σε ευρύ φάσμα φωτοτύπων, ακόμη και σε πιο σκούρες ή μαυρισμένες επιδερμίδες, όταν χρησιμοποιούνται οι κατάλληλες παράμετροι. Έτσι, η αποτρίχωση μπορεί να συνεχίζεται και τους 12 μήνες του χρόνου, χωρίς να περιορίζεται αποκλειστικά στους χειμερινούς μήνες.</p>
+                  </div>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Προσφέρει σταδιακή και μακροχρόνια μείωση της τριχοφυΐας, με τις τρίχες να γίνονται προοδευτικά πιο λεπτές και αραιές. Παράλληλα, μπορεί να βοηθήσει στη μείωση προβλημάτων που σχετίζονται με το συχνό ξύρισμα ή την αποτρίχωση, όπως η θυλακίτιδα και οι ερεθισμοί.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Σε γυναίκες και άνδρες διαφορετικών φωτοτύπων, από ανοιχτόχρωμες έως πιο σκούρες επιδερμίδες, που επιθυμούν αποτελεσματική και μακροχρόνια αντιμετώπιση της ανεπιθύμητης τριχοφυΐας σε πρόσωπο και σώμα. Οι παράμετροι κάθε συνεδρίας εξατομικεύονται ανάλογα με τον φωτότυπο, το επίπεδο μαυρίσματος και τα χαρακτηριστικά της τρίχας.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Laser%20%CE%B1%CF%80%CE%BF%CF%84%CF%81%CE%AF%CF%87%CF%89%CF%83%CE%B7%20%E2%80%94%20%CE%94%CE%B9%CE%BF%CE%B4%CE%B9%CE%BA%CF%8C" data-book="Laser αποτρίχωση — Διοδικό">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Laser αποτρίχωση — Αλεξανδρίτης</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Η Laser Αποτρίχωση με Αλεξανδρίτη 755 nm αποτελεί μία από τις πλέον καθιερωμένες τεχνολογίες για τη μακροχρόνια μείωση της ανεπιθύμητης τριχοφυΐας. Η ενέργεια του laser απορροφάται από τη μελανίνη της τρίχας και στοχεύει τον θύλακα, οδηγώντας σταδιακά σε πιο αραιή και λεπτή επανέκφυση.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Είναι ιδιαίτερα αποτελεσματικός σε ανοιχτόχρωμες επιδερμίδες με σκούρα τριχοφυΐα και μπορεί να εφαρμοστεί σε πρόσωπο και σώμα. Με την ολοκλήρωση του κατάλληλου κύκλου συνεδριών επιτυγχάνεται σημαντική και μακροχρόνια μείωση της τριχοφυΐας, ενώ μπορεί να περιοριστούν οι ερεθισμοί και η θυλακίτιδα που προκαλούνται από άλλες μεθόδους αποτρίχωσης.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Απευθύνεται κυρίως σε άτομα με ανοιχτούς έως μεσαίους φωτότυπους και σκούρα τρίχα.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=Laser%20%CE%B1%CF%80%CE%BF%CF%84%CF%81%CE%AF%CF%87%CF%89%CF%83%CE%B7%20%E2%80%94%20%CE%91%CE%BB%CE%B5%CE%BE%CE%B1%CE%BD%CE%B4%CF%81%CE%AF%CF%84%CE%B7%CF%82" data-book="Laser αποτρίχωση — Αλεξανδρίτης">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Αποτρίχωση με κερί</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Η Αποτρίχωση με Κερί είναι μια κλασική και αποτελεσματική μέθοδος προσωρινής αποτρίχωσης, κατά την οποία η τρίχα αφαιρείται από τη ρίζα, αφήνοντας την επιδερμίδα άμεσα λεία και απαλή.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Προσφέρει λεία επιδερμίδα για μεγαλύτερο διάστημα σε σχέση με το ξύρισμα, ενώ με τη συστηματική εφαρμογή οι τρίχες μπορεί να εμφανίζονται σταδιακά πιο λεπτές και μαλακές.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Σε γυναίκες και άνδρες που επιθυμούν άμεσο αποτέλεσμα χωρίς laser, σε περιοχές του προσώπου και του σώματος, όπως πόδια, χέρια, μασχάλες, μπικίνι και πρόσωπο.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=%CE%91%CF%80%CE%BF%CF%84%CF%81%CE%AF%CF%87%CF%89%CF%83%CE%B7%20%CE%BC%CE%B5%20%CE%BA%CE%B5%CF%81%CE%AF" data-book="Αποτρίχωση με κερί">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+              <details class="svc-item svc-item--rich">
+                <summary>
+                  <span class="svc-item-name">Ριζική αποτρίχωση προσώπου &amp; λαιμού</span>
+                  <span class="svc-item-hint">Λεπτομέρειες</span>
+                </summary>
+                <div class="svc-item-body">
+                  <p>Η Ριζική Αποτρίχωση (Ηλεκτρόλυση) είναι μέθοδος μόνιμης αποτρίχωσης, κατά την οποία μια εξαιρετικά λεπτή αποστειρωμένη βελόνα εισάγεται στον θύλακα της τρίχας και εφαρμόζεται ελεγχόμενη ηλεκτρική ενέργεια για την καταστροφή του.</p>
+                  <div class="svc-facts">
+                    <div>
+                      <h4>Πού βοηθάει</h4>
+                      <p>Είναι ιδανική για την αντιμετώπιση μεμονωμένων ή επίμονων τριχών στο πρόσωπο και τον λαιμό, καθώς και για λευκές, ξανθές, κόκκινες ή πολύ λεπτές τρίχες που δεν ανταποκρίνονται αποτελεσματικά στο laser, καθώς δεν εξαρτάται από τη μελανίνη της τρίχας.</p>
+                    </div>
+                    <div>
+                      <h4>Σε ποιους απευθύνεται</h4>
+                      <p>Σε γυναίκες και άνδρες που επιθυμούν οριστική αντιμετώπιση ανεπιθύμητων τριχών σε περιοχές όπως πηγούνι, άνω χείλος, παρειές και λαιμός, είτε ως αυτόνομη μέθοδο είτε συμπληρωματικά μετά από συνεδρίες laser.</p>
+                    </div>
+                  </div>
+                  <a class="svc-book svc-book--solid" href="booking.html?service=%CE%A1%CE%B9%CE%B6%CE%B9%CE%BA%CE%AE%20%CE%B1%CF%80%CE%BF%CF%84%CF%81%CE%AF%CF%87%CF%89%CF%83%CE%B7%20%CF%80%CF%81%CE%BF%CF%83%CF%8E%CF%80%CE%BF%CF%85%20%26%20%CE%BB%CE%B1%CE%B9%CE%BC%CE%BF%CF%8D" data-book="Ριζική αποτρίχωση προσώπου &amp; λαιμού">Κλείστε ραντεβού</a>
+                </div>
+              </details>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band svc-cta">
+      <div class="container cta-band-inner">
+        <div>
+          <span class="section-kicker">Επόμενο βήμα</span>
+          <h2 class="section-title">Βρήκατε τη θεραπεία σας;</h2>
+        </div>
+        <a class="btn btn-gold" href="booking.html">Κλείστε Ραντεβού</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-cta">
+        <p class="footer-tagline">Where beauty becomes an experience.</p>
+        <a class="btn btn-gold" href="booking.html">Κλείστε Ραντεβού</a>
+      </div>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="index.html" aria-label="Aesthée Beauty &amp; Tanning Bar">
+            <img class="brand-emblem" src="images/logo-emblem.svg" alt="" />
+            <img class="brand-wordmark" src="images/logo-wordmark.svg" alt="Aesthée Beauty &amp; Tanning Bar" />
+          </a>
+          <p class="footer-blurb">Beauty &amp; Tanning Bar στην Αρτέμιδα. Laser, solarium και θεραπείες προσώπου &amp; σώματος.</p>
+          <a class="footer-social" href="https://www.instagram.com/aesthee_beautyandtan/" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="17.3" cy="6.7" r="0.85" fill="currentColor" stroke="none"/></svg>
+            @aesthee_beautyandtan
+          </a>
+        </div>
+        <div class="footer-col">
+          <h3>Επίσκεψη</h3>
+          <address>
+            <a href="https://maps.google.com/?q=Leof.+Vravronos+45,+Artemis+190+16" target="_blank" rel="noopener">
+              Λεωφ. Βραυρώνος 45<br />Αρτέμιδα 190 16
+            </a>
+          </address>
+          <a class="footer-phone" href="tel:+302294152510">2294 152510</a>
+          <p class="footer-proof">4,9 ★ στο Google · 130 αξιολογήσεις</p>
+        </div>
+        <div class="footer-col">
+          <h3>Ωράριο</h3>
+          <dl class="footer-hours">
+            <div>
+              <dt>Δευτέρα – Παρασκευή</dt>
+              <dd>10:00–21:00</dd>
+            </div>
+            <div>
+              <dt>Σάββατο – Κυριακή</dt>
+              <dd>Κλειστά</dd>
+            </div>
+          </dl>
+        </div>
+        <nav class="footer-col footer-menu" aria-label="Υποσέλιδο">
+          <h3>Μενού</h3>
+          <a href="index.html">Αρχική</a>
+          <a href="services.html">Υπηρεσίες</a>
+          <a href="booking.html">Ραντεβού</a>
+          <a href="location.html">Τοποθεσία</a>
+          <a href="contact.html">Επικοινωνία</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Aesthée Beauty &amp; Tanning Bar</p>
+        <a href="contact.html">Πείτε μας τι χρειάζεστε</a>
+      </div>
+    </div>
+  </footer>
+  <div class="mobile-cta">
+    <a class="btn btn-gold" href="booking.html">Κλείστε Ραντεβού</a>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>
