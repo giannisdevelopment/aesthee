@@ -270,9 +270,10 @@ function initServices() {
 
   const rail = document.getElementById("svcRail");
   const panels = [...document.querySelectorAll(".svc-panel[data-panel]")];
-  if (!rail || !panels.length) return;
+  if (!panels.length) return;
 
-  const links = [...rail.querySelectorAll("[data-rail]")];
+  const links = rail ? [...rail.querySelectorAll("[data-rail]")] : [];
+  const hubs = [...document.querySelectorAll("[data-hub]")];
 
   const setActive = (id) => {
     links.forEach((link) => {
@@ -280,19 +281,56 @@ function initServices() {
     });
   };
 
-  const observer = new IntersectionObserver((entries) => {
-    const visible = entries
-      .filter((entry) => entry.isIntersecting)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-    if (visible[0]?.target?.dataset?.panel) {
-      setActive(visible[0].target.dataset.panel);
-    }
-  }, {
-    rootMargin: "-28% 0px -52% 0px",
-    threshold: [0.1, 0.35, 0.6],
+  const scrollToPanel = (id, behavior = "smooth") => {
+    const panel = document.getElementById(`cat-${id}`) || document.querySelector(`[data-panel="${id}"]`);
+    if (!panel) return false;
+    setActive(id);
+    panel.scrollIntoView({ behavior, block: "start" });
+    return true;
+  };
+
+  const idFromHash = () => {
+    const hash = location.hash.replace(/^#/, "");
+    if (!hash) return null;
+    if (hash.startsWith("cat-")) return hash.slice(4);
+    const panel = document.getElementById(hash);
+    return panel?.dataset?.panel || null;
+  };
+
+  [...links, ...hubs].forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const id = link.dataset.rail || link.dataset.hub;
+      if (!id) return;
+      event.preventDefault();
+      history.pushState(null, "", `#cat-${id}`);
+      scrollToPanel(id);
+    });
   });
 
-  panels.forEach((panel) => observer.observe(panel));
+  if (rail && panels.length) {
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+      if (visible[0]?.target?.dataset?.panel) {
+        setActive(visible[0].target.dataset.panel);
+      }
+    }, {
+      rootMargin: "-28% 0px -52% 0px",
+      threshold: [0.1, 0.35, 0.6],
+    });
+
+    panels.forEach((panel) => observer.observe(panel));
+  }
+
+  const jumpFromHash = () => {
+    const id = idFromHash();
+    if (id) scrollToPanel(id, "auto");
+  };
+
+  jumpFromHash();
+  window.addEventListener("load", jumpFromHash);
+  window.addEventListener("hashchange", jumpFromHash);
 }
 
 function initNav() {

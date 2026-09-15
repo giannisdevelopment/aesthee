@@ -887,7 +887,7 @@ body:has(.header.is-scrolled) .nav {
 }
 
 .svc-panel {
-  scroll-margin-top: calc(var(--header-h) + 24px);
+  scroll-margin-top: calc(var(--header-h) + 28px);
   padding-bottom: 56px;
 }
 
@@ -1991,9 +1991,20 @@ body:has(.header.is-scrolled) .nav {
   margin: 0;
 }
 
+.footer-bottom-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+}
+
 .footer-bottom a {
   color: rgba(251, 247, 240, 0.62);
   transition: color 180ms ease;
+}
+
+.footer-credit {
+  letter-spacing: 0.02em;
 }
 
 .footer .brand-wordmark {
