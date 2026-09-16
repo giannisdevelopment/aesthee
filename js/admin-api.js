@@ -83,7 +83,7 @@ export function mapAuthError(error) {
   const code = error?.code || "";
   const msg = String(error?.message || "");
   if (code === "invalid_credentials" || /invalid login credentials/i.test(msg)) {
-    return "Λάθος email ή κωδικός. Στο Supabase → Authentication → Users ελέγξτε ότι ο χρήστης υπάρχει και είναι Confirmed.";
+    return "Λάθος email ή κωδικός.";
   }
   if (code === "email_not_confirmed" || /email not confirmed/i.test(msg)) {
     return "Το email δεν έχει επιβεβαιωθεί. Στο user → Confirm user, ή απενεργοποιήστε Confirm email στα Auth settings.";
