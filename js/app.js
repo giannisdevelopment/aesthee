@@ -355,11 +355,75 @@ function initContact() {
   });
 }
 
+function initServiceGalleries() {
+  const labelFor = (count, open) => {
+    if (open) return "Απόκρυψη φωτογραφιών";
+    if (count <= 1) return "Δείτε φωτογραφία";
+    return `Δείτε φωτογραφίες (${count})`;
+  };
+
+  const wrapProofs = (container, insertAfter = null) => {
+    const proofs = [...container.children].filter(
+      (el) => el.classList.contains("svc-proof") || el.classList.contains("svc-proof-grid")
+    );
+    if (!proofs.length) return;
+
+    const details = document.createElement("details");
+    details.className = "svc-gallery";
+    const summary = document.createElement("summary");
+    const body = document.createElement("div");
+    body.className = "svc-gallery-body";
+    proofs.forEach((node) => body.appendChild(node));
+
+    const count = body.querySelectorAll("img").length;
+    summary.textContent = labelFor(count, false);
+    details.addEventListener("toggle", () => {
+      summary.textContent = labelFor(count, details.open);
+    });
+
+    details.append(summary, body);
+    if (insertAfter) insertAfter.after(details);
+    else container.prepend(details);
+  };
+
+  document.querySelectorAll(".svc-item").forEach((item) => {
+    const body = item.querySelector(":scope > .svc-item-body");
+    if (body) {
+      wrapProofs(body);
+      return;
+    }
+    const row = item.querySelector(":scope > .svc-item-row");
+    wrapProofs(item, row);
+  });
+
+  document.querySelectorAll(".svc-panel > .svc-results").forEach((grid) => {
+    const details = document.createElement("details");
+    details.className = "svc-gallery svc-gallery--results";
+    const summary = document.createElement("summary");
+    const count = grid.querySelectorAll("img").length;
+    summary.textContent = count
+      ? `Δείτε αποτελέσματα (${count})`
+      : "Δείτε αποτελέσματα";
+    details.addEventListener("toggle", () => {
+      summary.textContent = details.open
+        ? "Απόκρυψη αποτελεσμάτων"
+        : count
+          ? `Δείτε αποτελέσματα (${count})`
+          : "Δείτε αποτελέσματα";
+    });
+    grid.parentNode.insertBefore(details, grid);
+    details.append(summary, grid);
+  });
+}
+
 function initServices() {
+  initServiceGalleries();
+
   document.querySelectorAll(".svc-list, .treatment-list").forEach((list) => {
     list.addEventListener("toggle", (event) => {
       if (!(event.target instanceof HTMLDetailsElement) || !event.target.open) return;
-      list.querySelectorAll("details[open]").forEach((item) => {
+      if (event.target.classList.contains("svc-gallery")) return;
+      list.querySelectorAll("details.svc-item--rich[open]").forEach((item) => {
         if (item !== event.target) item.open = false;
       });
     }, true);
