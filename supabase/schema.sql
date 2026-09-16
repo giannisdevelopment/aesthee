@@ -56,6 +56,8 @@ create table if not exists public.appointments (
   service text not null,
   appointment_date date not null,
   appointment_time time not null,
+  duration_minutes int not null default 60,
+  price_cents int,
   guest_name text not null,
   guest_phone text not null,
   guest_email text,
@@ -65,8 +67,14 @@ create table if not exists public.appointments (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint appointments_name_len check (char_length(trim(guest_name)) >= 2),
-  constraint appointments_phone_len check (char_length(trim(guest_phone)) >= 8)
+  constraint appointments_phone_len check (char_length(trim(guest_phone)) >= 8),
+  constraint appointments_duration_pos check (duration_minutes >= 5 and duration_minutes <= 240)
 );
+
+alter table public.appointments
+  add column if not exists duration_minutes int not null default 60;
+alter table public.appointments
+  add column if not exists price_cents int;
 
 create index if not exists appointments_date_idx
   on public.appointments (appointment_date, appointment_time);
@@ -125,6 +133,8 @@ create trigger appointments_set_updated_at
 -- ---------------------------------------------------------------------------
 -- Public RPCs (anon-safe; no PII leaked in slot checks)
 -- ---------------------------------------------------------------------------
+drop function if exists public.create_booking(text, date, time, text, text, text);
+drop function if exists public.create_booking(text, date, time, text, text, text, int, int);
 create or replace function public.get_booked_times(p_date date)
 returns setof time
 language sql
@@ -138,13 +148,35 @@ as $$
   order by appointment_time;
 $$;
 
+create or replace function public.get_booked_slots(p_date date)
+returns table (
+  appointment_time time,
+  service text,
+  duration_minutes int
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    a.appointment_time,
+    a.service,
+    coalesce(a.duration_minutes, 60) as duration_minutes
+  from public.appointments a
+  where a.appointment_date = p_date
+    and a.status in ('pending', 'confirmed')
+  order by a.appointment_time;
+$$;
+
 create or replace function public.create_booking(
   p_service text,
   p_date date,
   p_time time,
   p_name text,
   p_phone text,
-  p_email text default null
+  p_email text default null,
+  p_duration_minutes int default 60,
+  p_price_cents int default null
 )
 returns uuid
 language plpgsql
@@ -155,6 +187,13 @@ declare
   new_id uuid;
   dow int;
   hh int;
+  mm int;
+  duration int;
+  new_start int;
+  new_end int;
+  busy record;
+  busy_start int;
+  busy_end int;
 begin
   if p_service is null or char_length(trim(p_service)) < 2 then
     raise exception 'INVALID_SERVICE';
@@ -177,25 +216,47 @@ begin
     raise exception 'WEEKEND_CLOSED';
   end if;
 
+  duration := coalesce(p_duration_minutes, 60);
+  if duration < 5 or duration > 240 then
+    raise exception 'INVALID_DURATION';
+  end if;
+
   hh := extract(hour from p_time)::int;
-  if hh < 10 or hh > 20 or extract(minute from p_time)::int <> 0 then
+  mm := extract(minute from p_time)::int;
+  if hh < 10 or hh > 20 then
+    raise exception 'INVALID_TIME';
+  end if;
+  if mm not in (0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55) then
     raise exception 'INVALID_TIME';
   end if;
 
-  if exists (
-    select 1
+  new_start := hh * 60 + mm;
+  new_end := new_start + duration;
+  -- Shop closes 21:00
+  if new_end > 21 * 60 then
+    raise exception 'INVALID_TIME';
+  end if;
+
+  for busy in
+    select appointment_time, coalesce(duration_minutes, 60) as duration_minutes
     from public.appointments
     where appointment_date = p_date
-      and appointment_time = p_time
       and status in ('pending', 'confirmed')
-  ) then
-    raise exception 'SLOT_TAKEN';
-  end if;
+  loop
+    busy_start := extract(hour from busy.appointment_time)::int * 60
+      + extract(minute from busy.appointment_time)::int;
+    busy_end := busy_start + busy.duration_minutes;
+    if new_start < busy_end and new_end > busy_start then
+      raise exception 'SLOT_TAKEN';
+    end if;
+  end loop;
 
   insert into public.appointments (
     service,
     appointment_date,
     appointment_time,
+    duration_minutes,
+    price_cents,
     guest_name,
     guest_phone,
     guest_email,
@@ -205,6 +266,8 @@ begin
     trim(p_service),
     p_date,
     p_time,
+    duration,
+    p_price_cents,
     trim(p_name),
     trim(p_phone),
     nullif(trim(coalesce(p_email, '')), ''),
@@ -248,7 +311,8 @@ end;
 $$;
 
 grant execute on function public.get_booked_times(date) to anon, authenticated;
-grant execute on function public.create_booking(text, date, time, text, text, text) to anon, authenticated;
+grant execute on function public.get_booked_slots(date) to anon, authenticated;
+grant execute on function public.create_booking(text, date, time, text, text, text, int, int) to anon, authenticated;
 grant execute on function public.submit_contact(text, text, text) to anon, authenticated;
 
 -- ---------------------------------------------------------------------------

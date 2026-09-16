@@ -1761,6 +1761,35 @@ body:has(.header.is-scrolled) .nav {
   text-align: center;
 }
 
+.service-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  margin-top: 2px;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.service-meta-price {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.service-meta-sep {
+  color: var(--ink-dim);
+}
+
+.service-meta-duration {
+  color: var(--ink-dim);
+}
+
+.times-hint {
+  margin: 0 0 8px;
+  font-size: 0.84rem;
+  color: var(--ink-dim);
+}
+
 .times {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

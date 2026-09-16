@@ -51,57 +51,21 @@
           </aside>
           <form class="booking-form" id="bookingForm">
             <div class="field">
-              <label for="service">Υπηρεσία</label>
-              <select id="service" name="service" required>
-                <option value="">Επιλέξτε υπηρεσία</option>
-                <optgroup label="Θεραπείες προσώπου">
-                  <option>Βαθύς καθαρισμός προσώπου</option>
-                  <option>Υδροδερμοαπόξεση</option>
-                  <option>Δερμοαπόξεση με διαμάντι</option>
-                  <option>Οξέα</option>
-                  <option>Χημικό peeling</option>
-                  <option>Φυτικό peeling</option>
-                  <option>Φωτοθεραπεία</option>
-                  <option>Μεσοθεραπεία</option>
-                  <option>Ραδιοσυχνότητες</option>
-                  <option>Θεραπεία βιταμίνης C</option>
-                  <option>Θεραπεία υαλουρονικού οξέος (μη ενέσιμη)</option>
-                  <option>Θεραπεία λεύκανσης</option>
-                  <option>HIFU</option>
-                  <option>RF Microneedling προσώπου</option>
-                  <option>Carbon peel</option>
-                  <option>Θεραπεία εξωσωμάτων (μη ενέσιμη)</option>
-                  <option>Θεραπεία PDRN (μη ενέσιμη)</option>
-                  <option>Αφαίρεση τατουάζ / ημιμόνιμου μακιγιάζ</option>
-                </optgroup>
-                <optgroup label="Θεραπείες σώματος">
-                  <option>Vacutherm Treadmill &amp; Bike</option>
-                  <option>Endospheres</option>
-                  <option>Cavitation</option>
-                  <option>Vacuum BBL</option>
-                  <option>Πρεσσοθεραπεία</option>
-                  <option>Κρυολιπόλυση</option>
-                  <option>RF Microneedling σώματος</option>
-                  <option>Μαδεροθεραπεία</option>
-                  <option>Μασάζ</option>
-                  <option>Stand Up Solarium XXXL</option>
-                  <option>Lay Down Solarium XXL</option>
-                </optgroup>
-                <optgroup label="Φρύδια &amp; βλεφαρίδες">
-                  <option>Brow Lamination &amp; Tint</option>
-                  <option>Lash Lift &amp; Tint</option>
-                  <option>Brow Shape</option>
-                  <option>Brow Shape &amp; Tint</option>
-                  <option>Τοποθέτηση βλεφαρίδων extensions</option>
-                  <option>Συντήρηση βλεφαρίδων extensions</option>
-                </optgroup>
-                <optgroup label="Θεραπείες αποτρίχωσης">
-                  <option>Laser αποτρίχωση — Διοδικό</option>
-                  <option>Laser αποτρίχωση — Αλεξανδρίτης</option>
-                  <option>Αποτρίχωση με κερί</option>
-                  <option>Ριζική αποτρίχωση προσώπου &amp; λαιμού</option>
-                </optgroup>
+              <label for="serviceCategory">Κατηγορία</label>
+              <select id="serviceCategory" name="category" required>
+                <option value="">Επιλέξτε κατηγορία</option>
               </select>
+            </div>
+            <div class="field">
+              <label for="service">Υπηρεσία</label>
+              <select id="service" name="service" required disabled>
+                <option value="">Επιλέξτε πρώτα κατηγορία</option>
+              </select>
+              <div class="service-meta" id="serviceMeta" hidden>
+                <span class="service-meta-price" id="servicePrice"></span>
+                <span class="service-meta-sep" aria-hidden="true">·</span>
+                <span class="service-meta-duration" id="serviceDuration"></span>
+              </div>
             </div>
             <div class="field">
               <label for="bookingDate">Ημερομηνία</label>
@@ -121,6 +85,7 @@
             </div>
             <div class="field">
               <label>Ώρα</label>
+              <p class="times-hint" id="timesHint">Επιλέξτε υπηρεσία για να δείτε διαθέσιμες ώρες.</p>
               <div class="times" id="times"></div>
             </div>
             <div class="field">

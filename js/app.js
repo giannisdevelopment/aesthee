@@ -9,9 +9,15 @@ const MONTHS = [
   "Ιανουάριος", "Φεβρουάριος", "Μάρτιος", "Απρίλιος", "Μάιος", "Ιούνιος",
   "Ιούλιος", "Αύγουστος", "Σεπτέμβριος", "Οκτώβριος", "Νοέμβριος", "Δεκέμβριος",
 ];
-const TIMES = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"];
 const BOOKING_HORIZON_MONTHS = 3;
-const state = { date: null, time: null, viewYear: null, viewMonth: null };
+const state = {
+  date: null,
+  time: null,
+  viewYear: null,
+  viewMonth: null,
+  serviceId: null,
+  bookedSlots: [],
+};
 
 function isDesktopNav() {
   return window.matchMedia("(min-width: 1081px)").matches;
@@ -204,28 +210,44 @@ function renderDatePicker() {
   }
 }
 
-function renderTimes(booked = []) {
+function renderTimes(available = []) {
   const timesEl = document.getElementById("times");
+  const hint = document.getElementById("timesHint");
   if (!timesEl) return;
 
-  const taken = new Set(booked);
-  const preferred = taken.has(TIMES[2]) ? TIMES.find((t) => !taken.has(t)) || null : TIMES[2];
-  state.time = preferred;
+  if (!state.serviceId) {
+    state.time = null;
+    timesEl.innerHTML = "";
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = "Επιλέξτε υπηρεσία για να δείτε διαθέσιμες ώρες.";
+    }
+    return;
+  }
+
+  if (!available.length) {
+    state.time = null;
+    timesEl.innerHTML = "";
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = "Δεν υπάρχουν διαθέσιμες ώρες για αυτή την υπηρεσία την επιλεγμένη ημέρα.";
+    }
+    return;
+  }
+
+  if (hint) hint.hidden = true;
+
+  if (!available.includes(state.time)) {
+    state.time = available[0];
+  }
 
   timesEl.innerHTML = "";
-  TIMES.forEach((time) => {
+  available.forEach((time) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    const isTaken = taken.has(time);
     btn.className = "time-slot" + (time === state.time ? " is-active" : "");
     btn.textContent = time;
-    btn.disabled = isTaken;
-    if (isTaken) {
-      btn.title = "Μη διαθέσιμη";
-      btn.classList.add("is-taken");
-    }
     btn.addEventListener("click", () => {
-      if (btn.disabled) return;
       state.time = time;
       timesEl.querySelectorAll(".time-slot").forEach((el) => el.classList.remove("is-active"));
       btn.classList.add("is-active");
@@ -235,42 +257,148 @@ function renderTimes(booked = []) {
 }
 
 async function refreshBookedTimes() {
-  if (!state.date) {
+  const catalog = await loadBookingCatalog();
+  const service = catalog.getServiceById(state.serviceId);
+
+  if (!state.date || !service) {
+    state.bookedSlots = [];
     renderTimes([]);
     return;
   }
+
+  const candidates = catalog.buildStartSlots(service.durationMin);
+
   try {
-    const { isSupabaseConfigured, fetchBookedTimes } = await import("./booking-api.js");
+    const { isSupabaseConfigured, fetchBookedSlots } = await import("./booking-api.js");
     if (!isSupabaseConfigured()) {
-      renderTimes([]);
+      renderTimes(candidates);
       return;
     }
-    const booked = await fetchBookedTimes(state.date);
-    renderTimes(booked);
+    state.bookedSlots = await fetchBookedSlots(state.date);
+    const available = catalog.filterAvailableStarts(
+      candidates,
+      state.bookedSlots,
+      service.durationMin,
+    );
+    renderTimes(available);
   } catch (error) {
     console.error(error);
-    renderTimes([]);
+    renderTimes(candidates);
   }
+}
+
+let bookingCatalogPromise = null;
+
+function loadBookingCatalog() {
+  if (!bookingCatalogPromise) {
+    bookingCatalogPromise = import("./booking-services.js");
+  }
+  return bookingCatalogPromise;
+}
+
+function updateServiceMeta(service) {
+  const meta = document.getElementById("serviceMeta");
+  const priceEl = document.getElementById("servicePrice");
+  const durationEl = document.getElementById("serviceDuration");
+  if (!meta || !priceEl || !durationEl) return;
+
+  if (!service) {
+    meta.hidden = true;
+    priceEl.textContent = "";
+    durationEl.textContent = "";
+    return;
+  }
+
+  loadBookingCatalog().then((catalog) => {
+    priceEl.textContent = catalog.formatPrice(service);
+    durationEl.textContent = catalog.formatDuration(service.durationMin);
+    meta.hidden = false;
+  });
+}
+
+function populateServiceSelect(categoryId, preferredServiceId = null) {
+  const select = document.getElementById("service");
+  if (!select) return Promise.resolve();
+
+  return loadBookingCatalog().then((catalog) => {
+    const category = catalog.BOOKING_CATEGORIES.find((row) => row.id === categoryId);
+    select.innerHTML = "";
+    if (!category) {
+      select.disabled = true;
+      const empty = document.createElement("option");
+      empty.value = "";
+      empty.textContent = "Επιλέξτε πρώτα κατηγορία";
+      select.appendChild(empty);
+      state.serviceId = null;
+      updateServiceMeta(null);
+      return;
+    }
+
+    select.disabled = false;
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Επιλέξτε υπηρεσία";
+    select.appendChild(placeholder);
+
+    category.services.forEach((service) => {
+      const option = document.createElement("option");
+      option.value = service.id;
+      option.textContent = `${service.name} — ${catalog.formatPrice(service)}`;
+      select.appendChild(option);
+    });
+
+    const preferred = preferredServiceId && category.services.some((s) => s.id === preferredServiceId)
+      ? preferredServiceId
+      : "";
+    select.value = preferred;
+    state.serviceId = preferred || null;
+    updateServiceMeta(preferred ? catalog.getServiceById(preferred) : null);
+  });
 }
 
 function initBooking() {
   const form = document.getElementById("bookingForm");
-  const select = document.getElementById("service");
-  if (!form || !select) return;
+  const categorySelect = document.getElementById("serviceCategory");
+  const serviceSelect = document.getElementById("service");
+  if (!form || !categorySelect || !serviceSelect) return;
 
-  const wanted = new URLSearchParams(location.search).get("service");
-  if (wanted) {
-    const match = [...select.options].some((option) => option.value === wanted);
-    if (match) select.value = wanted;
-  }
+  loadBookingCatalog().then(async (catalog) => {
+    catalog.BOOKING_CATEGORIES.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category.id;
+      option.textContent = `${category.label} (${category.services.length})`;
+      categorySelect.appendChild(option);
+    });
 
-  renderDatePicker();
-  renderTimes([]);
-  refreshBookedTimes();
+    const wanted = new URLSearchParams(location.search).get("service");
+    const resolved = catalog.resolveServiceQuery(wanted);
+    if (resolved) {
+      categorySelect.value = resolved.categoryId;
+      await populateServiceSelect(resolved.categoryId, resolved.id);
+    }
+
+    renderDatePicker();
+    await refreshBookedTimes();
+  });
+
+  categorySelect.addEventListener("change", async () => {
+    await populateServiceSelect(categorySelect.value);
+    state.time = null;
+    await refreshBookedTimes();
+  });
+
+  serviceSelect.addEventListener("change", async () => {
+    const catalog = await loadBookingCatalog();
+    state.serviceId = serviceSelect.value || null;
+    updateServiceMeta(catalog.getServiceById(state.serviceId));
+    state.time = null;
+    await refreshBookedTimes();
+  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const service = event.target.service.value;
+    const catalog = await loadBookingCatalog();
+    const service = catalog.getServiceById(state.serviceId);
     const name = event.target.name.value.trim();
     const phone = event.target.phone.value.trim();
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -293,16 +421,24 @@ function initBooking() {
       }
 
       await createBooking({
-        service,
+        service: service.name,
         date: state.date,
         time: state.time,
         name,
         phone,
+        durationMinutes: service.durationMin,
+        priceCents: service.priceCents,
       });
 
-      showToast(`Το ραντεβού καταχωρήθηκε για ${state.date} στις ${state.time}. Θα επικοινωνήσουμε για επιβεβαίωση.`);
+      const priceLabel = catalog.formatPrice(service);
+      showToast(
+        `Το ραντεβού καταχωρήθηκε: ${service.name} (${catalog.formatDuration(service.durationMin)}, ${priceLabel}) — ${state.date} στις ${state.time}.`,
+      );
       event.target.reset();
-      if (wanted) select.value = wanted;
+      state.serviceId = null;
+      updateServiceMeta(null);
+      serviceSelect.disabled = true;
+      serviceSelect.innerHTML = '<option value="">Επιλέξτε πρώτα κατηγορία</option>';
       const first = firstBookableDate();
       setSelectedDate(first);
       state.viewYear = first.getFullYear();

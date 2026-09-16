@@ -50,6 +50,25 @@ function filters() {
   };
 }
 
+function formatPriceCents(cents) {
+  if (cents == null || Number.isNaN(Number(cents))) return "—";
+  const amount = Number(cents) / 100;
+  const text = Number.isInteger(amount)
+    ? String(amount)
+    : amount.toFixed(2).replace(".", ",");
+  return `€ ${text}`;
+}
+
+function formatDurationMin(minutes) {
+  const value = Number(minutes);
+  if (!value || value < 1) return "";
+  if (value < 60) return `${value}′`;
+  const hours = Math.floor(value / 60);
+  const rest = value % 60;
+  if (!rest) return `${hours}ώ`;
+  return `${hours}ώ ${rest}′`;
+}
+
 async function renderAppointments() {
   rowsBody.innerHTML = `<tr><td colspan="7" class="empty">Φόρτωση…</td></tr>`;
   const { data, error } = await listAppointments(filters());
@@ -67,9 +86,12 @@ async function renderAppointments() {
     <tr data-id="${escapeHtml(row.id)}">
       <td>
         <strong>${escapeHtml(formatDate(row.appointment_date))}</strong><br />
-        <span class="muted">${escapeHtml(formatTime(row.appointment_time))}</span>
+        <span class="muted">${escapeHtml(formatTime(row.appointment_time))}${row.duration_minutes ? ` · ${escapeHtml(formatDurationMin(row.duration_minutes))}` : ""}</span>
       </td>
-      <td>${escapeHtml(row.service)}</td>
+      <td>
+        ${escapeHtml(row.service)}<br />
+        <span class="muted">${escapeHtml(formatPriceCents(row.price_cents))}</span>
+      </td>
       <td>
         ${escapeHtml(row.guest_name)}<br />
         <a class="muted" href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a>

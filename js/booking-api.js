@@ -30,7 +30,8 @@ function mapBookingError(message = "") {
   if (msg.includes("SLOT_TAKEN")) return "Η ώρα δεν είναι διαθέσιμη. Επιλέξτε άλλη.";
   if (msg.includes("WEEKEND_CLOSED")) return "Δεν δεχόμαστε ραντεβού Σάββατο και Κυριακή.";
   if (msg.includes("PAST_DATE")) return "Η ημερομηνία έχει περάσει.";
-  if (msg.includes("INVALID_TIME")) return "Μη έγκυρη ώρα.";
+  if (msg.includes("INVALID_TIME")) return "Μη έγκυρη ώρα για τη διάρκεια της υπηρεσίας.";
+  if (msg.includes("INVALID_DURATION")) return "Μη έγκυρη διάρκεια υπηρεσίας.";
   if (msg.includes("INVALID_PHONE")) return "Ελέγξτε το τηλέφωνο.";
   if (msg.includes("INVALID_NAME")) return "Συμπληρώστε το ονοματεπώνυμο.";
   if (msg.includes("INVALID_SERVICE")) return "Επιλέξτε υπηρεσία.";
@@ -45,6 +46,32 @@ function mapContactError(message = "") {
   return msg || "Αποτυχία αποστολής. Δοκιμάστε ξανά.";
 }
 
+function normalizeTime(value) {
+  if (value == null) return "";
+  if (typeof value === "string") return value.slice(0, 5);
+  return String(value).slice(0, 5);
+}
+
+/** @returns {Promise<{ time: string, service: string, durationMin: number }[]>} */
+export async function fetchBookedSlots(dateKey) {
+  const sb = getSupabase();
+  if (!sb || !dateKey) return [];
+
+  const { data, error } = await sb.rpc("get_booked_slots", { p_date: dateKey });
+  if (!error) {
+    return (data || []).map((row) => ({
+      time: normalizeTime(row.appointment_time ?? row.appointmentTime),
+      service: row.service || "",
+      durationMin: Number(row.duration_minutes ?? row.durationMinutes) || 60,
+    }));
+  }
+
+  // Fallback for DBs that still only expose get_booked_times
+  console.warn("get_booked_slots unavailable, falling back to get_booked_times", error);
+  const legacy = await fetchBookedTimes(dateKey);
+  return legacy.map((time) => ({ time, service: "", durationMin: 60 }));
+}
+
 /** @returns {Promise<string[]>} times like "10:00" */
 export async function fetchBookedTimes(dateKey) {
   const sb = getSupabase();
@@ -56,13 +83,19 @@ export async function fetchBookedTimes(dateKey) {
     throw new Error(error.message || "Αποτυχία φόρτωσης διαθεσιμότητας");
   }
 
-  return (data || []).map((value) => {
-    if (typeof value === "string") return value.slice(0, 5);
-    return String(value).slice(0, 5);
-  });
+  return (data || []).map(normalizeTime);
 }
 
-export async function createBooking({ service, date, time, name, phone, email = null }) {
+export async function createBooking({
+  service,
+  date,
+  time,
+  name,
+  phone,
+  email = null,
+  durationMinutes = 60,
+  priceCents = null,
+}) {
   const sb = getSupabase();
   if (!sb) {
     throw new Error("Το σύστημα κρατήσεων δεν είναι ρυθμισμένο ακόμα.");
@@ -75,6 +108,8 @@ export async function createBooking({ service, date, time, name, phone, email = 
     p_name: name,
     p_phone: phone,
     p_email: email,
+    p_duration_minutes: durationMinutes,
+    p_price_cents: priceCents,
   });
 
   if (error) {
