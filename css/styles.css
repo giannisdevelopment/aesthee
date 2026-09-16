@@ -814,6 +814,10 @@ body:has(.header.is-scrolled) .nav {
   margin-top: 18px;
 }
 
+.svc-panel .svc-results {
+  margin: 0 0 22px;
+}
+
 .svc-results figure {
   margin: 0;
   overflow: hidden;
