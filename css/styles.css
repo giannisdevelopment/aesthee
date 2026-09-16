@@ -554,9 +554,10 @@ body:has(.header.is-scrolled) .nav {
   color: var(--gold-deep);
 }
 
-.highlight-orb-inner svg {
-  width: 34px;
-  height: 34px;
+.highlight-orb-inner svg,
+.highlight-icon {
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
 }
 
