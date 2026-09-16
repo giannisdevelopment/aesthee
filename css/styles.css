@@ -1706,6 +1706,13 @@ body:has(.header.is-scrolled) .nav {
   border-color: var(--gold);
 }
 
+.time-slot:disabled,
+.time-slot.is-taken {
+  opacity: 0.38;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
 .booking-form .btn {
   width: 100%;
   margin-top: 8px;

@@ -111,3 +111,85 @@ export async function saveVisit(payload, id = null) {
 export async function deleteVisit(id) {
   return supabase.from("visits").delete().eq("id", id);
 }
+
+export async function listAppointments({ status = "", fromDate = "", toDate = "", query = "" } = {}) {
+  let request = supabase
+    .from("appointments")
+    .select("id, service, appointment_date, appointment_time, guest_name, guest_phone, guest_email, status, notes, client_id, created_at")
+    .order("appointment_date", { ascending: true })
+    .order("appointment_time", { ascending: true });
+
+  if (status) request = request.eq("status", status);
+  if (fromDate) request = request.gte("appointment_date", fromDate);
+  if (toDate) request = request.lte("appointment_date", toDate);
+
+  const q = query.trim();
+  if (q) {
+    request = request.or(`guest_name.ilike.%${q}%,guest_phone.ilike.%${q}%,service.ilike.%${q}%`);
+  }
+
+  return request;
+}
+
+export async function updateAppointment(id, payload) {
+  return supabase.from("appointments").update(payload).eq("id", id).select().single();
+}
+
+export async function deleteAppointment(id) {
+  return supabase.from("appointments").delete().eq("id", id);
+}
+
+export async function listContactMessages() {
+  return supabase
+    .from("contact_messages")
+    .select("*")
+    .order("created_at", { ascending: false });
+}
+
+export async function markContactRead(id, isRead = true) {
+  return supabase.from("contact_messages").update({ is_read: isRead }).eq("id", id);
+}
+
+export async function deleteContactMessage(id) {
+  return supabase.from("contact_messages").delete().eq("id", id);
+}
+
+export async function findOrCreateClientFromBooking(appointment) {
+  const phone = appointment.guest_phone?.trim();
+  if (phone) {
+    const { data: existing } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("phone", phone)
+      .limit(1)
+      .maybeSingle();
+    if (existing?.id) return existing.id;
+  }
+
+  const { data, error } = await supabase
+    .from("clients")
+    .insert({
+      full_name: appointment.guest_name,
+      phone: appointment.guest_phone || null,
+      email: appointment.guest_email || null,
+      notes: `Από online κράτηση (${appointment.service})`,
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data.id;
+}
+
+export function formatTime(value) {
+  if (!value) return "—";
+  return String(value).slice(0, 5);
+}
+
+export const APPOINTMENT_STATUS_LABELS = {
+  pending: "Σε αναμονή",
+  confirmed: "Επιβεβαιωμένο",
+  cancelled: "Ακυρωμένο",
+  completed: "Ολοκληρωμένο",
+  no_show: "Δεν εμφανίστηκε",
+};

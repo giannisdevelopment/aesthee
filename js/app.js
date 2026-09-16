@@ -98,6 +98,9 @@ function setSelectedDate(date) {
   state.date = key;
   const hidden = document.getElementById("bookingDate");
   if (hidden) hidden.value = key;
+  if (typeof refreshBookedTimes === "function") {
+    refreshBookedTimes();
+  }
 }
 
 function canShiftMonth(delta) {
@@ -201,23 +204,53 @@ function renderDatePicker() {
   }
 }
 
-function renderTimes() {
+function renderTimes(booked = []) {
   const timesEl = document.getElementById("times");
   if (!timesEl) return;
-  state.time = TIMES[2];
+
+  const taken = new Set(booked);
+  const preferred = taken.has(TIMES[2]) ? TIMES.find((t) => !taken.has(t)) || null : TIMES[2];
+  state.time = preferred;
+
   timesEl.innerHTML = "";
-  TIMES.forEach((time, index) => {
+  TIMES.forEach((time) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "time-slot" + (index === 2 ? " is-active" : "");
+    const isTaken = taken.has(time);
+    btn.className = "time-slot" + (time === state.time ? " is-active" : "");
     btn.textContent = time;
+    btn.disabled = isTaken;
+    if (isTaken) {
+      btn.title = "Μη διαθέσιμη";
+      btn.classList.add("is-taken");
+    }
     btn.addEventListener("click", () => {
+      if (btn.disabled) return;
       state.time = time;
       timesEl.querySelectorAll(".time-slot").forEach((el) => el.classList.remove("is-active"));
       btn.classList.add("is-active");
     });
     timesEl.appendChild(btn);
   });
+}
+
+async function refreshBookedTimes() {
+  if (!state.date) {
+    renderTimes([]);
+    return;
+  }
+  try {
+    const { isSupabaseConfigured, fetchBookedTimes } = await import("./booking-api.js");
+    if (!isSupabaseConfigured()) {
+      renderTimes([]);
+      return;
+    }
+    const booked = await fetchBookedTimes(state.date);
+    renderTimes(booked);
+  } catch (error) {
+    console.error(error);
+    renderTimes([]);
+  }
 }
 
 function initBooking() {
@@ -232,29 +265,93 @@ function initBooking() {
   }
 
   renderDatePicker();
-  renderTimes();
+  renderTimes([]);
+  refreshBookedTimes();
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const service = event.target.service.value;
     const name = event.target.name.value.trim();
-    if (!service || !state.date || !state.time || !name) {
-      showToast("Συμπληρώστε υπηρεσία, ημέρα, ώρα και όνομα.");
+    const phone = event.target.phone.value.trim();
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    if (!service || !state.date || !state.time || !name || !phone) {
+      showToast("Συμπληρώστε υπηρεσία, ημέρα, ώρα, όνομα και τηλέφωνο.");
       return;
     }
-    showToast(`Το ραντεβού καταχωρήθηκε για ${state.date} στις ${state.time}. Θα επικοινωνήσουμε για επιβεβαίωση.`);
-    event.target.reset();
-    if (wanted) select.value = wanted;
+
+    try {
+      const { isSupabaseConfigured, createBooking } = await import("./booking-api.js");
+      if (!isSupabaseConfigured()) {
+        showToast("Το σύστημα κρατήσεων δεν είναι ακόμα συνδεδεμένο.");
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Αποστολή…";
+      }
+
+      await createBooking({
+        service,
+        date: state.date,
+        time: state.time,
+        name,
+        phone,
+      });
+
+      showToast(`Το ραντεβού καταχωρήθηκε για ${state.date} στις ${state.time}. Θα επικοινωνήσουμε για επιβεβαίωση.`);
+      event.target.reset();
+      if (wanted) select.value = wanted;
+      const first = firstBookableDate();
+      setSelectedDate(first);
+      state.viewYear = first.getFullYear();
+      state.viewMonth = first.getMonth();
+      renderDatePicker();
+      await refreshBookedTimes();
+    } catch (error) {
+      showToast(error.message || "Αποτυχία κράτησης.");
+      await refreshBookedTimes();
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Κλείστε Ραντεβού";
+      }
+    }
   });
 }
 
 function initContact() {
   const form = document.getElementById("contactForm");
   if (!form) return;
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    showToast("Το μήνυμα καταχωρήθηκε. Θα σας απαντήσουμε σύντομα.");
-    event.target.reset();
+    const name = event.target.name.value.trim();
+    const email = event.target.email.value.trim();
+    const message = event.target.message.value.trim();
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    try {
+      const { isSupabaseConfigured, submitContact } = await import("./booking-api.js");
+      if (!isSupabaseConfigured()) {
+        showToast("Η φόρμα δεν είναι ακόμα συνδεδεμένη.");
+        return;
+      }
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Αποστολή…";
+      }
+      await submitContact({ name, email, message });
+      showToast("Το μήνυμα καταχωρήθηκε. Θα σας απαντήσουμε σύντομα.");
+      event.target.reset();
+    } catch (error) {
+      showToast(error.message || "Αποτυχία αποστολής.");
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Αποστολή";
+      }
+    }
   });
 }
 

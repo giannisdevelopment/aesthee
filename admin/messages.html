@@ -4,18 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Admin — Aesthée</title>
+  <title>Μηνύματα — Aesthée Admin</title>
   <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/admin.css" />
 </head>
-<body data-admin-page="list">
+<body data-admin-page="messages">
   <div id="loginView" class="login-wrap hidden">
     <form class="panel login-card" id="loginForm">
       <h1>Aesthée Admin</h1>
-      <p>Σύνδεση προσωπικού για διαχείριση πελατών.</p>
+      <p>Σύνδεση προσωπικού για μηνύματα επικοινωνίας.</p>
       <div id="configBanner" class="banner-warn hidden">
         Λείπει το <code>js/supabase-config.js</code>. Αντιγράψτε από το
         <code>supabase-config.example.js</code> και βάλτε URL + anon key.
@@ -38,44 +38,24 @@
         <img src="../images/logo-emblem.svg" alt="" />
         <div>
           <strong>Aesthée</strong>
-          <span>Πελάτες</span>
+          <span>Μηνύματα</span>
         </div>
       </div>
       <div class="admin-actions">
         <nav class="admin-nav">
-          <a class="is-active" href="index.html">Πελάτες</a>
+          <a href="index.html">Πελάτες</a>
           <a href="bookings.html">Ραντεβού</a>
-          <a href="messages.html">Μηνύματα</a>
+          <a class="is-active" href="messages.html">Μηνύματα</a>
         </nav>
-        <a class="btn btn-gold" href="client.html">Νέος πελάτης</a>
         <button class="btn btn-ghost" type="button" id="signOutBtn">Αποσύνδεση</button>
       </div>
     </header>
 
-    <div class="toolbar">
-      <input class="search" id="searchInput" type="search" placeholder="Αναζήτηση ονόματος, τηλεφώνου ή email…" />
-    </div>
-
-    <div class="panel table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Ονοματεπώνυμο</th>
-            <th>Τηλέφωνο</th>
-            <th>Email</th>
-            <th>Επισκέψεις</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="clientsBody">
-          <tr><td colspan="5" class="empty">Φόρτωση…</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div id="messagesList" class="messages-list"></div>
   </div>
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="../js/supabase-config.js"></script>
-  <script type="module" src="../js/admin-list.js"></script>
+  <script type="module" src="../js/admin-messages.js"></script>
 </body>
 </html>

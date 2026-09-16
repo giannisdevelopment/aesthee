@@ -412,6 +412,110 @@ tr:last-child td {
   background: var(--danger);
 }
 
+.admin-nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.admin-nav a {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.admin-nav a:hover,
+.admin-nav a.is-active {
+  background: rgba(196, 163, 106, 0.16);
+  color: var(--ink);
+}
+
+.toolbar-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.toolbar-wrap .search {
+  flex: 1 1 220px;
+}
+
+.toolbar-wrap select,
+.toolbar-wrap input[type="date"] {
+  border: 1px solid rgba(196, 163, 106, 0.35);
+  background: var(--white);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.status-select {
+  border: 1px solid rgba(196, 163, 106, 0.35);
+  background: var(--ivory);
+  border-radius: 10px;
+  padding: 8px 10px;
+  max-width: 160px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--cream-deep);
+  color: var(--ink-muted);
+}
+
+.badge-pending { background: #fff1e0; color: #9a5b1a; }
+.badge-confirmed { background: #e8f5ea; color: #2f6b3a; }
+.badge-completed { background: #ebe8f5; color: #4d3f7a; }
+.badge-cancelled { background: var(--danger-soft); color: var(--danger); }
+.badge-no_show { background: #eee; color: #666; }
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.muted {
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+}
+
+.messages-list {
+  display: grid;
+  gap: 14px;
+}
+
+.message-card {
+  background: var(--white);
+  border: 1px solid rgba(196, 163, 106, 0.2);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.message-card.is-unread {
+  border-color: var(--gold);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.message-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.message-head h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
 @media (max-width: 860px) {
   .grid-2,
   .field-row {
@@ -421,6 +525,11 @@ tr:last-child td {
   .admin-shell {
     width: min(1100px, calc(100% - 24px));
     padding-top: 20px;
+  }
+
+  .admin-top {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   th,

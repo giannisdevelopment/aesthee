@@ -4,7 +4,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".",
   "rewrites": [
-    { "source": "/admin", "destination": "/admin/index.html" }
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/admin/bookings", "destination": "/admin/bookings.html" },
+    { "source": "/admin/messages", "destination": "/admin/messages.html" },
+    { "source": "/admin/client", "destination": "/admin/client.html" }
   ],
   "headers": [
     {
