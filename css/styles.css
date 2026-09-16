@@ -496,12 +496,12 @@ body:has(.header.is-scrolled) .nav {
   background:
     linear-gradient(180deg, var(--ivory) 0%, var(--cream) 100%);
   border-bottom: 1px solid var(--gold-line);
-  padding: 48px 0 56px;
+  padding: 40px 0 44px;
 }
 
 .highlights-head {
   max-width: 36rem;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   text-align: center;
   margin-inline: auto;
 }
@@ -512,29 +512,44 @@ body:has(.header.is-scrolled) .nav {
 
 .highlights-row {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 16px;
   align-items: start;
+  max-width: 420px;
+  margin-inline: auto;
+  justify-items: center;
 }
 
 .highlight-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   text-align: center;
   color: var(--ink);
   min-width: 0;
+  width: 100%;
+  max-width: 112px;
+}
+
+.highlight-item:nth-child(4) {
+  grid-column: 1;
+  justify-self: end;
+}
+
+.highlight-item:nth-child(5) {
+  grid-column: 3;
+  justify-self: start;
 }
 
 .highlight-orb {
-  width: min(132px, 100%);
+  width: 76px;
   aspect-ratio: 1;
   border-radius: 50%;
-  padding: 5px;
-  background: rgba(196, 163, 106, 0.18);
-  box-shadow: 0 0 0 1px rgba(196, 163, 106, 0.28);
-  transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
+  padding: 3px;
+  background: rgba(196, 163, 106, 0.12);
+  box-shadow: 0 0 0 1px rgba(196, 163, 106, 0.22);
+  transition: transform 200ms var(--ease), box-shadow 200ms var(--ease);
 }
 
 .highlight-orb-inner {
@@ -545,44 +560,44 @@ body:has(.header.is-scrolled) .nav {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px 10px 12px;
+  gap: 4px;
+  padding: 8px 6px;
   background:
     radial-gradient(120% 90% at 30% 20%, #fff9f0 0%, #f3e6d2 55%, #ead7bb 100%);
-  border: 1px solid rgba(196, 163, 106, 0.55);
-  box-shadow: inset 0 0 0 4px rgba(255, 253, 248, 0.55);
+  border: 1px solid rgba(196, 163, 106, 0.45);
+  box-shadow: inset 0 0 0 2px rgba(255, 253, 248, 0.45);
   color: var(--gold-deep);
 }
 
 .highlight-orb-inner svg,
 .highlight-icon {
-  width: 30px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 }
 
 .highlight-orb-inner em {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-style: normal;
-  font-size: clamp(0.72rem, 1.4vw, 0.92rem);
+  font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1.15;
+  line-height: 1.1;
   color: var(--gold-deep);
 }
 
 .highlight-label {
-  font-size: 0.86rem;
+  font-size: 0.72rem;
   color: var(--ink-muted);
-  letter-spacing: 0.02em;
-  line-height: 1.3;
-  max-width: 14ch;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  max-width: 12ch;
 }
 
 .highlight-item:hover .highlight-orb {
-  transform: translateY(-3px);
-  box-shadow: 0 0 0 1px rgba(196, 163, 106, 0.45), 0 10px 24px rgba(44, 36, 28, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px rgba(196, 163, 106, 0.4), 0 6px 14px rgba(44, 36, 28, 0.06);
 }
 
 .team {
@@ -2276,24 +2291,33 @@ body:has(.header.is-scrolled) .nav {
   }
 
   .highlights {
-    padding: 36px 0 44px;
+    padding: 28px 0 32px;
   }
 
   .highlights-row {
-    grid-template-columns: repeat(5, minmax(104px, 1fr));
-    gap: 14px 10px;
-    overflow-x: auto;
-    padding-bottom: 6px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px 8px;
+    max-width: 340px;
+    overflow: visible;
+    padding-bottom: 0;
+    scroll-snap-type: none;
   }
 
   .highlight-item {
-    scroll-snap-align: start;
+    max-width: 96px;
   }
 
   .highlight-orb {
-    width: 104px;
+    width: 68px;
+  }
+
+  .highlight-orb-inner em {
+    font-size: 0.56rem;
+    letter-spacing: 0.04em;
+  }
+
+  .highlight-label {
+    font-size: 0.68rem;
   }
 
   .team-grid {
