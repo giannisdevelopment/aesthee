@@ -85,7 +85,7 @@ async function renderAppointments() {
       </td>
       <td class="row-actions">
         ${row.client_id
-          ? `<a class="btn btn-ghost btn-sm" href="client.html?id=${escapeHtml(row.client_id)}">Πελάτης</a>`
+          ? `<a class="btn btn-ghost btn-sm" href="/admin/client?id=${escapeHtml(row.client_id)}">Πελάτης</a>`
           : `<button class="btn btn-ghost btn-sm" type="button" data-to-client="${escapeHtml(row.id)}">→ Πελάτης</button>`}
         <button class="btn btn-danger btn-sm" type="button" data-delete="${escapeHtml(row.id)}">Διαγραφή</button>
       </td>
@@ -115,7 +115,7 @@ async function renderAppointments() {
         const clientId = await findOrCreateClientFromBooking(appointment);
         await updateAppointment(appointment.id, { client_id: clientId, status: appointment.status === "pending" ? "confirmed" : appointment.status });
         showToast("Συνδέθηκε με πελάτη.");
-        location.href = `client.html?id=${clientId}`;
+        location.href = `/admin/client?id=${clientId}`;
       } catch (err) {
         showToast(err.message || "Αποτυχία δημιουργίας πελάτη", true);
         btn.disabled = false;

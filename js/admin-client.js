@@ -136,7 +136,7 @@ async function loadClient() {
   const { data, error } = await getClient(clientId);
   if (error || !data) {
     showToast(error?.message || "Ο πελάτης δεν βρέθηκε", true);
-    window.setTimeout(() => { location.href = "index.html"; }, 1200);
+    window.setTimeout(() => { location.href = "/admin/"; }, 1200);
     return;
   }
 
@@ -166,7 +166,7 @@ clientForm?.addEventListener("submit", async (event) => {
   showToast("Αποθηκεύτηκε.");
   if (!clientId && data?.id) {
     clientId = data.id;
-    history.replaceState(null, "", `client.html?id=${clientId}`);
+    history.replaceState(null, "", `/admin/client?id=${clientId}`);
   }
   pageTitle.textContent = data.full_name;
   deleteClientBtn.classList.remove("hidden");
@@ -181,7 +181,7 @@ deleteClientBtn?.addEventListener("click", async () => {
     showToast(error.message || "Αποτυχία διαγραφής", true);
     return;
   }
-  location.href = "index.html";
+  location.href = "/admin/";
 });
 
 toggleVisitFormBtn?.addEventListener("click", () => {
@@ -221,18 +221,18 @@ visitForm?.addEventListener("submit", async (event) => {
 
 signOutBtn?.addEventListener("click", async () => {
   await signOut();
-  location.href = "index.html";
+  location.href = "/admin/";
 });
 
 async function boot() {
   if (configMissing()) {
     showToast("Ρυθμίστε το js/supabase-config.js", true);
-    window.setTimeout(() => { location.href = "index.html"; }, 900);
+    window.setTimeout(() => { location.href = "/admin/"; }, 900);
     return;
   }
   const session = await requireSession();
   if (!session) {
-    location.href = "index.html";
+    location.href = "/admin/";
     return;
   }
   await loadClient();

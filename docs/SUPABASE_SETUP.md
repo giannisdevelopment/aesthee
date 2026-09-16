@@ -12,9 +12,17 @@
 4. Confirm RPCs: `get_booked_times`, `create_booking`, `submit_contact`
 
 ## 3. Create staff login
-1. Authentication → Users → Add user
-2. Email + password (this is the admin login)
-3. Email confirm can be disabled for the first staff user in Auth settings if needed
+1. Authentication → Providers → **Email** enabled
+2. Authentication → Providers → Email → turn **Confirm email OFF** (or Confirm the user manually)
+3. Authentication → Users → **Add user**
+4. Email + password (e.g. `info@aesthee.gr`)
+5. In the user row, ensure status is **Confirmed** (⋯ → Confirm user if needed)
+6. Authentication → URL Configuration → Site URL = `https://aesthee.vercel.app`
+7. Add Redirect URL: `https://aesthee.vercel.app/**`
+
+Do **not** put the service_role / secret key in the browser. Admin uses the **anon / publishable** key + staff Auth login.
+
+If login says “Invalid login credentials”, the API key is fine — reset the user password in Authentication → Users.
 
 ## 4. Local config
 ```bash

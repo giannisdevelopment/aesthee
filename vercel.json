@@ -3,8 +3,14 @@
   "trailingSlash": false,
   "buildCommand": "npm run build",
   "outputDirectory": ".",
+  "redirects": [
+    { "source": "/bookings", "destination": "/admin/bookings", "permanent": false },
+    { "source": "/messages", "destination": "/admin/messages", "permanent": false },
+    { "source": "/clients", "destination": "/admin", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/admin/", "destination": "/admin/index.html" },
     { "source": "/admin/bookings", "destination": "/admin/bookings.html" },
     { "source": "/admin/messages", "destination": "/admin/messages.html" },
     { "source": "/admin/client", "destination": "/admin/client.html" }

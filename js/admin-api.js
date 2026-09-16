@@ -1,17 +1,50 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const cfg = window.AESTHEE_SUPABASE;
-if (!cfg?.url || !cfg?.anonKey || cfg.url.includes("YOUR_PROJECT_REF")) {
-  console.error("Missing js/supabase-config.js — copy from supabase-config.example.js");
+function readConfig() {
+  const cfg = window.AESTHEE_SUPABASE || {};
+  const url = cfg.url || "";
+  // Docs: browser uses publishable (or legacy anon) key — never the secret/service_role key.
+  const anonKey = cfg.anonKey || cfg.publishableKey || cfg.key || "";
+  return { url, anonKey };
 }
 
-export const supabase = createClient(cfg?.url || "", cfg?.anonKey || "", {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+export function isSupabaseConfigured() {
+  const { url, anonKey } = readConfig();
+  return Boolean(url && anonKey && !url.includes("YOUR_PROJECT_REF") && !anonKey.includes("YOUR_"));
+}
+
+let _client = null;
+
+/** Lazily create the browser client (publishable/anon key only). */
+export function getSupabase() {
+  if (_client) return _client;
+  const { url, anonKey } = readConfig();
+  if (!url || !anonKey) {
+    throw new Error("Missing Supabase URL or anon/publishable key in js/supabase-config.js");
+  }
+  _client = createClient(url, anonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: window.localStorage,
+      flowType: "pkce",
+    },
+  });
+  return _client;
+}
+
+/** @deprecated use getSupabase() — kept for existing imports */
+export const supabase = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      const client = getSupabase();
+      const value = client[prop];
+      return typeof value === "function" ? value.bind(client) : value;
+    },
+  }
+);
 
 export function formatMoney(value) {
   if (value == null || value === "") return "—";
@@ -43,24 +76,42 @@ export function showToast(message, isError = false) {
   el.classList.toggle("is-error", isError);
   el.classList.add("is-visible");
   window.clearTimeout(showToast._timer);
-  showToast._timer = window.setTimeout(() => el.classList.remove("is-visible"), 3800);
+  showToast._timer = window.setTimeout(() => el.classList.remove("is-visible"), 5200);
+}
+
+export function mapAuthError(error) {
+  const code = error?.code || "";
+  const msg = String(error?.message || "");
+  if (code === "invalid_credentials" || /invalid login credentials/i.test(msg)) {
+    return "Λάθος email ή κωδικός. Στο Supabase → Authentication → Users ελέγξτε ότι ο χρήστης υπάρχει και είναι Confirmed.";
+  }
+  if (code === "email_not_confirmed" || /email not confirmed/i.test(msg)) {
+    return "Το email δεν έχει επιβεβαιωθεί. Στο user → Confirm user, ή απενεργοποιήστε Confirm email στα Auth settings.";
+  }
+  if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) {
+    return "Αποτυχία σύνδεσης με το Supabase. Ελέγξτε δίκτυο / ad-block.";
+  }
+  return msg || "Αποτυχία σύνδεσης";
 }
 
 export async function requireSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await getSupabase().auth.getSession();
   return session;
 }
 
 export async function signIn(email, password) {
-  return supabase.auth.signInWithPassword({ email, password });
+  return getSupabase().auth.signInWithPassword({
+    email: String(email || "").trim(),
+    password: String(password || ""),
+  });
 }
 
 export async function signOut() {
-  return supabase.auth.signOut();
+  return getSupabase().auth.signOut();
 }
 
 export async function listClients(query = "") {
-  let request = supabase
+  let request = getSupabase()
     .from("clients")
     .select("id, full_name, phone, email, updated_at, visits(count)")
     .order("updated_at", { ascending: false });
@@ -74,7 +125,7 @@ export async function listClients(query = "") {
 }
 
 export async function getClient(id) {
-  return supabase
+  return getSupabase()
     .from("clients")
     .select("*")
     .eq("id", id)
@@ -83,17 +134,17 @@ export async function getClient(id) {
 
 export async function saveClient(payload, id = null) {
   if (id) {
-    return supabase.from("clients").update(payload).eq("id", id).select().single();
+    return getSupabase().from("clients").update(payload).eq("id", id).select().single();
   }
-  return supabase.from("clients").insert(payload).select().single();
+  return getSupabase().from("clients").insert(payload).select().single();
 }
 
 export async function deleteClient(id) {
-  return supabase.from("clients").delete().eq("id", id);
+  return getSupabase().from("clients").delete().eq("id", id);
 }
 
 export async function listVisits(clientId) {
-  return supabase
+  return getSupabase()
     .from("visits")
     .select("*")
     .eq("client_id", clientId)
@@ -103,17 +154,17 @@ export async function listVisits(clientId) {
 
 export async function saveVisit(payload, id = null) {
   if (id) {
-    return supabase.from("visits").update(payload).eq("id", id).select().single();
+    return getSupabase().from("visits").update(payload).eq("id", id).select().single();
   }
-  return supabase.from("visits").insert(payload).select().single();
+  return getSupabase().from("visits").insert(payload).select().single();
 }
 
 export async function deleteVisit(id) {
-  return supabase.from("visits").delete().eq("id", id);
+  return getSupabase().from("visits").delete().eq("id", id);
 }
 
 export async function listAppointments({ status = "", fromDate = "", toDate = "", query = "" } = {}) {
-  let request = supabase
+  let request = getSupabase()
     .from("appointments")
     .select("id, service, appointment_date, appointment_time, guest_name, guest_phone, guest_email, status, notes, client_id, created_at")
     .order("appointment_date", { ascending: true })
@@ -132,32 +183,32 @@ export async function listAppointments({ status = "", fromDate = "", toDate = ""
 }
 
 export async function updateAppointment(id, payload) {
-  return supabase.from("appointments").update(payload).eq("id", id).select().single();
+  return getSupabase().from("appointments").update(payload).eq("id", id).select().single();
 }
 
 export async function deleteAppointment(id) {
-  return supabase.from("appointments").delete().eq("id", id);
+  return getSupabase().from("appointments").delete().eq("id", id);
 }
 
 export async function listContactMessages() {
-  return supabase
+  return getSupabase()
     .from("contact_messages")
     .select("*")
     .order("created_at", { ascending: false });
 }
 
 export async function markContactRead(id, isRead = true) {
-  return supabase.from("contact_messages").update({ is_read: isRead }).eq("id", id);
+  return getSupabase().from("contact_messages").update({ is_read: isRead }).eq("id", id);
 }
 
 export async function deleteContactMessage(id) {
-  return supabase.from("contact_messages").delete().eq("id", id);
+  return getSupabase().from("contact_messages").delete().eq("id", id);
 }
 
 export async function findOrCreateClientFromBooking(appointment) {
   const phone = appointment.guest_phone?.trim();
   if (phone) {
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from("clients")
       .select("id")
       .eq("phone", phone)
@@ -166,7 +217,7 @@ export async function findOrCreateClientFromBooking(appointment) {
     if (existing?.id) return existing.id;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("clients")
     .insert({
       full_name: appointment.guest_name,

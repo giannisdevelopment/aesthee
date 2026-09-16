@@ -185,9 +185,18 @@ select {
   font-weight: 500;
 }
 
-.login-card p {
-  margin: 0 0 24px;
-  color: var(--ink-muted);
+.login-error {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.login-error[hidden] {
+  display: none !important;
 }
 
 .field {

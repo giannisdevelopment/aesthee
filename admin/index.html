@@ -12,13 +12,13 @@
   <link rel="stylesheet" href="../css/admin.css" />
 </head>
 <body data-admin-page="list">
-  <div id="loginView" class="login-wrap hidden">
+  <div id="loginView" class="login-wrap">
     <form class="panel login-card" id="loginForm">
       <h1>Aesthée Admin</h1>
       <p>Σύνδεση προσωπικού για διαχείριση πελατών.</p>
       <div id="configBanner" class="banner-warn hidden">
         Λείπει το <code>js/supabase-config.js</code>. Αντιγράψτε από το
-        <code>supabase-config.example.js</code> και βάλτε URL + anon key.
+        <code>supabase-config.example.js</code> και βάλτε URL + anon/publishable key.
       </div>
       <div class="field">
         <label for="email">Email</label>
@@ -28,6 +28,7 @@
         <label for="password">Κωδικός</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required />
       </div>
+      <p id="loginError" class="login-error" hidden></p>
       <button class="btn btn-gold" type="submit" style="width:100%">Σύνδεση</button>
     </form>
   </div>
@@ -43,11 +44,11 @@
       </div>
       <div class="admin-actions">
         <nav class="admin-nav">
-          <a class="is-active" href="index.html">Πελάτες</a>
-          <a href="bookings.html">Ραντεβού</a>
-          <a href="messages.html">Μηνύματα</a>
+          <a class="is-active" href="/admin/">Πελάτες</a>
+          <a href="/admin/bookings">Ραντεβού</a>
+          <a href="/admin/messages">Μηνύματα</a>
         </nav>
-        <a class="btn btn-gold" href="client.html">Νέος πελάτης</a>
+        <a class="btn btn-gold" href="/admin/client">Νέος πελάτης</a>
         <button class="btn btn-ghost" type="button" id="signOutBtn">Αποσύνδεση</button>
       </div>
     </header>
@@ -75,7 +76,7 @@
   </div>
 
   <div class="toast" id="adminToast" role="status"></div>
-  <script src="../js/supabase-config.js"></script>
-  <script type="module" src="../js/admin-list.js"></script>
+  <script src="/js/supabase-config.js"></script>
+  <script type="module" src="/js/admin-list.js"></script>
 </body>
 </html>
