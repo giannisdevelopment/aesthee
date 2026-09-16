@@ -496,12 +496,14 @@ body:has(.header.is-scrolled) .nav {
   background:
     linear-gradient(180deg, var(--ivory) 0%, var(--cream) 100%);
   border-bottom: 1px solid var(--gold-line);
-  padding: 56px 0 64px;
+  padding: 48px 0 56px;
 }
 
 .highlights-head {
   max-width: 36rem;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
+  text-align: center;
+  margin-inline: auto;
 }
 
 .highlights-head .section-title {
@@ -510,84 +512,154 @@ body:has(.header.is-scrolled) .nav {
 
 .highlights-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px 12px;
+  align-items: start;
 }
 
-.highlight-card {
-  position: relative;
-  display: block;
+.highlight-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--ink);
+  min-width: 0;
+}
+
+.highlight-orb {
+  width: min(132px, 100%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  padding: 5px;
+  background: rgba(196, 163, 106, 0.18);
+  box-shadow: 0 0 0 1px rgba(196, 163, 106, 0.28);
+  transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
+}
+
+.highlight-orb-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px 12px;
+  background:
+    radial-gradient(120% 90% at 30% 20%, #fff9f0 0%, #f3e6d2 55%, #ead7bb 100%);
+  border: 1px solid rgba(196, 163, 106, 0.55);
+  box-shadow: inset 0 0 0 4px rgba(255, 253, 248, 0.55);
+  color: var(--gold-deep);
+}
+
+.highlight-orb-inner svg {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.highlight-orb-inner em {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: normal;
+  font-size: clamp(0.72rem, 1.4vw, 0.92rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: var(--gold-deep);
+}
+
+.highlight-label {
+  font-size: 0.86rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  max-width: 14ch;
+}
+
+.highlight-item:hover .highlight-orb {
+  transform: translateY(-3px);
+  box-shadow: 0 0 0 1px rgba(196, 163, 106, 0.45), 0 10px 24px rgba(44, 36, 28, 0.08);
+}
+
+.team {
+  background: var(--cream);
+  padding-top: 72px;
+  padding-bottom: 40px;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 20px;
+  margin-top: 36px;
+}
+
+.team-card {
+  background: var(--white);
+  border: 1px solid rgba(196, 163, 106, 0.22);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+
+.team-card--lead {
+  background:
+    linear-gradient(165deg, #fffdf8 0%, #f7efe3 100%);
+}
+
+.team-photo {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 16px;
   overflow: hidden;
-  border-radius: 20px;
-  min-height: 280px;
-  color: var(--ivory);
-  isolation: isolate;
+  margin-bottom: 16px;
+  background: #ebe2d2;
 }
 
-.highlight-card img {
-  position: absolute;
-  inset: 0;
+.team-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 700ms var(--ease);
 }
 
-.highlight-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(28, 22, 16, 0.08) 20%, rgba(28, 22, 16, 0.78) 100%);
-  transition: background 280ms var(--ease);
-}
-
-.highlight-card-copy {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  min-height: 280px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 22px;
-}
-
-.highlight-card-copy em {
-  font-style: normal;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--gold-soft);
-  margin-bottom: 6px;
-}
-
-.highlight-card-copy strong {
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
-  font-weight: 500;
-  line-height: 1.15;
-}
-
-.highlight-card:hover img {
-  transform: scale(1.06);
-}
-
-.highlight-card:hover::after {
-  background: linear-gradient(180deg, rgba(28, 22, 16, 0.02) 10%, rgba(28, 22, 16, 0.84) 100%);
-}
-
-.highlight-card--placeholder {
+.team-photo.is-placeholder {
+  display: grid;
+  place-items: center;
   background:
-    radial-gradient(120% 90% at 80% 10%, rgba(196, 163, 106, 0.35), transparent 55%),
-    linear-gradient(160deg, #3a3026 0%, #2c241c 48%, #1f1914 100%);
+    radial-gradient(90% 70% at 50% 30%, rgba(196, 163, 106, 0.22), transparent 60%),
+    linear-gradient(160deg, #f0e5d4 0%, #e2d3bc 100%);
+  border: 1px dashed rgba(196, 163, 106, 0.45);
+  color: var(--gold-deep);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.highlight-card--placeholder::after {
-  background: linear-gradient(180deg, rgba(28, 22, 16, 0.08) 20%, rgba(28, 22, 16, 0.72) 100%);
+.team-copy h3 {
+  margin: 0 0 4px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
-.highlight-card--placeholder:hover img {
-  transform: none;
+.team-role {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+.team-bio {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
 .svc-hero {
@@ -975,6 +1047,7 @@ body:has(.header.is-scrolled) .nav {
 
 .svc-item {
   border-bottom: 1px solid rgba(196, 163, 106, 0.18);
+  scroll-margin-top: calc(var(--header-h) + 28px);
 }
 
 .svc-item-row,
@@ -2197,17 +2270,28 @@ body:has(.header.is-scrolled) .nav {
   }
 
   .highlights {
-    padding: 40px 0 48px;
+    padding: 36px 0 44px;
   }
 
   .highlights-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(5, minmax(104px, 1fr));
+    gap: 14px 10px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .highlight-card,
-  .highlight-card-copy {
-    min-height: 220px;
+  .highlight-item {
+    scroll-snap-align: start;
+  }
+
+  .highlight-orb {
+    width: 104px;
+  }
+
+  .team-grid {
+    grid-template-columns: 1fr;
   }
 
   .cards,

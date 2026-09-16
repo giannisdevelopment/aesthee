@@ -473,6 +473,19 @@ function initServices() {
   }
 
   const jumpFromHash = () => {
+    const hash = location.hash.replace(/^#/, "");
+    if (!hash) return;
+
+    if (hash === "svc-tattoo") {
+      const tattoo = document.getElementById("svc-tattoo");
+      if (tattoo instanceof HTMLDetailsElement) {
+        tattoo.open = true;
+        setActive("face");
+        tattoo.scrollIntoView({ behavior: "auto", block: "start" });
+        return;
+      }
+    }
+
     const id = idFromHash();
     if (id) scrollToPanel(id, "auto");
   };
