@@ -512,10 +512,10 @@ body:has(.header.is-scrolled) .nav {
 
 .highlights-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px 16px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px 12px;
   align-items: start;
-  max-width: 420px;
+  max-width: 720px;
   margin-inline: auto;
   justify-items: center;
 }
@@ -529,21 +529,11 @@ body:has(.header.is-scrolled) .nav {
   color: var(--ink);
   min-width: 0;
   width: 100%;
-  max-width: 112px;
-}
-
-.highlight-item:nth-child(4) {
-  grid-column: 1;
-  justify-self: end;
-}
-
-.highlight-item:nth-child(5) {
-  grid-column: 3;
-  justify-self: start;
+  max-width: 120px;
 }
 
 .highlight-orb {
-  width: 76px;
+  width: min(84px, 100%);
   aspect-ratio: 1;
   border-radius: 50%;
   padding: 3px;
@@ -2286,11 +2276,20 @@ body:has(.header.is-scrolled) .nav {
     max-width: 340px;
     overflow: visible;
     padding-bottom: 0;
-    scroll-snap-type: none;
   }
 
   .highlight-item {
     max-width: 96px;
+  }
+
+  .highlight-item:nth-child(4) {
+    grid-column: 1;
+    justify-self: end;
+  }
+
+  .highlight-item:nth-child(5) {
+    grid-column: 3;
+    justify-self: start;
   }
 
   .highlight-orb {
