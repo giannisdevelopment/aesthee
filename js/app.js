@@ -356,11 +356,7 @@ function initContact() {
 }
 
 function initServiceGalleries() {
-  const labelFor = (count, open) => {
-    if (open) return "Απόκρυψη φωτογραφιών";
-    if (count <= 1) return "Δείτε φωτογραφία";
-    return `Δείτε φωτογραφίες (${count})`;
-  };
+  const labelFor = (open) => (open ? "Κλείσιμο" : "Φωτογραφίες");
 
   const wrapProofs = (container, insertAfter = null) => {
     const proofs = [...container.children].filter(
@@ -375,10 +371,9 @@ function initServiceGalleries() {
     body.className = "svc-gallery-body";
     proofs.forEach((node) => body.appendChild(node));
 
-    const count = body.querySelectorAll("img").length;
-    summary.textContent = labelFor(count, false);
+    summary.textContent = labelFor(false);
     details.addEventListener("toggle", () => {
-      summary.textContent = labelFor(count, details.open);
+      summary.textContent = labelFor(details.open);
     });
 
     details.append(summary, body);
@@ -400,16 +395,9 @@ function initServiceGalleries() {
     const details = document.createElement("details");
     details.className = "svc-gallery svc-gallery--results";
     const summary = document.createElement("summary");
-    const count = grid.querySelectorAll("img").length;
-    summary.textContent = count
-      ? `Δείτε αποτελέσματα (${count})`
-      : "Δείτε αποτελέσματα";
+    summary.textContent = "Φωτογραφίες";
     details.addEventListener("toggle", () => {
-      summary.textContent = details.open
-        ? "Απόκρυψη αποτελεσμάτων"
-        : count
-          ? `Δείτε αποτελέσματα (${count})`
-          : "Δείτε αποτελέσματα";
+      summary.textContent = details.open ? "Κλείσιμο" : "Φωτογραφίες";
     });
     grid.parentNode.insertBefore(details, grid);
     details.append(summary, grid);
