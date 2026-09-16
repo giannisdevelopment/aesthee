@@ -2035,14 +2035,19 @@ body:has(.header.is-scrolled) .nav {
 }
 
 .footer-phone {
-  display: inline-block;
-  margin: 14px 0 10px;
+  display: block;
+  margin: 14px 0 6px;
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 1.7rem;
   line-height: 1;
   color: var(--gold-soft);
   letter-spacing: 0.02em;
   transition: color 180ms ease;
+}
+
+.footer-phone + .footer-phone {
+  margin-top: 4px;
+  margin-bottom: 10px;
 }
 
 .footer-phone:hover {
