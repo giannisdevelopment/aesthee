@@ -759,6 +759,11 @@ body:has(.header.is-scrolled) .nav {
   margin-bottom: 36px;
 }
 
+.svc-explore-orbs {
+  max-width: 880px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
 .svc-hubs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
