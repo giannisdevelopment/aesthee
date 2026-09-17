@@ -1,3 +1,4 @@
 .vercel
 .DS_Store
 js/supabase-config.js
+.venv/
