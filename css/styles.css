@@ -542,6 +542,26 @@ body:has(.header.is-scrolled) .nav {
   transition: transform 200ms var(--ease), box-shadow 200ms var(--ease);
 }
 
+.highlight-orb--photo {
+  width: min(112px, 100%);
+  padding: 0;
+  background: none;
+  box-shadow: 0 4px 14px rgba(44, 36, 28, 0.08);
+  overflow: hidden;
+}
+
+.highlight-orb--photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+.highlight-item:has(.highlight-orb--photo) {
+  max-width: 124px;
+}
+
 .highlight-orb-inner {
   width: 100%;
   height: 100%;
@@ -2321,6 +2341,15 @@ body:has(.header.is-scrolled) .nav {
 
   .highlight-orb {
     width: 68px;
+  }
+
+  .highlight-orb--photo {
+    width: 92px;
+  }
+
+  .highlight-item:has(.highlight-orb--photo) {
+    max-width: 104px;
+    flex: 0 0 calc((100% - 40px) / 3);
   }
 
   .highlight-orb-inner svg,
