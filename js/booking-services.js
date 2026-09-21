@@ -128,17 +128,25 @@ export const BOOKING_CATEGORIES = [
     id: "body",
     label: "Θεραπείες σώματος",
     services: [
-      { id: "vacutherm", name: "Vacutherm Treadmill & Bike", durationMin: 45, priceCents: 3500 },
-      { id: "endospheres", name: "Endospheres", durationMin: 45, priceCents: 5500 },
-      { id: "cavitation", name: "Cavitation", durationMin: 45, priceCents: 5000 },
-      { id: "vacuum-bbl", name: "Vacuum BBL", durationMin: 45, priceCents: 5500 },
-      { id: "presso", name: "Πρεσσοθεραπεία", durationMin: 40, priceCents: 3500 },
-      { id: "cryo", name: "Κρυολιπόλυση", durationMin: 60, priceCents: 8000 },
-      { id: "rf-body", name: "RF Microneedling σώματος", durationMin: 60, priceCents: 9000 },
-      { id: "madero", name: "Μαδεροθεραπεία", durationMin: 45, priceCents: 4500 },
-      { id: "massage", name: "Μασάζ", durationMin: 50, priceCents: 4000 },
-      { id: "standup", name: "Stand Up Solarium XXXL", durationMin: 15, priceCents: 1500 },
-      { id: "laydown", name: "Lay Down Solarium XXL", durationMin: 15, priceCents: 1500 },
+      { id: "vacutherm", name: "Vacutherm Treadmill & Bike", durationMin: 30, priceCents: 3500 },
+      { id: "vacutherm-pack", name: "Vacutherm — πακέτο 10+2 δώρο", durationMin: 30, priceCents: 25000 },
+      { id: "endospheres", name: "ENDOSPHERES", durationMin: 45, priceCents: 4000 },
+      { id: "endospheres-pack", name: "ENDOSPHERES — πακέτο 8+2 δώρο", durationMin: 45, priceCents: 34900 },
+      { id: "cavitation", name: "Cavitation", durationMin: 30, priceCents: 2500 },
+      { id: "cavitation-pack", name: "Cavitation — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 20000 },
+      { id: "vacuum-bbl", name: "Vacuum BBL", durationMin: 30, priceCents: 2000 },
+      { id: "vacuum-bbl-pack", name: "Vacuum BBL — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 15000 },
+      { id: "presso", name: "Πρεσσοθεραπεία", durationMin: 30, priceCents: 2000 },
+      { id: "presso-pack", name: "Πρεσσοθεραπεία — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 15000 },
+      { id: "cryo", name: "Κρυολιπόλυση 4 σημείων", durationMin: 60, priceCents: 16000 },
+      { id: "cryo-pack", name: "Κρυολιπόλυση 4 σημείων — πακέτο 3 συνεδριών", durationMin: 60, priceCents: 39000 },
+      { id: "madero", name: "Μαδεροθεραπεία", durationMin: 35, priceCents: 3000 },
+      { id: "madero-pack", name: "Μαδεροθεραπεία — πακέτο 10+2 δώρο", durationMin: 35, priceCents: 25000 },
+      { id: "rf-body", name: "RF Microneedling σώματος (έως 3 περιοχές)", durationMin: 60, priceCents: 18000 },
+      { id: "rf-body-pack", name: "RF Microneedling σώματος — πακέτο 3 συνεδριών", durationMin: 60, priceCents: 45000 },
+      { id: "massage", name: "Μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό", durationMin: 55, priceCents: 4000 },
+      { id: "massage-cupping", name: "Μασάζ βεντούζες", durationMin: 40, priceCents: 4000 },
+      { id: "massage-neck-back", name: "Μασάζ αυχένα πλάτη μέση", durationMin: 30, priceCents: 3500 },
       { id: "wax", name: "Αποτρίχωση με κερί", durationMin: 30, priceCents: 2500, priceFrom: true },
     ],
   },
@@ -168,13 +176,19 @@ const SERVICE_ALIASES = {
   "endospheres": "endospheres",
   "cavitation": "cavitation",
   "vacuum bbl": "vacuum-bbl",
+  "vacum bbl": "vacuum-bbl",
   "πρεσσοθεραπεία": "presso",
   "κρυολιπόλυση": "cryo",
+  "κρυολιπόλυση 4 σημείων": "cryo",
+  "rf microneedling": "rf-body",
   "rf microneedling σώματος": "rf-body",
+  "rf microneedling σώματος (έως 3 περιοχές)": "rf-body",
   "μαδεροθεραπεία": "madero",
   "μασάζ": "massage",
-  "stand up solarium xxxl": "standup",
-  "lay down solarium xxl": "laydown",
+  "μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό": "massage",
+  "μασάζ βεντούζες": "massage-cupping",
+  "μασάζ αυχένα πλάτη μέση": "massage-neck-back",
+  "αποτρίχωση με κερί": "wax",
   "brow lamination & tint": "brow-lamination-tint",
   "lash lift & tint": "lash-lift-tint",
   "brow shape": "brow-shape",
@@ -183,16 +197,79 @@ const SERVICE_ALIASES = {
   "συντήρηση βλεφαρίδων extensions": "lash-maint-classic",
   "laser αποτρίχωση — διοδικό": "lw-full-body",
   "laser αποτρίχωση — αλεξανδρίτης": "lw-full-body",
-  "αποτρίχωση με κερί": "wax",
   "ριζική αποτρίχωση προσώπου & λαιμού": "elec-15",
 };
+
+/** Cabins as parallel resources:
+ * 1–2 πρόσωπο + laser, 3 φρύδια/βλεφαρίδες/κερί, 4 Vacutherm, 5 σώμα + μασάζ
+ */
+export const CABIN_LABELS = {
+  1: "Καμπίνα 1 — πρόσωπο & laser",
+  2: "Καμπίνα 2 — πρόσωπο & laser",
+  3: "Καμπίνα 3 — φρύδια, βλεφαρίδες & κερί",
+  4: "Καμπίνα 4 — Vacutherm",
+  5: "Καμπίνα 5 — σώμα & μασάζ",
+};
+
+/** @param {{ id: string, categoryId?: string } | null | undefined} service */
+export function getCabinPool(service) {
+  if (!service) return [1, 2];
+  const id = service.id;
+  if (id === "vacutherm" || id === "vacutherm-pack") return [4];
+  if (
+    id === "wax"
+    || service.categoryId === "brows"
+    || service.categoryId === "lashes"
+  ) {
+    return [3];
+  }
+  if (service.categoryId === "body") return [5];
+  // face, laser, electrolysis
+  return [1, 2];
+}
+
+/** Infer cabin pool from a stored appointment service name (legacy rows). */
+export function getCabinPoolForServiceName(serviceName) {
+  const service = findServiceByName(serviceName);
+  if (service) {
+    const withCat = getServiceById(service.id);
+    return getCabinPool(withCat || service);
+  }
+  const key = String(serviceName || "").toLowerCase();
+  if (key.includes("vacutherm")) return [4];
+  if (
+    key.includes("μασάζ")
+    || key.includes("endosphere")
+    || key.includes("cavitation")
+    || key.includes("vacuum bbl")
+    || key.includes("vacum bbl")
+    || key.includes("πρεσσο")
+    || key.includes("κρυολιπ")
+    || key.includes("μαδερο")
+    || (key.includes("rf") && key.includes("σώμα"))
+  ) {
+    return [5];
+  }
+  if (
+    key.includes("brow")
+    || key.includes("lash")
+    || key.includes("φρύδ")
+    || key.includes("βλεφαρίδ")
+    || key.includes("κερί")
+    || key.includes("σχηματισμός")
+  ) {
+    return [3];
+  }
+  return [1, 2];
+}
 
 const byId = new Map();
 const byName = new Map();
 for (const category of BOOKING_CATEGORIES) {
   for (const service of category.services) {
-    byId.set(service.id, { ...service, categoryId: category.id, categoryLabel: category.label });
-    byName.set(service.name.toLowerCase(), service);
+    const enriched = { ...service, categoryId: category.id, categoryLabel: category.label };
+    byId.set(service.id, enriched);
+    byName.set(service.name.toLowerCase(), enriched);
   }
 }
 
@@ -264,22 +341,62 @@ export function buildStartSlots(durationMin) {
 
 /**
  * @param {string[]} candidateStarts
- * @param {{ time: string, service?: string, durationMin?: number }[]} booked
- * @param {number} selectedDuration
+ * @param {{ time: string, service?: string, durationMin?: number, cabinId?: number | null }[]} booked
+ * @param {{ id: string, categoryId?: string, durationMin: number }} service
  */
-export function filterAvailableStarts(candidateStarts, booked, selectedDuration) {
-  const duration = Math.max(5, Number(selectedDuration) || 60);
-  const busy = (booked || []).map((row) => {
+export function filterAvailableStarts(candidateStarts, booked, service) {
+  const duration = Math.max(5, Number(service?.durationMin) || 60);
+  const pool = getCabinPool(service);
+  /** @type {Map<number, { start: number, end: number }[]>} */
+  const busyByCabin = new Map();
+
+  for (const row of booked || []) {
     const start = timeLabelToMinutes(row.time);
+    if (start == null) continue;
     const known = row.durationMin || findServiceByName(row.service)?.durationMin || 60;
-    return { start, end: start + known };
-  }).filter((row) => row.start != null);
+    const cabinId = Number(row.cabinId)
+      || getCabinPoolForServiceName(row.service)[0]
+      || 1;
+    if (!busyByCabin.has(cabinId)) busyByCabin.set(cabinId, []);
+    busyByCabin.get(cabinId).push({ start, end: start + known });
+  }
 
   return candidateStarts.filter((label) => {
     const start = timeLabelToMinutes(label);
     if (start == null) return false;
     const end = start + duration;
     if (end > BOOKING_DAY_END) return false;
-    return !busy.some((b) => start < b.end && end > b.start);
+    return pool.some((cabinId) => {
+      const intervals = busyByCabin.get(cabinId) || [];
+      return !intervals.some((b) => start < b.end && end > b.start);
+    });
   });
+}
+
+/** Pick the first free cabin in the service pool for a slot. */
+export function pickCabinForSlot(service, booked, startLabel) {
+  const duration = Math.max(5, Number(service?.durationMin) || 60);
+  const start = timeLabelToMinutes(startLabel);
+  if (start == null) return null;
+  const end = start + duration;
+  const pool = getCabinPool(service);
+
+  /** @type {Map<number, { start: number, end: number }[]>} */
+  const busyByCabin = new Map();
+  for (const row of booked || []) {
+    const bStart = timeLabelToMinutes(row.time);
+    if (bStart == null) continue;
+    const known = row.durationMin || findServiceByName(row.service)?.durationMin || 60;
+    const cabinId = Number(row.cabinId)
+      || getCabinPoolForServiceName(row.service)[0]
+      || 1;
+    if (!busyByCabin.has(cabinId)) busyByCabin.set(cabinId, []);
+    busyByCabin.get(cabinId).push({ start: bStart, end: bStart + known });
+  }
+
+  for (const cabinId of pool) {
+    const intervals = busyByCabin.get(cabinId) || [];
+    if (!intervals.some((b) => start < b.end && end > b.start)) return cabinId;
+  }
+  return null;
 }

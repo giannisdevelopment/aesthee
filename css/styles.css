@@ -1202,6 +1202,17 @@ body:has(.header.is-scrolled) .nav {
   margin-top: 4px;
 }
 
+.svc-book-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.svc-book-row .svc-book--solid {
+  margin-top: 0;
+}
+
 .svc-cta {
   border-top: 1px solid rgba(196, 163, 106, 0.18);
 }

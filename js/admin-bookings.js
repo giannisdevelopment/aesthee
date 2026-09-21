@@ -90,7 +90,7 @@ async function renderAppointments() {
       </td>
       <td>
         ${escapeHtml(row.service)}<br />
-        <span class="muted">${escapeHtml(formatPriceCents(row.price_cents))}</span>
+        <span class="muted">${escapeHtml(formatPriceCents(row.price_cents))}${row.cabin_id ? ` · Καμπίνα ${escapeHtml(String(row.cabin_id))}` : ""}</span>
       </td>
       <td>
         ${escapeHtml(row.guest_name)}<br />

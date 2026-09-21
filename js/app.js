@@ -278,7 +278,7 @@ async function refreshBookedTimes() {
     const available = catalog.filterAvailableStarts(
       candidates,
       state.bookedSlots,
-      service.durationMin,
+      service,
     );
     renderTimes(available);
   } catch (error) {
@@ -420,6 +420,13 @@ function initBooking() {
         submitBtn.textContent = "Αποστολή…";
       }
 
+      const cabinId = catalog.pickCabinForSlot(service, state.bookedSlots || [], state.time);
+      if (!cabinId) {
+        showToast("Η ώρα δεν είναι διαθέσιμη. Επιλέξτε άλλη.");
+        await refreshBookedTimes();
+        return;
+      }
+
       await createBooking({
         service: service.name,
         date: state.date,
@@ -428,6 +435,7 @@ function initBooking() {
         phone,
         durationMinutes: service.durationMin,
         priceCents: service.priceCents,
+        cabinId,
       });
 
       const priceLabel = catalog.formatPrice(service);

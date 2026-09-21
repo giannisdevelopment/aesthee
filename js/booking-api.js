@@ -52,7 +52,7 @@ function normalizeTime(value) {
   return String(value).slice(0, 5);
 }
 
-/** @returns {Promise<{ time: string, service: string, durationMin: number }[]>} */
+/** @returns {Promise<{ time: string, service: string, durationMin: number, cabinId: number | null }[]>} */
 export async function fetchBookedSlots(dateKey) {
   const sb = getSupabase();
   if (!sb || !dateKey) return [];
@@ -63,13 +63,14 @@ export async function fetchBookedSlots(dateKey) {
       time: normalizeTime(row.appointment_time ?? row.appointmentTime),
       service: row.service || "",
       durationMin: Number(row.duration_minutes ?? row.durationMinutes) || 60,
+      cabinId: row.cabin_id != null ? Number(row.cabin_id) : (row.cabinId != null ? Number(row.cabinId) : null),
     }));
   }
 
   // Fallback for DBs that still only expose get_booked_times
   console.warn("get_booked_slots unavailable, falling back to get_booked_times", error);
   const legacy = await fetchBookedTimes(dateKey);
-  return legacy.map((time) => ({ time, service: "", durationMin: 60 }));
+  return legacy.map((time) => ({ time, service: "", durationMin: 60, cabinId: null }));
 }
 
 /** @returns {Promise<string[]>} times like "10:00" */
@@ -95,6 +96,7 @@ export async function createBooking({
   email = null,
   durationMinutes = 60,
   priceCents = null,
+  cabinId = null,
 }) {
   const sb = getSupabase();
   if (!sb) {
@@ -110,6 +112,7 @@ export async function createBooking({
     p_email: email,
     p_duration_minutes: durationMinutes,
     p_price_cents: priceCents,
+    p_cabin_id: cabinId,
   });
 
   if (error) {

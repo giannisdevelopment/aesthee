@@ -75,6 +75,14 @@ alter table public.appointments
   add column if not exists duration_minutes int not null default 60;
 alter table public.appointments
   add column if not exists price_cents int;
+alter table public.appointments
+  add column if not exists cabin_id smallint;
+
+alter table public.appointments
+  drop constraint if exists appointments_cabin_range;
+alter table public.appointments
+  add constraint appointments_cabin_range
+  check (cabin_id is null or (cabin_id >= 1 and cabin_id <= 5));
 
 create index if not exists appointments_date_idx
   on public.appointments (appointment_date, appointment_time);
@@ -85,10 +93,11 @@ create index if not exists appointments_status_idx
 create index if not exists appointments_created_idx
   on public.appointments (created_at desc);
 
--- One active booking per slot
-create unique index if not exists appointments_active_slot_uidx
-  on public.appointments (appointment_date, appointment_time)
-  where status in ('pending', 'confirmed');
+create index if not exists appointments_cabin_date_idx
+  on public.appointments (appointment_date, cabin_id, appointment_time);
+
+-- Legacy single-slot uniqueness (pre-cabin). Drop so parallel cabins can share a clock time.
+drop index if exists appointments_active_slot_uidx;
 
 -- ---------------------------------------------------------------------------
 -- Contact messages (public form)
@@ -135,6 +144,50 @@ create trigger appointments_set_updated_at
 -- ---------------------------------------------------------------------------
 drop function if exists public.create_booking(text, date, time, text, text, text);
 drop function if exists public.create_booking(text, date, time, text, text, text, int, int);
+drop function if exists public.create_booking(text, date, time, text, text, text, int, int, int);
+
+-- Map a service label to the cabins that can host it.
+create or replace function public.booking_cabin_pool(p_service text)
+returns smallint[]
+language plpgsql
+immutable
+as $$
+declare
+  s text := lower(trim(coalesce(p_service, '')));
+begin
+  if s like '%vacutherm%' then
+    return array[4]::smallint[];
+  end if;
+
+  if s like '%μασάζ%'
+     or s like '%endosphere%'
+     or s like '%cavitation%'
+     or s like '%vacuum bbl%'
+     or s like '%vacum bbl%'
+     or s like '%πρεσσο%'
+     or s like '%κρυολιπ%'
+     or s like '%μαδερο%'
+     or (s like '%rf%' and s like '%σώμα%')
+  then
+    return array[5]::smallint[];
+  end if;
+
+  if s like '%brow%'
+     or s like '%lash%'
+     or s like '%φρύδ%'
+     or s like '%βλεφαρίδ%'
+     or s like '%κερί%'
+     or s like '%σχηματισμός%'
+     or s like '%extension%'
+  then
+    return array[3]::smallint[];
+  end if;
+
+  -- Face treatments, laser, electrolysis → cabins 1 & 2
+  return array[1, 2]::smallint[];
+end;
+$$;
+
 create or replace function public.get_booked_times(p_date date)
 returns setof time
 language sql
@@ -148,11 +201,13 @@ as $$
   order by appointment_time;
 $$;
 
+drop function if exists public.get_booked_slots(date);
 create or replace function public.get_booked_slots(p_date date)
 returns table (
   appointment_time time,
   service text,
-  duration_minutes int
+  duration_minutes int,
+  cabin_id smallint
 )
 language sql
 security definer
@@ -161,7 +216,8 @@ as $$
   select
     a.appointment_time,
     a.service,
-    coalesce(a.duration_minutes, 60) as duration_minutes
+    coalesce(a.duration_minutes, 60) as duration_minutes,
+    a.cabin_id
   from public.appointments a
   where a.appointment_date = p_date
     and a.status in ('pending', 'confirmed')
@@ -176,7 +232,8 @@ create or replace function public.create_booking(
   p_phone text,
   p_email text default null,
   p_duration_minutes int default 60,
-  p_price_cents int default null
+  p_price_cents int default null,
+  p_cabin_id int default null
 )
 returns uuid
 language plpgsql
@@ -194,6 +251,10 @@ declare
   busy record;
   busy_start int;
   busy_end int;
+  pool smallint[];
+  chosen smallint;
+  candidate smallint;
+  cabin_free boolean;
 begin
   if p_service is null or char_length(trim(p_service)) < 2 then
     raise exception 'INVALID_SERVICE';
@@ -237,19 +298,72 @@ begin
     raise exception 'INVALID_TIME';
   end if;
 
-  for busy in
-    select appointment_time, coalesce(duration_minutes, 60) as duration_minutes
-    from public.appointments
-    where appointment_date = p_date
-      and status in ('pending', 'confirmed')
-  loop
-    busy_start := extract(hour from busy.appointment_time)::int * 60
-      + extract(minute from busy.appointment_time)::int;
-    busy_end := busy_start + busy.duration_minutes;
-    if new_start < busy_end and new_end > busy_start then
+  pool := public.booking_cabin_pool(p_service);
+  chosen := null;
+
+  if p_cabin_id is not null then
+    if not (p_cabin_id = any (pool)) then
       raise exception 'SLOT_TAKEN';
     end if;
-  end loop;
+    cabin_free := true;
+    for busy in
+      select appointment_time, coalesce(duration_minutes, 60) as duration_minutes
+      from public.appointments
+      where appointment_date = p_date
+        and status in ('pending', 'confirmed')
+        and cabin_id = p_cabin_id
+    loop
+      busy_start := extract(hour from busy.appointment_time)::int * 60
+        + extract(minute from busy.appointment_time)::int;
+      busy_end := busy_start + busy.duration_minutes;
+      if new_start < busy_end and new_end > busy_start then
+        cabin_free := false;
+        exit;
+      end if;
+    end loop;
+    if cabin_free then
+      chosen := p_cabin_id::smallint;
+    end if;
+  end if;
+
+  if chosen is null then
+    foreach candidate in array pool
+    loop
+      cabin_free := true;
+      for busy in
+        select
+          appointment_time,
+          coalesce(duration_minutes, 60) as duration_minutes,
+          service
+        from public.appointments
+        where appointment_date = p_date
+          and status in ('pending', 'confirmed')
+          and (
+            cabin_id = candidate
+            or (
+              cabin_id is null
+              and candidate = (public.booking_cabin_pool(service))[1]
+            )
+          )
+      loop
+        busy_start := extract(hour from busy.appointment_time)::int * 60
+          + extract(minute from busy.appointment_time)::int;
+        busy_end := busy_start + busy.duration_minutes;
+        if new_start < busy_end and new_end > busy_start then
+          cabin_free := false;
+          exit;
+        end if;
+      end loop;
+      if cabin_free then
+        chosen := candidate;
+        exit;
+      end if;
+    end loop;
+  end if;
+
+  if chosen is null then
+    raise exception 'SLOT_TAKEN';
+  end if;
 
   insert into public.appointments (
     service,
@@ -257,6 +371,7 @@ begin
     appointment_time,
     duration_minutes,
     price_cents,
+    cabin_id,
     guest_name,
     guest_phone,
     guest_email,
@@ -268,6 +383,7 @@ begin
     p_time,
     duration,
     p_price_cents,
+    chosen,
     trim(p_name),
     trim(p_phone),
     nullif(trim(coalesce(p_email, '')), ''),
@@ -310,9 +426,10 @@ begin
 end;
 $$;
 
+grant execute on function public.booking_cabin_pool(text) to anon, authenticated;
 grant execute on function public.get_booked_times(date) to anon, authenticated;
 grant execute on function public.get_booked_slots(date) to anon, authenticated;
-grant execute on function public.create_booking(text, date, time, text, text, text, int, int) to anon, authenticated;
+grant execute on function public.create_booking(text, date, time, text, text, text, int, int, int) to anon, authenticated;
 grant execute on function public.submit_contact(text, text, text) to anon, authenticated;
 
 -- ---------------------------------------------------------------------------

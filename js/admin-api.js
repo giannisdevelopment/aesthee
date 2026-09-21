@@ -166,7 +166,7 @@ export async function deleteVisit(id) {
 export async function listAppointments({ status = "", fromDate = "", toDate = "", query = "" } = {}) {
   let request = getSupabase()
     .from("appointments")
-    .select("id, service, appointment_date, appointment_time, duration_minutes, price_cents, guest_name, guest_phone, guest_email, status, notes, client_id, created_at")
+    .select("id, service, appointment_date, appointment_time, duration_minutes, price_cents, cabin_id, guest_name, guest_phone, guest_email, status, notes, client_id, created_at")
     .order("appointment_date", { ascending: true })
     .order("appointment_time", { ascending: true });
 
