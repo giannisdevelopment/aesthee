@@ -236,6 +236,10 @@ select {
   gap: 14px;
 }
 
+.field-row--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -605,7 +609,8 @@ tr.is-inactive {
 
 @media (max-width: 860px) {
   .grid-2,
-  .field-row {
+  .field-row,
+  .field-row--3 {
     grid-template-columns: 1fr;
   }
 

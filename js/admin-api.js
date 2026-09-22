@@ -182,6 +182,14 @@ export async function listAppointments({ status = "", fromDate = "", toDate = ""
   return request;
 }
 
+export async function createAppointment(payload) {
+  return getSupabase()
+    .from("appointments")
+    .insert(payload)
+    .select()
+    .single();
+}
+
 export async function updateAppointment(id, payload) {
   return getSupabase().from("appointments").update(payload).eq("id", id).select().single();
 }

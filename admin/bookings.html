@@ -64,6 +64,103 @@
       </select>
       <input id="fromDate" type="date" aria-label="Από ημερομηνία" />
       <input id="toDate" type="date" aria-label="Έως ημερομηνία" />
+      <button class="btn btn-gold" type="button" id="openBookingBtn">+ Νέο ραντεβού</button>
+    </div>
+
+    <div class="panel" id="bookingPanel" hidden>
+      <h2 class="panel-title">Νέο ραντεβού</h2>
+      <form id="bookingForm" class="offer-form">
+        <div class="field-row">
+          <div class="field">
+            <label for="bkClient">Υπάρχων πελάτης (προαιρετικά)</label>
+            <select id="bkClient">
+              <option value="">— Χωρίς σύνδεση / νέος —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="bkStatus">Κατάσταση</label>
+            <select id="bkStatus" required>
+              <option value="confirmed" selected>Επιβεβαιωμένο</option>
+              <option value="pending">Σε αναμονή</option>
+              <option value="completed">Ολοκληρωμένο</option>
+              <option value="cancelled">Ακυρωμένο</option>
+              <option value="no_show">Δεν εμφανίστηκε</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="bkName">Ονοματεπώνυμο</label>
+            <input id="bkName" type="text" required minlength="2" autocomplete="name" placeholder="π.χ. Μαρία Παπαδοπούλου" />
+          </div>
+          <div class="field">
+            <label for="bkPhone">Τηλέφωνο</label>
+            <input id="bkPhone" type="tel" required minlength="8" autocomplete="tel" placeholder="69xxxxxxxx" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="bkEmail">Email (προαιρετικά)</label>
+          <input id="bkEmail" type="email" autocomplete="email" placeholder="name@email.com" />
+        </div>
+        <div class="field">
+          <label for="bkService">Υπηρεσία</label>
+          <select id="bkService" required>
+            <option value="">Φόρτωση καταλόγου…</option>
+          </select>
+          <input
+            id="bkServiceCustom"
+            type="text"
+            class="hidden"
+            placeholder="Όνομα υπηρεσίας"
+            style="margin-top:8px"
+          />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="bkDate">Ημερομηνία</label>
+            <input id="bkDate" type="date" required />
+          </div>
+          <div class="field">
+            <label for="bkTime">Ώρα</label>
+            <select id="bkTime" required>
+              <option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row field-row--3">
+          <div class="field">
+            <label for="bkDuration">Διάρκεια (λεπτά)</label>
+            <input id="bkDuration" type="number" min="5" max="240" step="5" required value="60" />
+          </div>
+          <div class="field">
+            <label for="bkPrice">Τιμή (€)</label>
+            <input id="bkPrice" type="number" min="0" step="0.01" placeholder="π.χ. 25" />
+          </div>
+          <div class="field">
+            <label for="bkCabin">Καμπίνα</label>
+            <select id="bkCabin">
+              <option value="">Αυτόματα</option>
+              <option value="1">Καμπίνα 1</option>
+              <option value="2">Καμπίνα 2</option>
+              <option value="3">Καμπίνα 3</option>
+              <option value="4">Καμπίνα 4</option>
+              <option value="5">Καμπίνα 5</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="bkNotes">Σημειώσεις</label>
+          <textarea id="bkNotes" rows="2" placeholder="Προαιρετικά"></textarea>
+        </div>
+        <label class="check-inline" style="margin-bottom:14px">
+          <input type="checkbox" id="bkLinkClient" checked />
+          Σύνδεση / δημιουργία κάρτας πελάτη
+        </label>
+        <div class="offer-actions">
+          <button class="btn btn-gold" type="submit" id="bkSubmitBtn">Αποθήκευση ραντεβού</button>
+          <button class="btn btn-ghost" type="button" id="cancelBookingBtn">Ακύρωση</button>
+        </div>
+      </form>
     </div>
 
     <div class="panel table-wrap">
