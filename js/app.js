@@ -436,6 +436,7 @@ function initBooking() {
     const service = catalog.getServiceById(state.serviceId);
     const name = event.target.name.value.trim();
     const phone = event.target.phone.value.trim();
+    const email = event.target.email?.value?.trim() || "";
     const submitBtn = form.querySelector('button[type="submit"]');
 
     if (!service || !state.date || !state.time || !name || !phone) {
@@ -468,10 +469,30 @@ function initBooking() {
         time: state.time,
         name,
         phone,
+        email: email || null,
         durationMinutes: service.durationMin,
         priceCents: service.priceCents,
         cabinId,
       });
+
+      if (email) {
+        const { notifyAppointmentEmail } = await import("./appointment-email.js");
+        notifyAppointmentEmail({
+          type: "created",
+          email,
+          appointment: {
+            guest_name: name,
+            guest_email: email,
+            service: service.name,
+            appointment_date: state.date,
+            appointment_time: state.time,
+            duration_minutes: service.durationMin,
+            price_cents: service.priceCents,
+            cabin_id: cabinId,
+            status: "pending",
+          },
+        }).catch(() => {});
+      }
 
       const priceLabel = catalog.formatPrice(service);
       showToast(

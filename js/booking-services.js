@@ -1,7 +1,7 @@
 /** Bookable services: duration in minutes, price in euro cents. */
 export const BOOKING_DAY_START = 10 * 60; // 10:00
 export const BOOKING_DAY_END = 21 * 60; // 21:00
-export const SLOT_STEP_MINUTES = 15;
+export const SLOT_STEP_MINUTES = 10;
 
 /** @typedef {{ id: string, name: string, durationMin: number, priceCents: number, priceFrom?: boolean, isOffer?: boolean }} BookingService */
 /** @typedef {{ id: string, label: string, services: BookingService[] }} BookingCategory */
@@ -208,21 +208,21 @@ const SERVICE_ALIASES = {
 };
 
 /** Cabins as parallel resources:
- * 1–2 πρόσωπο + laser, 3 φρύδια/βλεφαρίδες/κερί, 4 Vacutherm, 5 σώμα + μασάζ
+ * 1–2 laser (+ πρόσωπο), 3 φρύδια/βλεφαρίδες/κερί, 4 Vacutherm, 5 σώμα + μασάζ
  */
 export const CABIN_LABELS = {
-  1: "Καμπίνα 1 — πρόσωπο & laser",
-  2: "Καμπίνα 2 — πρόσωπο & laser",
-  3: "Καμπίνα 3 — φρύδια, βλεφαρίδες & κερί",
+  1: "Καμπίνα 1 — laser",
+  2: "Καμπίνα 2 — laser",
+  3: "Καμπίνα 3 — φρύδια",
   4: "Καμπίνα 4 — Vacutherm",
   5: "Καμπίνα 5 — σώμα & μασάζ",
 };
 
 /** Short labels for the admin day calendar columns */
 export const CABIN_SHORT = {
-  1: { code: "Κ1", role: "Πρόσωπο" },
-  2: { code: "Κ2", role: "Πρόσωπο" },
-  3: { code: "Κ3", role: "Βλέμμα" },
+  1: { code: "Κ1", role: "Laser" },
+  2: { code: "Κ2", role: "Laser" },
+  3: { code: "Κ3", role: "Φρύδια" },
   4: { code: "Κ4", role: "Vacutherm" },
   5: { code: "Κ5", role: "Σώμα" },
 };
@@ -242,8 +242,21 @@ export function getCabinPool(service) {
     return [3];
   }
   if (service.categoryId === "body") return [5];
-  // face, laser, electrolysis
+  // face, laser, electrolysis → Κ1/Κ2
   return [1, 2];
+}
+
+/**
+ * Force a cabin into the allowed pool for a service.
+ * Wrong cabin → first cabin in the correct pool.
+ * @returns {number | null}
+ */
+export function clampCabinToPool(service, cabinId) {
+  const pool = getCabinPool(service);
+  if (!pool.length) return null;
+  const id = Number(cabinId);
+  if (Number.isFinite(id) && pool.includes(id)) return id;
+  return pool[0];
 }
 
 /** Infer cabin pool from a stored appointment service name (legacy rows). */
@@ -422,13 +435,13 @@ export function timeLabelToMinutes(label) {
   return h * 60 + m;
 }
 
-/** Candidate start times for a service that finish by closing. */
+/** Candidate start times for a service that finish by closing (10′ grid). */
 export function buildStartSlots(durationMin) {
   const duration = Math.max(5, Number(durationMin) || 60);
   const lastStart = BOOKING_DAY_END - duration;
   if (lastStart < BOOKING_DAY_START) return [];
 
-  const step = duration >= 60 ? 30 : duration >= 30 ? 15 : Math.min(SLOT_STEP_MINUTES, duration);
+  const step = SLOT_STEP_MINUTES;
   const slots = [];
   for (let t = BOOKING_DAY_START; t <= lastStart; t += step) {
     slots.push(minutesToTimeLabel(t));
@@ -496,4 +509,24 @@ export function pickCabinForSlot(service, booked, startLabel) {
     if (!intervals.some((b) => start < b.end && end > b.start)) return cabinId;
   }
   return null;
+}
+
+/** Whether a specific cabin is free for this service start. */
+export function isCabinFreeForSlot(cabinId, service, booked, startLabel) {
+  const id = Number(cabinId);
+  const pool = getCabinPool(service);
+  if (!pool.includes(id)) return false;
+  const duration = Math.max(5, Number(service?.durationMin) || 60);
+  const start = timeLabelToMinutes(startLabel);
+  if (start == null) return false;
+  const end = start + duration;
+  for (const row of booked || []) {
+    const rowCabin = Number(row.cabinId) || getCabinPoolForServiceName(row.service)[0] || 1;
+    if (rowCabin !== id) continue;
+    const bStart = timeLabelToMinutes(row.time);
+    if (bStart == null) continue;
+    const known = row.durationMin || findServiceByName(row.service)?.durationMin || 60;
+    if (start < bStart + known && end > bStart) return false;
+  }
+  return true;
 }

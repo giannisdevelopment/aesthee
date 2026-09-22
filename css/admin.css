@@ -904,9 +904,9 @@ tr.is-inactive {
     repeating-linear-gradient(
       to bottom,
       transparent 0,
-      transparent calc(15 * var(--cal-px-min) * 1px - 1px),
-      rgba(196, 163, 106, 0.07) calc(15 * var(--cal-px-min) * 1px - 1px),
-      rgba(196, 163, 106, 0.07) calc(15 * var(--cal-px-min) * 1px)
+      transparent calc(10 * var(--cal-px-min) * 1px - 1px),
+      rgba(196, 163, 106, 0.07) calc(10 * var(--cal-px-min) * 1px - 1px),
+      rgba(196, 163, 106, 0.07) calc(10 * var(--cal-px-min) * 1px)
     );
 }
 

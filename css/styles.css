@@ -1639,6 +1639,13 @@ body:has(.header.is-scrolled) .nav {
   font-weight: 600;
 }
 
+.field label .optional {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
 .field input,
 .field select,
 .field textarea {

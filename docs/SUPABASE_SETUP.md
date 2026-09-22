@@ -40,13 +40,27 @@ Set environment variables:
 
 `npm run build` writes `js/supabase-config.js` from those env vars.
 
+## 6. Appointment emails (Resend)
+
+Staff / online booking can email the guest on create, confirm, reschedule, or cancel.
+
+1. Create a free [Resend](https://resend.com) account and API key
+2. In Vercel → Project → Settings → Environment Variables add:
+   - `RESEND_API_KEY` = your key
+   - `EMAIL_FROM` = `Aesthée <onboarding@resend.dev>` (or a verified domain sender)
+   - optional `SITE_URL` = `https://aesthee.vercel.app`
+3. Redeploy
+
+Endpoint: `POST /api/send-appointment-email`  
+Emails are skipped silently when the guest has no email address.
+
 ## What is connected
 | Surface | Behavior |
 |---|---|
-| `/booking.html` | Priced service catalog from `catalog_services` (falls back to defaults); duration-aware slots |
+| `/booking.html` | Priced service catalog from `catalog_services` (falls back to defaults); **10′** start slots |
 | `/contact.html` | Saves messages via `submit_contact` |
 | `/admin/` | Staff login → clients CRM |
-| `/admin/bookings.html` | Manage appointments, status, link to client |
+| `/admin/bookings` | Day calendar (5 cabins), create/edit appointments, status + email notices |
 | `/admin/services.html` | Edit prices, toggle active, add package offers |
 | `/admin/messages.html` | Contact inbox |
 

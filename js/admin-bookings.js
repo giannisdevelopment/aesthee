@@ -22,15 +22,20 @@ import {
   buildStartSlots,
   filterAvailableStarts,
   pickCabinForSlot,
+  isCabinFreeForSlot,
+  getCabinPool,
   getCabinPoolForServiceName,
+  clampCabinToPool,
   CABIN_SHORT,
   CABIN_IDS,
+  CABIN_LABELS,
   BOOKING_DAY_START,
   BOOKING_DAY_END,
   timeLabelToMinutes,
   minutesToTimeLabel,
 } from "./booking-services.js";
 import { fetchBookedSlots } from "./booking-api.js";
+import { notifyAppointmentEmail } from "./appointment-email.js";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -96,6 +101,12 @@ let calendarDay = "";
 
 /** @type {object[]} */
 let appointmentsCache = [];
+
+/** @type {string | null} */
+let editingAppointmentId = null;
+
+/** Snapshot while editing — for email diffs */
+let editingSnapshot = null;
 
 const PX_PER_MIN = 1.35;
 const DOW_LABELS = ["Κ", "Δ", "Τ", "Τ", "Π", "Π", "Σ"];
@@ -253,8 +264,8 @@ function buildCalendarChrome() {
       const rect = col.getBoundingClientRect();
       const y = event.clientY - rect.top;
       let mins = BOOKING_DAY_START + Math.round(y / PX_PER_MIN);
-      mins = Math.round(mins / 15) * 15;
-      mins = Math.max(BOOKING_DAY_START, Math.min(BOOKING_DAY_END - 15, mins));
+      mins = Math.round(mins / 10) * 10;
+      mins = Math.max(BOOKING_DAY_START, Math.min(BOOKING_DAY_END - 10, mins));
       openBookingPanel({
         date: calendarDay,
         time: minutesToTimeLabel(mins),
@@ -320,6 +331,7 @@ function openCalDetail(row) {
     <p>${escapeHtml(formatPriceCents(row.price_cents))} · Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}</p>
     <p>${statusBadge(row.status)} · <a href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a></p>
     <div class="cal-detail-actions">
+      <button class="btn btn-gold btn-sm" type="button" id="calDetailEdit">Επεξεργασία</button>
       <select class="status-select" id="calDetailStatus" aria-label="Κατάσταση">
         ${Object.entries(APPOINTMENT_STATUS_LABELS).map(([value, label]) =>
           `<option value="${value}" ${row.status === value ? "selected" : ""}>${label}</option>`
@@ -335,13 +347,24 @@ function openCalDetail(row) {
   document.body.appendChild(el);
 
   el.querySelector("#calDetailClose")?.addEventListener("click", closeCalDetail);
+  el.querySelector("#calDetailEdit")?.addEventListener("click", () => {
+    closeCalDetail();
+    openBookingPanel({ edit: row });
+  });
   el.querySelector("#calDetailStatus")?.addEventListener("change", async (event) => {
-    const { error } = await updateAppointment(row.id, { status: event.target.value });
+    const nextStatus = event.target.value;
+    const { error } = await updateAppointment(row.id, { status: nextStatus });
     if (error) {
       showToast(error.message || "Αποτυχία ενημέρωσης", true);
       return;
     }
     showToast("Η κατάσταση ενημερώθηκε.");
+    const updated = { ...row, status: nextStatus };
+    if (nextStatus === "confirmed" && row.status !== "confirmed") {
+      notifyAppointmentEmail({ type: "confirmed", appointment: updated }).catch(() => {});
+    } else if (nextStatus === "cancelled" && row.status !== "cancelled") {
+      notifyAppointmentEmail({ type: "cancelled", appointment: updated }).catch(() => {});
+    }
     closeCalDetail();
     await renderAppointments();
   });
@@ -372,6 +395,8 @@ function openCalDetail(row) {
 
 function resetBookingForm(prefs = {}) {
   bookingForm.reset();
+  editingAppointmentId = null;
+  editingSnapshot = null;
   selectedServiceId = "";
   bkServiceId.value = "";
   bkServiceSearch.value = "";
@@ -380,20 +405,73 @@ function resetBookingForm(prefs = {}) {
   hideServiceSuggest();
   bkDate.value = prefs.date || calendarDay || toDateKey(new Date());
   bkDuration.value = "60";
-  bkCabin.value = prefs.cabinId ? String(prefs.cabinId) : "";
+  syncCabinSelectForService(null, prefs.cabinId || null);
   bkTime.innerHTML = prefs.time
     ? `<option value="${escapeHtml(prefs.time)}" selected>${escapeHtml(prefs.time)}</option>`
     : `<option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>`;
-  if (prefs.time) {
-    // keep preferred time visible even before service pick
-    const opt = document.createElement("option");
-    opt.value = prefs.time;
-    opt.selected = true;
-    opt.textContent = prefs.time;
+  const title = document.querySelector("#bookingPanel .panel-title");
+  if (title) title.textContent = "Νέο ραντεβού";
+  if (bkSubmitBtn) bkSubmitBtn.textContent = "Αποθήκευση ραντεβού";
+}
+
+function fillFormFromAppointment(row) {
+  editingAppointmentId = row.id;
+  editingSnapshot = { ...row };
+  selectedServiceId = "";
+  bkServiceId.value = "";
+  bkServiceSearch.value = row.service || "";
+  const match = catalogCache.find(
+    (item) => normalizeSearch(item.name) === normalizeSearch(row.service || "")
+  );
+  if (match) {
+    selectedServiceId = match.id;
+    bkServiceId.value = match.id;
   }
+  bkName.value = row.guest_name || "";
+  bkPhone.value = row.guest_phone || "";
+  bkEmail.value = row.guest_email || "";
+  bkDate.value = row.appointment_date || calendarDay;
+  bkDuration.value = String(row.duration_minutes || 60);
+  bkPrice.value = row.price_cents != null ? eurosFromCents(row.price_cents) : "";
+  bkCabin.value = row.cabin_id ? String(row.cabin_id) : "";
+  bkStatus.value = row.status || "confirmed";
+  bkNotes.value = row.notes || "";
+  bkClient.value = row.client_id || "";
+  bkLinkClient.checked = Boolean(row.client_id);
+  const serviceObj = selectedCatalogService() || {
+    id: selectedServiceId || "custom",
+    name: row.service,
+    categoryId: "",
+    durationMin: row.duration_minutes || 60,
+  };
+  syncCabinSelectForService(serviceObj, row.cabin_id);
+  const time = formatTime(row.appointment_time);
+  bkTime.innerHTML = `<option value="${escapeHtml(time)}" selected>${escapeHtml(time)}</option>`;
+  const title = document.querySelector("#bookingPanel .panel-title");
+  if (title) title.textContent = "Επεξεργασία ραντεβού";
+  if (bkSubmitBtn) bkSubmitBtn.textContent = "Αποθήκευση αλλαγών";
 }
 
 function openBookingPanel(prefs = {}) {
+  if (prefs.edit) {
+    resetBookingForm();
+    fillFormFromAppointment(prefs.edit);
+    bookingPanel.hidden = false;
+    bookingPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    refreshTimeOptions().then(() => {
+      const time = formatTime(prefs.edit.appointment_time);
+      const exists = [...bkTime.options].some((o) => o.value === time);
+      if (!exists && time) {
+        const opt = document.createElement("option");
+        opt.value = time;
+        opt.textContent = time;
+        bkTime.appendChild(opt);
+      }
+      bkTime.value = time;
+    }).catch(() => {});
+    return;
+  }
+
   resetBookingForm(prefs);
   bookingPanel.hidden = false;
   bookingPanel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -558,7 +636,44 @@ function pickService(id) {
   bkDuration.value = String(row.durationMin || 60);
   bkPrice.value = eurosFromCents(row.priceCents);
   hideServiceSuggest();
+  syncCabinSelectForService({
+    id: row.id,
+    categoryId: row.categoryId,
+    durationMin: row.durationMin,
+    name: row.name,
+  });
   refreshTimeOptions().catch(() => {});
+}
+
+/** Limit cabin dropdown to the pool allowed for this service; auto-fix wrong picks. */
+function syncCabinSelectForService(service, preferredCabinId = null) {
+  if (!bkCabin) return;
+  const pool = service ? getCabinPool(service) : CABIN_IDS.slice();
+  const current = preferredCabinId != null
+    ? Number(preferredCabinId)
+    : (bkCabin.value ? Number(bkCabin.value) : null);
+
+  bkCabin.innerHTML = [
+    `<option value="">Αυτόματα</option>`,
+    ...pool.map((id) => {
+      const meta = CABIN_SHORT[id] || { code: `Κ${id}`, role: "" };
+      return `<option value="${id}">${escapeHtml(meta.code)} — ${escapeHtml(meta.role)}</option>`;
+    }),
+  ].join("");
+
+  if (current != null && pool.includes(current)) {
+    bkCabin.value = String(current);
+    return;
+  }
+
+  if (current != null && !pool.includes(current)) {
+    bkCabin.value = pool.length === 1 ? String(pool[0]) : "";
+    const labels = pool.map((id) => CABIN_SHORT[id]?.code || `Κ${id}`).join(" / ");
+    showToast(`Η θεραπεία μπαίνει μόνο σε ${labels}. Διορθώθηκε αυτόματα.`);
+    return;
+  }
+
+  bkCabin.value = pool.length === 1 ? String(pool[0]) : "";
 }
 
 function clearPickedServiceKeepText() {
@@ -615,7 +730,19 @@ async function refreshTimeOptions() {
   bkTime.innerHTML = `<option value="">Φόρτωση ωρών…</option>`;
 
   try {
-    const booked = await fetchBookedSlots(date);
+    let booked = await fetchBookedSlots(date);
+    if (editingAppointmentId && editingSnapshot) {
+      const selfTime = formatTime(editingSnapshot.appointment_time);
+      const selfCabin = Number(editingSnapshot.cabin_id) || null;
+      const selfDate = String(editingSnapshot.appointment_date || "").slice(0, 10);
+      if (selfDate === date) {
+        booked = booked.filter((row) => {
+          if (formatTime(row.time) !== selfTime) return true;
+          if (selfCabin == null) return false;
+          return Number(row.cabinId) !== selfCabin;
+        });
+      }
+    }
     const candidates = buildStartSlots(duration);
     const available = filterAvailableStarts(candidates, booked, {
       id: service.id,
@@ -730,6 +857,7 @@ async function renderAppointments() {
         </select>
       </td>
       <td class="row-actions">
+        <button class="btn btn-ghost btn-sm" type="button" data-edit="${escapeHtml(row.id)}">Επεξεργασία</button>
         ${row.client_id
           ? `<a class="btn btn-ghost btn-sm" href="/admin/client?id=${escapeHtml(row.client_id)}">Πελάτης</a>`
           : `<button class="btn btn-ghost btn-sm" type="button" data-to-client="${escapeHtml(row.id)}">→ Πελάτης</button>`}
@@ -741,14 +869,31 @@ async function renderAppointments() {
   rowsBody.querySelectorAll("[data-status-for]").forEach((select) => {
     select.addEventListener("change", async () => {
       const id = select.dataset.statusFor;
-      const { error: updError } = await updateAppointment(id, { status: select.value });
+      const row = data.find((item) => item.id === id);
+      const nextStatus = select.value;
+      const { error: updError } = await updateAppointment(id, { status: nextStatus });
       if (updError) {
         showToast(updError.message || "Αποτυχία ενημέρωσης", true);
         await renderAppointments();
         return;
       }
       showToast("Η κατάσταση ενημερώθηκε.");
+      if (row) {
+        const updated = { ...row, status: nextStatus };
+        if (nextStatus === "confirmed" && row.status !== "confirmed") {
+          notifyAppointmentEmail({ type: "confirmed", appointment: updated }).catch(() => {});
+        } else if (nextStatus === "cancelled" && row.status !== "cancelled") {
+          notifyAppointmentEmail({ type: "cancelled", appointment: updated }).catch(() => {});
+        }
+      }
       await renderAppointments();
+    });
+  });
+
+  rowsBody.querySelectorAll("[data-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const row = data.find((item) => item.id === btn.dataset.edit);
+      if (row) openBookingPanel({ edit: row });
     });
   });
 
@@ -947,18 +1092,50 @@ bookingForm?.addEventListener("submit", async (event) => {
   }
 
   let cabinId = bkCabin.value ? Number(bkCabin.value) : null;
+  const pool = getCabinPool(service);
+  const poolLabel = pool.map((id) => CABIN_SHORT[id]?.code || `Κ${id}`).join(" / ");
+
+  if (cabinId && !pool.includes(cabinId)) {
+    showToast(`Η θεραπεία δεν μπαίνει σε Κ${cabinId}. Επιτρέπονται: ${poolLabel}.`);
+    cabinId = null;
+    syncCabinSelectForService(service, null);
+  }
+
   try {
-    const booked = await fetchBookedSlots(date);
-    if (!cabinId) {
-      cabinId = pickCabinForSlot(service, booked, time);
+    let booked = await fetchBookedSlots(date);
+    if (editingAppointmentId && editingSnapshot) {
+      const selfTime = formatTime(editingSnapshot.appointment_time);
+      const selfCabin = Number(editingSnapshot.cabin_id) || null;
+      const selfDate = String(editingSnapshot.appointment_date || "").slice(0, 10);
+      if (selfDate === date) {
+        booked = booked.filter((row) => {
+          if (formatTime(row.time) !== selfTime) return true;
+          if (selfCabin == null) return false;
+          return Number(row.cabinId) !== selfCabin;
+        });
+      }
     }
-    if (!cabinId) {
-      showToast("Η ώρα δεν είναι διαθέσιμη σε καμία καμπίνα.", true);
+
+    const freeInPool = pickCabinForSlot(service, booked, time);
+    if (!freeInPool) {
+      showToast(`Καμία ελεύθερη καμπίνα (${poolLabel}) για αυτή την ώρα.`, true);
       await refreshTimeOptions();
       return;
     }
+
+    if (cabinId && isCabinFreeForSlot(cabinId, service, booked, time)) {
+      // keep preferred
+    } else if (cabinId) {
+      showToast(`Η επιλεγμένη καμπίνα δεν ήταν ελεύθερη — μπήκε στη ${CABIN_SHORT[freeInPool]?.code || `Κ${freeInPool}`}.`);
+      cabinId = freeInPool;
+    } else {
+      cabinId = freeInPool;
+    }
+
+    cabinId = clampCabinToPool(service, cabinId);
+    syncCabinSelectForService(service, cabinId);
   } catch (error) {
-    if (!cabinId) cabinId = 1;
+    cabinId = clampCabinToPool(service, cabinId || pool[0]);
     console.warn("cabin pick fallback", error);
   }
 
@@ -979,22 +1156,61 @@ bookingForm?.addEventListener("submit", async (event) => {
 
   bkSubmitBtn.disabled = true;
   try {
-    const { data, error } = await createAppointment(payload);
-    if (error) {
-      showToast(error.message || "Αποτυχία αποθήκευσης", true);
-      return;
-    }
-
-    if (bkLinkClient.checked && data && !data.client_id) {
-      try {
-        const clientId = await findOrCreateClientFromBooking(data);
-        await updateAppointment(data.id, { client_id: clientId });
-      } catch (linkErr) {
-        console.warn(linkErr);
+    if (editingAppointmentId) {
+      const prev = editingSnapshot || {};
+      const { data, error } = await updateAppointment(editingAppointmentId, payload);
+      if (error) {
+        showToast(error.message || "Αποτυχία αποθήκευσης", true);
+        return;
       }
+
+      const prevDate = String(prev.appointment_date || "").slice(0, 10);
+      const prevTime = formatTime(prev.appointment_time);
+      const nextDate = String(payload.appointment_date).slice(0, 10);
+      const nextTime = formatTime(payload.appointment_time);
+      const timeChanged = prevDate !== nextDate || prevTime !== nextTime;
+      const statusBecameConfirmed = payload.status === "confirmed" && prev.status !== "confirmed";
+      const statusBecameCancelled = payload.status === "cancelled" && prev.status !== "cancelled";
+
+      if (timeChanged) {
+        notifyAppointmentEmail({
+          type: "rescheduled",
+          appointment: data || payload,
+          previousDate: prevDate,
+          previousTime: prevTime,
+        }).catch(() => {});
+      } else if (statusBecameConfirmed) {
+        notifyAppointmentEmail({ type: "confirmed", appointment: data || payload }).catch(() => {});
+      } else if (statusBecameCancelled) {
+        notifyAppointmentEmail({ type: "cancelled", appointment: data || payload }).catch(() => {});
+      } else {
+        notifyAppointmentEmail({ type: "updated", appointment: data || payload }).catch(() => {});
+      }
+
+      showToast("Το ραντεβού ενημερώθηκε.");
+    } else {
+      const { data, error } = await createAppointment(payload);
+      if (error) {
+        showToast(error.message || "Αποτυχία αποθήκευσης", true);
+        return;
+      }
+
+      let saved = data;
+      if (bkLinkClient.checked && data && !data.client_id) {
+        try {
+          const clientId = await findOrCreateClientFromBooking(data);
+          const linked = await updateAppointment(data.id, { client_id: clientId });
+          saved = linked.data || data;
+        } catch (linkErr) {
+          console.warn(linkErr);
+        }
+      }
+
+      const mailType = payload.status === "confirmed" ? "confirmed" : "created";
+      notifyAppointmentEmail({ type: mailType, appointment: saved || payload }).catch(() => {});
+      showToast("Το ραντεβού καταχωρήθηκε.");
     }
 
-    showToast("Το ραντεβού καταχωρήθηκε.");
     closeBookingPanel();
     await loadCatalogAndClients();
     await renderAppointments();
