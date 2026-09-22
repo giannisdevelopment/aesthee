@@ -26,13 +26,17 @@ const visitsList = document.getElementById("visitsList");
 const visitForm = document.getElementById("visitForm");
 const toggleVisitFormBtn = document.getElementById("toggleVisitFormBtn");
 const cancelVisitBtn = document.getElementById("cancelVisitBtn");
-const treatmentSelect = document.getElementById("treatment");
-const treatmentCustom = document.getElementById("treatmentCustom");
+const treatmentSearch = document.getElementById("treatmentSearch");
+const treatmentId = document.getElementById("treatmentId");
+const treatmentSuggest = document.getElementById("treatmentSuggest");
 
 /** @type {Array<{ id: string, name: string, categoryLabel: string, priceCents: number, priceFrom: boolean }>} */
 let catalogCache = [];
 
-const OTHER_VALUE = "__other__";
+/** @type {string} */
+let selectedTreatmentId = "";
+
+let suggestActiveIndex = -1;
 
 function configMissing() {
   const cfg = window.AESTHEE_SUPABASE;
@@ -53,10 +57,12 @@ function eurosFromCents(cents) {
   return (n / 100).toFixed(2).replace(/\.00$/, "");
 }
 
-function formatOptionLabel(row) {
-  const euros = eurosFromCents(row.priceCents);
-  const from = row.priceFrom ? "από " : "";
-  return euros ? `${row.name} — ${from}€${euros}` : row.name;
+function normalizeSearch(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 }
 
 function catalogFromDefaults() {
@@ -84,63 +90,103 @@ function catalogFromRows(rows) {
     .filter((row) => row.name);
 }
 
-function renderTreatmentOptions(selectedName = "") {
-  const groups = new Map();
-  for (const row of catalogCache) {
-    if (!groups.has(row.categoryLabel)) groups.set(row.categoryLabel, []);
-    groups.get(row.categoryLabel).push(row);
-  }
-
-  const parts = [`<option value="">Επιλέξτε θεραπεία…</option>`];
-  for (const [label, rows] of groups) {
-    parts.push(`<optgroup label="${escapeHtml(label)}">`);
-    for (const row of rows) {
-      const selected = selectedName && selectedName === row.name ? " selected" : "";
-      parts.push(
-        `<option value="${escapeHtml(row.id)}" data-name="${escapeHtml(row.name)}" data-price-cents="${row.priceCents}"${selected}>${escapeHtml(formatOptionLabel(row))}</option>`
-      );
-    }
-    parts.push("</optgroup>");
-  }
-
-  const known = catalogCache.some((row) => row.name === selectedName);
-  const otherSelected = selectedName && !known ? " selected" : "";
-  parts.push(`<option value="${OTHER_VALUE}"${otherSelected}>Άλλο (χειροκίνητα)…</option>`);
-
-  treatmentSelect.innerHTML = parts.join("");
-
-  if (selectedName && !known) {
-    treatmentCustom.classList.remove("hidden");
-    treatmentCustom.required = true;
-    treatmentCustom.value = selectedName;
-  } else {
-    treatmentCustom.classList.add("hidden");
-    treatmentCustom.required = false;
-    treatmentCustom.value = "";
-  }
+function formatTreatmentMeta(row) {
+  const euros = eurosFromCents(row.priceCents);
+  const from = row.priceFrom ? "από " : "";
+  const price = euros ? `${from}€${euros}` : "";
+  return [row.categoryLabel, price].filter(Boolean).join(" · ");
 }
 
-function applySelectedTreatmentPrice() {
-  const option = treatmentSelect.selectedOptions[0];
-  if (!option || option.value === "" || option.value === OTHER_VALUE) return;
-  const cents = Number(option.dataset.priceCents);
-  if (!Number.isFinite(cents)) return;
-  visitForm.payment_amount.value = eurosFromCents(cents);
+function filterCatalog(query) {
+  const q = normalizeSearch(query);
+  if (!q) return [];
+  return catalogCache
+    .filter((row) => {
+      const hay = normalizeSearch(`${row.name} ${row.categoryLabel}`);
+      return hay.includes(q);
+    })
+    .slice(0, 25);
 }
 
-function syncTreatmentCustomVisibility() {
-  const isOther = treatmentSelect.value === OTHER_VALUE;
-  treatmentCustom.classList.toggle("hidden", !isOther);
-  treatmentCustom.required = isOther;
-  if (!isOther) treatmentCustom.value = "";
+function hideTreatmentSuggest() {
+  treatmentSuggest.classList.add("hidden");
+  treatmentSuggest.innerHTML = "";
+  suggestActiveIndex = -1;
+}
+
+function showTreatmentSuggest(rows, query = "") {
+  const q = String(query || "").trim();
+  if (!q) {
+    hideTreatmentSuggest();
+    return;
+  }
+
+  if (!rows.length) {
+    treatmentSuggest.innerHTML = `<div class="suggest-empty">Δεν βρέθηκε στον κατάλογο — θα αποθηκευτεί ως χειροκίνητη θεραπεία.</div>`;
+    treatmentSuggest.classList.remove("hidden");
+    suggestActiveIndex = -1;
+    return;
+  }
+
+  treatmentSuggest.innerHTML = rows.map((row, index) => `
+    <button
+      type="button"
+      class="suggest-item${index === 0 ? " is-active" : ""}"
+      role="option"
+      data-treatment-id="${escapeHtml(row.id)}"
+      data-index="${index}"
+    >
+      <strong>${escapeHtml(row.name)}</strong>
+      <span>${escapeHtml(formatTreatmentMeta(row))}</span>
+    </button>
+  `).join("");
+  treatmentSuggest.classList.remove("hidden");
+  suggestActiveIndex = 0;
+
+  treatmentSuggest.querySelectorAll("[data-treatment-id]").forEach((btn) => {
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      pickTreatment(btn.dataset.treatmentId);
+    });
+  });
+}
+
+function pickTreatment(id) {
+  const row = catalogCache.find((item) => item.id === id);
+  if (!row) return;
+  selectedTreatmentId = row.id;
+  treatmentId.value = row.id;
+  treatmentSearch.value = row.name;
+  visitForm.payment_amount.value = eurosFromCents(row.priceCents);
+  hideTreatmentSuggest();
+}
+
+function clearPickedTreatmentKeepText() {
+  selectedTreatmentId = "";
+  treatmentId.value = "";
 }
 
 function getSelectedTreatmentName() {
-  if (treatmentSelect.value === OTHER_VALUE) {
-    return treatmentCustom.value.trim();
+  if (selectedTreatmentId) {
+    const row = catalogCache.find((item) => item.id === selectedTreatmentId);
+    if (row) return row.name;
   }
-  const option = treatmentSelect.selectedOptions[0];
-  return option?.dataset?.name?.trim() || "";
+  return treatmentSearch.value.trim();
+}
+
+function setTreatmentFromName(name = "") {
+  selectedTreatmentId = "";
+  treatmentId.value = "";
+  treatmentSearch.value = name || "";
+  if (!name) return;
+  const exact = catalogCache.find(
+    (row) => normalizeSearch(row.name) === normalizeSearch(name)
+  );
+  if (exact) {
+    selectedTreatmentId = exact.id;
+    treatmentId.value = exact.id;
+    treatmentSearch.value = exact.name;
+  }
 }
 
 async function loadTreatmentCatalog() {
@@ -151,7 +197,6 @@ async function loadTreatmentCatalog() {
   } catch {
     catalogCache = catalogFromDefaults();
   }
-  renderTreatmentOptions();
 }
 
 function fillClientForm(client) {
@@ -165,7 +210,8 @@ function fillClientForm(client) {
 function resetVisitForm() {
   visitForm.reset();
   document.getElementById("visitId").value = "";
-  renderTreatmentOptions();
+  setTreatmentFromName("");
+  hideTreatmentSuggest();
   visitForm.classList.add("hidden");
 }
 
@@ -173,14 +219,14 @@ function openVisitForm(visit = null) {
   visitForm.classList.remove("hidden");
   if (visit) {
     document.getElementById("visitId").value = visit.id;
-    renderTreatmentOptions(visit.treatment || "");
+    setTreatmentFromName(visit.treatment || "");
     visitForm.payment_amount.value = visit.payment_amount ?? "";
     visitForm.payment_date.value = visit.payment_date || "";
     visitForm.notes.value = visit.notes || "";
   } else {
     document.getElementById("visitId").value = "";
     visitForm.reset();
-    renderTreatmentOptions();
+    setTreatmentFromName("");
     const today = new Date();
     visitForm.payment_date.value = today.toISOString().slice(0, 10);
   }
@@ -312,11 +358,61 @@ toggleVisitFormBtn?.addEventListener("click", () => {
 
 cancelVisitBtn?.addEventListener("click", resetVisitForm);
 
-treatmentSelect?.addEventListener("change", () => {
-  syncTreatmentCustomVisibility();
-  if (treatmentSelect.value && treatmentSelect.value !== OTHER_VALUE) {
-    applySelectedTreatmentPrice();
+treatmentSearch?.addEventListener("focus", () => {
+  showTreatmentSuggest(filterCatalog(treatmentSearch.value), treatmentSearch.value);
+});
+
+treatmentSearch?.addEventListener("input", () => {
+  clearPickedTreatmentKeepText();
+  showTreatmentSuggest(filterCatalog(treatmentSearch.value), treatmentSearch.value);
+});
+
+treatmentSearch?.addEventListener("keydown", (event) => {
+  const items = [...treatmentSuggest.querySelectorAll("[data-treatment-id]")];
+  if (event.key === "Escape") {
+    hideTreatmentSuggest();
+    return;
   }
+  if (event.key === "ArrowDown" && items.length) {
+    event.preventDefault();
+    suggestActiveIndex = Math.min(items.length - 1, suggestActiveIndex + 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === suggestActiveIndex));
+    items[suggestActiveIndex]?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (event.key === "ArrowUp" && items.length) {
+    event.preventDefault();
+    suggestActiveIndex = Math.max(0, suggestActiveIndex - 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === suggestActiveIndex));
+    items[suggestActiveIndex]?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (event.key === "Enter" && !treatmentSuggest.classList.contains("hidden") && items.length) {
+    const active = items[Math.max(0, suggestActiveIndex)] || items[0];
+    if (active) {
+      event.preventDefault();
+      pickTreatment(active.dataset.treatmentId);
+    }
+  }
+});
+
+treatmentSearch?.addEventListener("blur", () => {
+  window.setTimeout(() => hideTreatmentSuggest(), 120);
+  const typed = treatmentSearch.value.trim();
+  if (!typed) {
+    clearPickedTreatmentKeepText();
+    return;
+  }
+  if (selectedTreatmentId) return;
+  const exact = catalogCache.find(
+    (row) => normalizeSearch(row.name) === normalizeSearch(typed)
+  );
+  if (exact) pickTreatment(exact.id);
+});
+
+document.addEventListener("click", (event) => {
+  const wrap = document.getElementById("treatmentSuggestWrap");
+  if (wrap && !wrap.contains(event.target)) hideTreatmentSuggest();
 });
 
 visitForm?.addEventListener("submit", async (event) => {
@@ -326,6 +422,7 @@ visitForm?.addEventListener("submit", async (event) => {
   const treatment = getSelectedTreatmentName();
   if (!treatment) {
     showToast("Επιλέξτε ή πληκτρολογήστε θεραπεία.", true);
+    treatmentSearch?.focus();
     return;
   }
 
