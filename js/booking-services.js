@@ -218,6 +218,17 @@ export const CABIN_LABELS = {
   5: "Καμπίνα 5 — σώμα & μασάζ",
 };
 
+/** Short labels for the admin day calendar columns */
+export const CABIN_SHORT = {
+  1: { code: "Κ1", role: "Πρόσωπο" },
+  2: { code: "Κ2", role: "Πρόσωπο" },
+  3: { code: "Κ3", role: "Βλέμμα" },
+  4: { code: "Κ4", role: "Vacutherm" },
+  5: { code: "Κ5", role: "Σώμα" },
+};
+
+export const CABIN_IDS = [1, 2, 3, 4, 5];
+
 /** @param {{ id: string, categoryId?: string } | null | undefined} service */
 export function getCabinPool(service) {
   if (!service) return [1, 2];

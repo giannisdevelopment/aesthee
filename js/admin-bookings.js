@@ -22,6 +22,13 @@ import {
   buildStartSlots,
   filterAvailableStarts,
   pickCabinForSlot,
+  getCabinPoolForServiceName,
+  CABIN_SHORT,
+  CABIN_IDS,
+  BOOKING_DAY_START,
+  BOOKING_DAY_END,
+  timeLabelToMinutes,
+  minutesToTimeLabel,
 } from "./booking-services.js";
 import { fetchBookedSlots } from "./booking-api.js";
 
@@ -35,6 +42,19 @@ const fromDate = document.getElementById("fromDate");
 const toDate = document.getElementById("toDate");
 const signOutBtn = document.getElementById("signOutBtn");
 const configBanner = document.getElementById("configBanner");
+const calendarPanel = document.getElementById("calendarPanel");
+const listPanel = document.getElementById("listPanel");
+const viewCalBtn = document.getElementById("viewCalBtn");
+const viewListBtn = document.getElementById("viewListBtn");
+const calDayStrip = document.getElementById("calDayStrip");
+const calMonthLabel = document.getElementById("calMonthLabel");
+const calCabinHeads = document.getElementById("calCabinHeads");
+const calTimes = document.getElementById("calTimes");
+const calCols = document.getElementById("calCols");
+const calPrev = document.getElementById("calPrev");
+const calNext = document.getElementById("calNext");
+const calToday = document.getElementById("calToday");
+const calFab = document.getElementById("calFab");
 
 const openBookingBtn = document.getElementById("openBookingBtn");
 const cancelBookingBtn = document.getElementById("cancelBookingBtn");
@@ -68,6 +88,22 @@ let selectedServiceId = "";
 
 let suggestActiveIndex = -1;
 
+/** @type {"calendar" | "list"} */
+let activeView = "calendar";
+
+/** Calendar selected day as YYYY-MM-DD */
+let calendarDay = "";
+
+/** @type {object[]} */
+let appointmentsCache = [];
+
+const PX_PER_MIN = 1.35;
+const DOW_LABELS = ["Κ", "Δ", "Τ", "Τ", "Π", "Π", "Σ"];
+const MONTH_LABELS = [
+  "Ιανουάριος", "Φεβρουάριος", "Μάρτιος", "Απρίλιος", "Μάιος", "Ιούνιος",
+  "Ιούλιος", "Αύγουστος", "Σεπτέμβριος", "Οκτώβριος", "Νοέμβριος", "Δεκέμβριος",
+];
+
 function configMissing() {
   const cfg = window.AESTHEE_SUPABASE;
   return !cfg?.url || !cfg?.anonKey || String(cfg.url).includes("YOUR_PROJECT_REF");
@@ -87,12 +123,299 @@ function statusBadge(status) {
 }
 
 function filters() {
+  if (activeView === "calendar" && calendarDay) {
+    return {
+      status: statusFilter?.value || "",
+      fromDate: calendarDay,
+      toDate: calendarDay,
+      query: searchInput?.value || "",
+    };
+  }
   return {
     status: statusFilter?.value || "",
     fromDate: fromDate?.value || "",
     toDate: toDate?.value || "",
     query: searchInput?.value || "",
   };
+}
+
+function toDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function parseDateKey(key) {
+  const [y, m, d] = String(key).split("-").map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+
+function setCalendarDay(key) {
+  calendarDay = key;
+  if (fromDate) fromDate.value = key;
+  if (toDate) toDate.value = key;
+  renderDayStrip();
+  renderAppointments();
+}
+
+function setActiveView(view, { refresh = true } = {}) {
+  activeView = view;
+  viewCalBtn?.classList.toggle("is-active", view === "calendar");
+  viewListBtn?.classList.toggle("is-active", view === "list");
+  if (calendarPanel) calendarPanel.hidden = view !== "calendar";
+  if (listPanel) listPanel.hidden = view !== "list";
+  if (view === "list") {
+    if (fromDate) fromDate.classList.remove("hidden");
+    if (toDate) toDate.classList.remove("hidden");
+  } else {
+    if (fromDate) fromDate.classList.add("hidden");
+    if (toDate) toDate.classList.add("hidden");
+  }
+  if (refresh) renderAppointments();
+}
+
+function renderDayStrip() {
+  if (!calDayStrip || !calendarDay) return;
+  const selected = parseDateKey(calendarDay);
+  calMonthLabel.textContent = `${MONTH_LABELS[selected.getMonth()]} ${selected.getFullYear()}`;
+
+  const start = new Date(selected);
+  start.setDate(selected.getDate() - selected.getDay() + 1); // Monday start
+  if (selected.getDay() === 0) start.setDate(selected.getDate() - 6);
+
+  const todayKey = toDateKey(new Date());
+  const parts = [];
+  for (let i = 0; i < 7; i += 1) {
+    const day = new Date(start);
+    day.setDate(start.getDate() + i);
+    const key = toDateKey(day);
+    const dow = DOW_LABELS[day.getDay()];
+    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+    const isSelected = key === calendarDay;
+    parts.push(`
+      <button
+        type="button"
+        class="cal-day${isSelected ? " is-selected" : ""}${isWeekend ? " is-weekend" : ""}${key === todayKey ? " is-today" : ""}"
+        data-day="${key}"
+        role="tab"
+        aria-selected="${isSelected ? "true" : "false"}"
+      >
+        <span class="dow">${dow}</span>
+        <span class="dom">${day.getDate()}</span>
+      </button>
+    `);
+  }
+  calDayStrip.innerHTML = parts.join("");
+  calDayStrip.querySelectorAll("[data-day]").forEach((btn) => {
+    btn.addEventListener("click", () => setCalendarDay(btn.dataset.day));
+  });
+}
+
+function resolveCabinId(row) {
+  const direct = Number(row.cabin_id);
+  if (direct >= 1 && direct <= 5) return direct;
+  return getCabinPoolForServiceName(row.service)?.[0] || 1;
+}
+
+function buildCalendarChrome() {
+  if (!calCabinHeads || !calTimes || !calCols) return;
+
+  calCabinHeads.innerHTML = CABIN_IDS.map((id) => {
+    const meta = CABIN_SHORT[id];
+    return `
+      <div class="cal-cabin-head" title="${escapeHtml(meta.role)}">
+        <span class="code">${escapeHtml(meta.code)}</span>
+        <span class="role">${escapeHtml(meta.role)}</span>
+      </div>
+    `;
+  }).join("");
+
+  const labels = [];
+  for (let mins = BOOKING_DAY_START; mins < BOOKING_DAY_END; mins += 60) {
+    const top = (mins - BOOKING_DAY_START) * PX_PER_MIN;
+    labels.push(`<div class="cal-time-label" style="top:${top}px">${minutesToTimeLabel(mins)}</div>`);
+  }
+  calTimes.innerHTML = labels.join("");
+  calTimes.style.height = `${(BOOKING_DAY_END - BOOKING_DAY_START) * PX_PER_MIN}px`;
+
+  calCols.innerHTML = CABIN_IDS.map((id) => `
+    <div
+      class="cal-col"
+      data-cabin="${id}"
+      style="height:${(BOOKING_DAY_END - BOOKING_DAY_START) * PX_PER_MIN}px"
+    ></div>
+  `).join("");
+
+  calCols.querySelectorAll(".cal-col").forEach((col) => {
+    col.addEventListener("click", (event) => {
+      if (event.target.closest(".cal-block")) return;
+      const rect = col.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      let mins = BOOKING_DAY_START + Math.round(y / PX_PER_MIN);
+      mins = Math.round(mins / 15) * 15;
+      mins = Math.max(BOOKING_DAY_START, Math.min(BOOKING_DAY_END - 15, mins));
+      openBookingPanel({
+        date: calendarDay,
+        time: minutesToTimeLabel(mins),
+        cabinId: Number(col.dataset.cabin),
+      });
+    });
+  });
+}
+
+function renderCalendar(data) {
+  if (!calCols) return;
+  if (!calCols.querySelector(".cal-col")) buildCalendarChrome();
+
+  calCols.querySelectorAll(".cal-block").forEach((el) => el.remove());
+  closeCalDetail();
+
+  const visible = (data || []).filter((row) => row.status !== "cancelled");
+
+  for (const row of visible) {
+    const cabinId = resolveCabinId(row);
+    const col = calCols.querySelector(`.cal-col[data-cabin="${cabinId}"]`);
+    if (!col) continue;
+
+    const start = timeLabelToMinutes(formatTime(row.appointment_time));
+    if (start == null) continue;
+    const duration = Number(row.duration_minutes) || 60;
+    const top = (start - BOOKING_DAY_START) * PX_PER_MIN;
+    const height = Math.max(duration * PX_PER_MIN, 34);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `cal-block is-${row.status || "pending"}`;
+    btn.style.top = `${Math.max(0, top)}px`;
+    btn.style.height = `${height}px`;
+    btn.dataset.id = row.id;
+    btn.innerHTML = `
+      <span class="t">${escapeHtml(formatTime(row.appointment_time))}</span>
+      <span class="n">${escapeHtml(row.guest_name)}</span>
+      <span class="s">${escapeHtml(row.service)}</span>
+      <span class="d">${escapeHtml(formatDurationMin(duration))}${row.price_cents != null ? ` · ${escapeHtml(formatPriceCents(row.price_cents))}` : ""}</span>
+    `;
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openCalDetail(row);
+    });
+    col.appendChild(btn);
+  }
+}
+
+function closeCalDetail() {
+  document.getElementById("calDetail")?.remove();
+}
+
+function openCalDetail(row) {
+  closeCalDetail();
+  const el = document.createElement("div");
+  el.id = "calDetail";
+  el.className = "cal-detail";
+  el.innerHTML = `
+    <h3>${escapeHtml(row.guest_name)}</h3>
+    <p>${escapeHtml(formatTime(row.appointment_time))} · ${escapeHtml(formatDurationMin(row.duration_minutes || 60))}</p>
+    <p>${escapeHtml(row.service)}</p>
+    <p>${escapeHtml(formatPriceCents(row.price_cents))} · Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}</p>
+    <p>${statusBadge(row.status)} · <a href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a></p>
+    <div class="cal-detail-actions">
+      <select class="status-select" id="calDetailStatus" aria-label="Κατάσταση">
+        ${Object.entries(APPOINTMENT_STATUS_LABELS).map(([value, label]) =>
+          `<option value="${value}" ${row.status === value ? "selected" : ""}>${label}</option>`
+        ).join("")}
+      </select>
+      ${row.client_id
+        ? `<a class="btn btn-ghost btn-sm" href="/admin/client?id=${escapeHtml(row.client_id)}">Πελάτης</a>`
+        : `<button class="btn btn-ghost btn-sm" type="button" id="calDetailToClient">→ Πελάτης</button>`}
+      <button class="btn btn-danger btn-sm" type="button" id="calDetailDelete">Διαγραφή</button>
+      <button class="btn btn-ghost btn-sm" type="button" id="calDetailClose">Κλείσιμο</button>
+    </div>
+  `;
+  document.body.appendChild(el);
+
+  el.querySelector("#calDetailClose")?.addEventListener("click", closeCalDetail);
+  el.querySelector("#calDetailStatus")?.addEventListener("change", async (event) => {
+    const { error } = await updateAppointment(row.id, { status: event.target.value });
+    if (error) {
+      showToast(error.message || "Αποτυχία ενημέρωσης", true);
+      return;
+    }
+    showToast("Η κατάσταση ενημερώθηκε.");
+    closeCalDetail();
+    await renderAppointments();
+  });
+  el.querySelector("#calDetailDelete")?.addEventListener("click", async () => {
+    if (!confirm("Οριστική διαγραφή αυτού του ραντεβού;")) return;
+    const { error } = await deleteAppointment(row.id);
+    if (error) {
+      showToast(error.message || "Αποτυχία διαγραφής", true);
+      return;
+    }
+    showToast("Διαγράφηκε.");
+    closeCalDetail();
+    await renderAppointments();
+  });
+  el.querySelector("#calDetailToClient")?.addEventListener("click", async () => {
+    try {
+      const clientId = await findOrCreateClientFromBooking(row);
+      await updateAppointment(row.id, {
+        client_id: clientId,
+        status: row.status === "pending" ? "confirmed" : row.status,
+      });
+      location.href = `/admin/client?id=${clientId}`;
+    } catch (err) {
+      showToast(err.message || "Αποτυχία δημιουργίας πελάτη", true);
+    }
+  });
+}
+
+function resetBookingForm(prefs = {}) {
+  bookingForm.reset();
+  selectedServiceId = "";
+  bkServiceId.value = "";
+  bkServiceSearch.value = "";
+  bkStatus.value = "confirmed";
+  bkLinkClient.checked = true;
+  hideServiceSuggest();
+  bkDate.value = prefs.date || calendarDay || toDateKey(new Date());
+  bkDuration.value = "60";
+  bkCabin.value = prefs.cabinId ? String(prefs.cabinId) : "";
+  bkTime.innerHTML = prefs.time
+    ? `<option value="${escapeHtml(prefs.time)}" selected>${escapeHtml(prefs.time)}</option>`
+    : `<option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>`;
+  if (prefs.time) {
+    // keep preferred time visible even before service pick
+    const opt = document.createElement("option");
+    opt.value = prefs.time;
+    opt.selected = true;
+    opt.textContent = prefs.time;
+  }
+}
+
+function openBookingPanel(prefs = {}) {
+  resetBookingForm(prefs);
+  bookingPanel.hidden = false;
+  bookingPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (prefs.time && bkDate.value) {
+    refreshTimeOptions().then(() => {
+      if (prefs.time) {
+        const exists = [...bkTime.options].some((o) => o.value === prefs.time);
+        if (!exists) {
+          const opt = document.createElement("option");
+          opt.value = prefs.time;
+          opt.textContent = prefs.time;
+          bkTime.appendChild(opt);
+        }
+        bkTime.value = prefs.time;
+      }
+    }).catch(() => {});
+  }
+}
+
+function closeBookingPanel() {
+  bookingPanel.hidden = true;
+  resetBookingForm();
 }
 
 function formatPriceCents(cents) {
@@ -319,31 +642,6 @@ async function refreshTimeOptions() {
   }
 }
 
-function resetBookingForm() {
-  bookingForm.reset();
-  selectedServiceId = "";
-  bkServiceId.value = "";
-  bkServiceSearch.value = "";
-  bkStatus.value = "confirmed";
-  bkLinkClient.checked = true;
-  hideServiceSuggest();
-  const today = new Date();
-  bkDate.value = today.toISOString().slice(0, 10);
-  bkDuration.value = "60";
-  bkTime.innerHTML = `<option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>`;
-}
-
-function openBookingPanel() {
-  resetBookingForm();
-  bookingPanel.hidden = false;
-  bookingPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function closeBookingPanel() {
-  bookingPanel.hidden = true;
-  resetBookingForm();
-}
-
 async function loadCatalogAndClients() {
   try {
     const { data, error } = await listCatalogServices({ includeInactive: false });
@@ -396,8 +694,13 @@ async function renderAppointments() {
   if (error) {
     rowsBody.innerHTML = `<tr><td colspan="7" class="empty">Σφάλμα φόρτωσης.</td></tr>`;
     showToast(error.message || "Αποτυχία φόρτωσης ραντεβού", true);
+    renderCalendar([]);
     return;
   }
+
+  appointmentsCache = data || [];
+  renderCalendar(appointmentsCache);
+
   if (!data?.length) {
     rowsBody.innerHTML = `<tr><td colspan="7" class="empty">Δεν βρέθηκαν ραντεβού.</td></tr>`;
     return;
@@ -509,6 +812,9 @@ loginForm?.addEventListener("submit", async (event) => {
   }
   showApp();
   await loadCatalogAndClients();
+  buildCalendarChrome();
+  renderDayStrip();
+  setActiveView("calendar", { refresh: false });
   await renderAppointments();
 });
 
@@ -517,8 +823,30 @@ signOutBtn?.addEventListener("click", async () => {
   showLogin();
 });
 
-openBookingBtn?.addEventListener("click", () => openBookingPanel());
+openBookingBtn?.addEventListener("click", () => openBookingPanel({ date: calendarDay }));
+calFab?.addEventListener("click", () => openBookingPanel({ date: calendarDay }));
 cancelBookingBtn?.addEventListener("click", () => closeBookingPanel());
+
+viewCalBtn?.addEventListener("click", () => setActiveView("calendar"));
+viewListBtn?.addEventListener("click", () => setActiveView("list"));
+
+calPrev?.addEventListener("click", () => {
+  const d = parseDateKey(calendarDay);
+  d.setDate(d.getDate() - 7);
+  setCalendarDay(toDateKey(d));
+});
+
+calNext?.addEventListener("click", () => {
+  const d = parseDateKey(calendarDay);
+  d.setDate(d.getDate() + 7);
+  setCalendarDay(toDateKey(d));
+});
+
+calToday?.addEventListener("click", () => setCalendarDay(toDateKey(new Date())));
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeCalDetail();
+});
 
 bkClient?.addEventListener("change", () => {
   onClientPicked().catch(() => {});
@@ -676,7 +1004,7 @@ bookingForm?.addEventListener("submit", async (event) => {
 });
 
 let searchTimer = 0;
-[searchInput, statusFilter, fromDate, toDate].forEach((el) => {
+[searchInput, statusFilter].forEach((el) => {
   el?.addEventListener("input", () => {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => renderAppointments(), 200);
@@ -684,11 +1012,18 @@ let searchTimer = 0;
   el?.addEventListener("change", () => renderAppointments());
 });
 
+[fromDate, toDate].forEach((el) => {
+  el?.addEventListener("change", () => {
+    if (activeView === "list") renderAppointments();
+  });
+});
+
 async function boot() {
-  const today = new Date();
-  if (fromDate && !fromDate.value) {
-    fromDate.value = today.toISOString().slice(0, 10);
-  }
+  const today = toDateKey(new Date());
+  calendarDay = today;
+  if (fromDate) fromDate.value = today;
+  if (toDate) toDate.value = today;
+
   if (configMissing()) {
     showLogin();
     return;
@@ -700,6 +1035,9 @@ async function boot() {
   }
   showApp();
   await loadCatalogAndClients();
+  buildCalendarChrome();
+  renderDayStrip();
+  setActiveView("calendar", { refresh: false });
   await renderAppointments();
 }
 

@@ -53,6 +53,10 @@
     </header>
 
     <div class="toolbar toolbar-wrap">
+      <div class="view-toggle" role="group" aria-label="Προβολή">
+        <button class="btn btn-ghost btn-sm is-active" type="button" id="viewCalBtn" data-view="calendar">Ημερολόγιο</button>
+        <button class="btn btn-ghost btn-sm" type="button" id="viewListBtn" data-view="list">Λίστα</button>
+      </div>
       <input class="search" id="searchInput" type="search" placeholder="Αναζήτηση ονόματος, τηλεφώνου ή υπηρεσίας…" />
       <select id="statusFilter" aria-label="Κατάσταση">
         <option value="">Όλες οι καταστάσεις</option>
@@ -62,10 +66,28 @@
         <option value="cancelled">Ακυρωμένα</option>
         <option value="no_show">Δεν εμφανίστηκε</option>
       </select>
-      <input id="fromDate" type="date" aria-label="Από ημερομηνία" />
-      <input id="toDate" type="date" aria-label="Έως ημερομηνία" />
+      <input id="fromDate" type="date" aria-label="Από ημερομηνία" class="hidden" />
+      <input id="toDate" type="date" aria-label="Έως ημερομηνία" class="hidden" />
       <button class="btn btn-gold" type="button" id="openBookingBtn">+ Νέο ραντεβού</button>
     </div>
+
+    <section class="panel cal-panel" id="calendarPanel" aria-label="Ημερολόγιο καμπινών">
+      <div class="cal-top">
+        <button class="btn btn-ghost btn-sm" type="button" id="calPrev" aria-label="Προηγούμενη εβδομάδα">‹</button>
+        <h2 class="cal-month" id="calMonthLabel">—</h2>
+        <button class="btn btn-ghost btn-sm" type="button" id="calNext" aria-label="Επόμενη εβδομάδα">›</button>
+        <button class="btn btn-ghost btn-sm" type="button" id="calToday">Σήμερα</button>
+      </div>
+      <div class="cal-days" id="calDayStrip" role="tablist" aria-label="Ημέρες"></div>
+      <div class="cal-board" id="calBoard">
+        <div class="cal-grid" id="calGrid">
+          <div class="cal-head-spacer" aria-hidden="true"></div>
+          <div class="cal-cabin-heads" id="calCabinHeads"></div>
+          <div class="cal-times" id="calTimes" aria-hidden="true"></div>
+          <div class="cal-cols" id="calCols"></div>
+        </div>
+      </div>
+    </section>
 
     <div class="panel panel-pad" id="bookingPanel" hidden>
       <h2 class="panel-title">Νέο ραντεβού</h2>
@@ -143,11 +165,11 @@
             <label for="bkCabin">Καμπίνα</label>
             <select id="bkCabin">
               <option value="">Αυτόματα</option>
-              <option value="1">Καμπίνα 1</option>
-              <option value="2">Καμπίνα 2</option>
-              <option value="3">Καμπίνα 3</option>
-              <option value="4">Καμπίνα 4</option>
-              <option value="5">Καμπίνα 5</option>
+              <option value="1">Κ1 — Πρόσωπο</option>
+              <option value="2">Κ2 — Πρόσωπο</option>
+              <option value="3">Κ3 — Βλέμμα</option>
+              <option value="4">Κ4 — Vacutherm</option>
+              <option value="5">Κ5 — Σώμα</option>
             </select>
           </div>
         </div>
@@ -166,7 +188,7 @@
       </form>
     </div>
 
-    <div class="panel table-wrap">
+    <div class="panel table-wrap" id="listPanel" hidden>
       <table>
         <thead>
           <tr>
@@ -184,6 +206,8 @@
         </tbody>
       </table>
     </div>
+
+    <button class="cal-fab" type="button" id="calFab" aria-label="Νέο ραντεβού">+</button>
   </div>
 
   <div class="toast" id="adminToast" role="status"></div>
