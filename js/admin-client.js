@@ -7,10 +7,12 @@ import {
   listVisits,
   saveVisit,
   deleteVisit,
+  listCatalogServices,
   showToast,
   formatDate,
   formatMoney,
 } from "./admin-api.js";
+import { DEFAULT_BOOKING_CATEGORIES } from "./booking-services.js";
 
 const params = new URLSearchParams(location.search);
 let clientId = params.get("id");
@@ -24,6 +26,13 @@ const visitsList = document.getElementById("visitsList");
 const visitForm = document.getElementById("visitForm");
 const toggleVisitFormBtn = document.getElementById("toggleVisitFormBtn");
 const cancelVisitBtn = document.getElementById("cancelVisitBtn");
+const treatmentSelect = document.getElementById("treatment");
+const treatmentCustom = document.getElementById("treatmentCustom");
+
+/** @type {Array<{ id: string, name: string, categoryLabel: string, priceCents: number, priceFrom: boolean }>} */
+let catalogCache = [];
+
+const OTHER_VALUE = "__other__";
 
 function configMissing() {
   const cfg = window.AESTHEE_SUPABASE;
@@ -38,6 +47,113 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function eurosFromCents(cents) {
+  const n = Number(cents);
+  if (!Number.isFinite(n)) return "";
+  return (n / 100).toFixed(2).replace(/\.00$/, "");
+}
+
+function formatOptionLabel(row) {
+  const euros = eurosFromCents(row.priceCents);
+  const from = row.priceFrom ? "από " : "";
+  return euros ? `${row.name} — ${from}€${euros}` : row.name;
+}
+
+function catalogFromDefaults() {
+  return DEFAULT_BOOKING_CATEGORIES.flatMap((cat) =>
+    cat.services.map((s) => ({
+      id: s.id,
+      name: s.name,
+      categoryLabel: cat.label,
+      priceCents: s.priceCents,
+      priceFrom: Boolean(s.priceFrom),
+    }))
+  );
+}
+
+function catalogFromRows(rows) {
+  return (rows || [])
+    .filter((row) => row.is_active !== false)
+    .map((row) => ({
+      id: String(row.id),
+      name: String(row.name || ""),
+      categoryLabel: String(row.category_label || row.category_id || "Άλλο"),
+      priceCents: Number(row.price_cents) || 0,
+      priceFrom: Boolean(row.price_from),
+    }))
+    .filter((row) => row.name);
+}
+
+function renderTreatmentOptions(selectedName = "") {
+  const groups = new Map();
+  for (const row of catalogCache) {
+    if (!groups.has(row.categoryLabel)) groups.set(row.categoryLabel, []);
+    groups.get(row.categoryLabel).push(row);
+  }
+
+  const parts = [`<option value="">Επιλέξτε θεραπεία…</option>`];
+  for (const [label, rows] of groups) {
+    parts.push(`<optgroup label="${escapeHtml(label)}">`);
+    for (const row of rows) {
+      const selected = selectedName && selectedName === row.name ? " selected" : "";
+      parts.push(
+        `<option value="${escapeHtml(row.id)}" data-name="${escapeHtml(row.name)}" data-price-cents="${row.priceCents}"${selected}>${escapeHtml(formatOptionLabel(row))}</option>`
+      );
+    }
+    parts.push("</optgroup>");
+  }
+
+  const known = catalogCache.some((row) => row.name === selectedName);
+  const otherSelected = selectedName && !known ? " selected" : "";
+  parts.push(`<option value="${OTHER_VALUE}"${otherSelected}>Άλλο (χειροκίνητα)…</option>`);
+
+  treatmentSelect.innerHTML = parts.join("");
+
+  if (selectedName && !known) {
+    treatmentCustom.classList.remove("hidden");
+    treatmentCustom.required = true;
+    treatmentCustom.value = selectedName;
+  } else {
+    treatmentCustom.classList.add("hidden");
+    treatmentCustom.required = false;
+    treatmentCustom.value = "";
+  }
+}
+
+function applySelectedTreatmentPrice() {
+  const option = treatmentSelect.selectedOptions[0];
+  if (!option || option.value === "" || option.value === OTHER_VALUE) return;
+  const cents = Number(option.dataset.priceCents);
+  if (!Number.isFinite(cents)) return;
+  visitForm.payment_amount.value = eurosFromCents(cents);
+}
+
+function syncTreatmentCustomVisibility() {
+  const isOther = treatmentSelect.value === OTHER_VALUE;
+  treatmentCustom.classList.toggle("hidden", !isOther);
+  treatmentCustom.required = isOther;
+  if (!isOther) treatmentCustom.value = "";
+}
+
+function getSelectedTreatmentName() {
+  if (treatmentSelect.value === OTHER_VALUE) {
+    return treatmentCustom.value.trim();
+  }
+  const option = treatmentSelect.selectedOptions[0];
+  return option?.dataset?.name?.trim() || "";
+}
+
+async function loadTreatmentCatalog() {
+  try {
+    const { data, error } = await listCatalogServices({ includeInactive: false });
+    if (error) throw error;
+    catalogCache = data?.length ? catalogFromRows(data) : catalogFromDefaults();
+  } catch {
+    catalogCache = catalogFromDefaults();
+  }
+  renderTreatmentOptions();
+}
+
 function fillClientForm(client) {
   clientForm.full_name.value = client.full_name || "";
   clientForm.phone.value = client.phone || "";
@@ -49,6 +165,7 @@ function fillClientForm(client) {
 function resetVisitForm() {
   visitForm.reset();
   document.getElementById("visitId").value = "";
+  renderTreatmentOptions();
   visitForm.classList.add("hidden");
 }
 
@@ -56,13 +173,14 @@ function openVisitForm(visit = null) {
   visitForm.classList.remove("hidden");
   if (visit) {
     document.getElementById("visitId").value = visit.id;
-    visitForm.treatment.value = visit.treatment || "";
+    renderTreatmentOptions(visit.treatment || "");
     visitForm.payment_amount.value = visit.payment_amount ?? "";
     visitForm.payment_date.value = visit.payment_date || "";
     visitForm.notes.value = visit.notes || "";
   } else {
     document.getElementById("visitId").value = "";
     visitForm.reset();
+    renderTreatmentOptions();
     const today = new Date();
     visitForm.payment_date.value = today.toISOString().slice(0, 10);
   }
@@ -194,15 +312,28 @@ toggleVisitFormBtn?.addEventListener("click", () => {
 
 cancelVisitBtn?.addEventListener("click", resetVisitForm);
 
+treatmentSelect?.addEventListener("change", () => {
+  syncTreatmentCustomVisibility();
+  if (treatmentSelect.value && treatmentSelect.value !== OTHER_VALUE) {
+    applySelectedTreatmentPrice();
+  }
+});
+
 visitForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!clientId) return;
+
+  const treatment = getSelectedTreatmentName();
+  if (!treatment) {
+    showToast("Επιλέξτε ή πληκτρολογήστε θεραπεία.", true);
+    return;
+  }
 
   const visitId = document.getElementById("visitId").value || null;
   const amountRaw = visitForm.payment_amount.value;
   const payload = {
     client_id: clientId,
-    treatment: visitForm.treatment.value.trim(),
+    treatment,
     payment_amount: amountRaw === "" ? null : Number(amountRaw),
     payment_date: visitForm.payment_date.value || null,
     notes: visitForm.notes.value.trim() || null,
@@ -235,6 +366,7 @@ async function boot() {
     location.href = "/admin/";
     return;
   }
+  await loadTreatmentCatalog();
   await loadClient();
 }
 

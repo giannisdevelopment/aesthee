@@ -83,7 +83,17 @@
           <input type="hidden" id="visitId" value="" />
           <div class="field">
             <label for="treatment">Θεραπεία</label>
-            <input id="treatment" name="treatment" type="text" required placeholder="π.χ. Laser αποτρίχωση" />
+            <select id="treatment" name="treatment" required>
+              <option value="">Φόρτωση καταλόγου…</option>
+            </select>
+            <input
+              id="treatmentCustom"
+              name="treatment_custom"
+              type="text"
+              class="hidden"
+              placeholder="Πληκτρολογήστε την θεραπεία"
+              style="margin-top:8px"
+            />
           </div>
           <div class="field-row">
             <div class="field">
