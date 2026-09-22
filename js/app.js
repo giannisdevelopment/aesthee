@@ -312,18 +312,25 @@ function updateServiceMeta(service) {
   const meta = document.getElementById("serviceMeta");
   const priceEl = document.getElementById("servicePrice");
   const durationEl = document.getElementById("serviceDuration");
+  const offerEl = document.getElementById("serviceOffer");
   if (!meta || !priceEl || !durationEl) return;
 
   if (!service) {
     meta.hidden = true;
     priceEl.textContent = "";
     durationEl.textContent = "";
+    if (offerEl) {
+      offerEl.hidden = true;
+    }
     return;
   }
 
   loadBookingCatalog().then((catalog) => {
     priceEl.textContent = catalog.formatPrice(service);
     durationEl.textContent = catalog.formatDuration(service.durationMin);
+    if (offerEl) {
+      offerEl.hidden = !service.isOffer;
+    }
     meta.hidden = false;
   });
 }
@@ -352,12 +359,28 @@ function populateServiceSelect(categoryId, preferredServiceId = null) {
     placeholder.textContent = "Επιλέξτε υπηρεσία";
     select.appendChild(placeholder);
 
-    category.services.forEach((service) => {
-      const option = document.createElement("option");
-      option.value = service.id;
-      option.textContent = `${service.name} — ${catalog.formatPrice(service)}`;
-      select.appendChild(option);
-    });
+    const offers = category.services.filter((s) => s.isOffer);
+    const regular = category.services.filter((s) => !s.isOffer);
+
+    function appendOptions(list, groupLabel) {
+      if (!list.length) return;
+      const parent = groupLabel && (offers.length && regular.length)
+        ? document.createElement("optgroup")
+        : select;
+      if (parent !== select) {
+        parent.label = groupLabel;
+        select.appendChild(parent);
+      }
+      list.forEach((service) => {
+        const option = document.createElement("option");
+        option.value = service.id;
+        option.textContent = catalog.formatServiceOption(service);
+        parent.appendChild(option);
+      });
+    }
+
+    appendOptions(offers, "Προσφορές");
+    appendOptions(regular, "Υπηρεσίες");
 
     const preferred = preferredServiceId && category.services.some((s) => s.id === preferredServiceId)
       ? preferredServiceId

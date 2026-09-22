@@ -93,10 +93,10 @@ export const DEFAULT_BOOKING_CATEGORIES = [
       { id: "lw-mustache-chin", name: "Laser Γυναίκες — Μουστάκι + πηγούνι", durationMin: 10, priceCents: 2500 },
       { id: "lw-cheeks", name: "Laser Γυναίκες — Παρείες", durationMin: 10, priceCents: 2000 },
       { id: "lw-belly-line", name: "Laser Γυναίκες — Γραμμή κοιλιάς", durationMin: 10, priceCents: 2000 },
-      { id: "lw-full-10", name: "Laser Full Body — 10 συνεδρίες", durationMin: 60, priceCents: 115000 },
-      { id: "lw-full-6", name: "Laser Full Body — 6 συνεδρίες", durationMin: 60, priceCents: 69000 },
-      { id: "lw-bikini-under-6", name: "Laser Full Bikini + Armpits — 6 συνεδρίες", durationMin: 20, priceCents: 30000 },
-      { id: "lw-bikini-under-10", name: "Laser Full Bikini + Armpits — 10 συνεδρίες", durationMin: 20, priceCents: 50000 },
+      { id: "lw-full-10", name: "Laser Full Body — 10 συνεδρίες", durationMin: 60, priceCents: 115000, isOffer: true },
+      { id: "lw-full-6", name: "Laser Full Body — 6 συνεδρίες", durationMin: 60, priceCents: 69000, isOffer: true },
+      { id: "lw-bikini-under-6", name: "Laser Full Bikini + Armpits — 6 συνεδρίες", durationMin: 20, priceCents: 30000, isOffer: true },
+      { id: "lw-bikini-under-10", name: "Laser Full Bikini + Armpits — 10 συνεδρίες", durationMin: 20, priceCents: 50000, isOffer: true },
     ],
   },
   {
@@ -129,21 +129,21 @@ export const DEFAULT_BOOKING_CATEGORIES = [
     label: "Θεραπείες σώματος",
     services: [
       { id: "vacutherm", name: "Vacutherm Treadmill & Bike", durationMin: 30, priceCents: 3500 },
-      { id: "vacutherm-pack", name: "Vacutherm — πακέτο 10+2 δώρο", durationMin: 30, priceCents: 25000 },
+      { id: "vacutherm-pack", name: "Vacutherm — πακέτο 10+2 δώρο", durationMin: 30, priceCents: 25000, isOffer: true },
       { id: "endospheres", name: "ENDOSPHERES", durationMin: 45, priceCents: 4000 },
-      { id: "endospheres-pack", name: "ENDOSPHERES — πακέτο 8+2 δώρο", durationMin: 45, priceCents: 34900 },
+      { id: "endospheres-pack", name: "ENDOSPHERES — πακέτο 8+2 δώρο", durationMin: 45, priceCents: 34900, isOffer: true },
       { id: "cavitation", name: "Cavitation", durationMin: 30, priceCents: 2500 },
-      { id: "cavitation-pack", name: "Cavitation — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 20000 },
+      { id: "cavitation-pack", name: "Cavitation — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 20000, isOffer: true },
       { id: "vacuum-bbl", name: "Vacuum BBL", durationMin: 30, priceCents: 2000 },
-      { id: "vacuum-bbl-pack", name: "Vacuum BBL — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 15000 },
+      { id: "vacuum-bbl-pack", name: "Vacuum BBL — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 15000, isOffer: true },
       { id: "presso", name: "Πρεσσοθεραπεία", durationMin: 30, priceCents: 2000 },
-      { id: "presso-pack", name: "Πρεσσοθεραπεία — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 15000 },
+      { id: "presso-pack", name: "Πρεσσοθεραπεία — πακέτο 10 συνεδριών", durationMin: 30, priceCents: 15000, isOffer: true },
       { id: "cryo", name: "Κρυολιπόλυση 4 σημείων", durationMin: 60, priceCents: 16000 },
-      { id: "cryo-pack", name: "Κρυολιπόλυση 4 σημείων — πακέτο 3 συνεδριών", durationMin: 60, priceCents: 39000 },
+      { id: "cryo-pack", name: "Κρυολιπόλυση 4 σημείων — πακέτο 3 συνεδριών", durationMin: 60, priceCents: 39000, isOffer: true },
       { id: "madero", name: "Μαδεροθεραπεία", durationMin: 35, priceCents: 3000 },
-      { id: "madero-pack", name: "Μαδεροθεραπεία — πακέτο 10+2 δώρο", durationMin: 35, priceCents: 25000 },
+      { id: "madero-pack", name: "Μαδεροθεραπεία — πακέτο 10+2 δώρο", durationMin: 35, priceCents: 25000, isOffer: true },
       { id: "rf-body", name: "RF Microneedling σώματος (έως 3 περιοχές)", durationMin: 60, priceCents: 18000 },
-      { id: "rf-body-pack", name: "RF Microneedling σώματος — πακέτο 3 συνεδριών", durationMin: 60, priceCents: 45000 },
+      { id: "rf-body-pack", name: "RF Microneedling σώματος — πακέτο 3 συνεδριών", durationMin: 60, priceCents: 45000, isOffer: true },
       { id: "massage", name: "Μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό", durationMin: 55, priceCents: 4000 },
       { id: "massage-cupping", name: "Μασάζ βεντούζες", durationMin: 40, priceCents: 4000 },
       { id: "massage-neck-back", name: "Μασάζ αυχένα πλάτη μέση", durationMin: 30, priceCents: 3500 },
@@ -308,6 +308,17 @@ export function applyCatalogFromRows(rows) {
   if (!Array.isArray(rows) || !rows.length) return BOOKING_CATEGORIES;
 
   const sorted = [...rows].sort((a, b) => {
+    // Keep category grouping by sort_order bands, but offers float first within category
+    const catA = String(a.category_id || "");
+    const catB = String(b.category_id || "");
+    if (catA !== catB) {
+      const ao = Number(a.sort_order) || 0;
+      const bo = Number(b.sort_order) || 0;
+      if (ao !== bo) return ao - bo;
+      return catA.localeCompare(catB);
+    }
+    const offerDelta = Number(Boolean(b.is_offer)) - Number(Boolean(a.is_offer));
+    if (offerDelta !== 0) return offerDelta;
     const ao = Number(a.sort_order) || 0;
     const bo = Number(b.sort_order) || 0;
     if (ao !== bo) return ao - bo;
@@ -368,6 +379,13 @@ export function formatPrice(service) {
     ? String(amount)
     : amount.toFixed(2).replace(".", ",");
   return service.priceFrom ? `από € ${text}` : `€ ${text}`;
+}
+
+/** Dropdown / toast label — offers get a clear prefix. */
+export function formatServiceOption(service) {
+  if (!service) return "";
+  const prefix = service.isOffer ? "Προσφορά · " : "";
+  return `${prefix}${service.name} — ${formatPrice(service)}`;
 }
 
 export function formatDuration(minutes) {

@@ -9,8 +9,9 @@
 1. SQL Editor → New query
 2. Paste and run all of `supabase/schema.sql`
 3. Also run `supabase/migrate-catalog.sql` (seeds prices + offers; safe to re-run — never overwrites edits)
-4. Confirm tables: `clients`, `visits`, `appointments`, `contact_messages`, `catalog_services`
-5. Confirm RPCs: `get_booked_times`, `get_booked_slots`, `create_booking`, `submit_contact`
+4. Optionally run `supabase/migrate-catalog-offers.sql` to flag package/session rows as offers
+5. Confirm tables: `clients`, `visits`, `appointments`, `contact_messages`, `catalog_services`
+6. Confirm RPCs: `get_booked_times`, `get_booked_slots`, `create_booking`, `submit_contact`
 
 ## 3. Create staff login
 1. Authentication → Providers → **Email** enabled

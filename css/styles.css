@@ -1798,6 +1798,19 @@ body:has(.header.is-scrolled) .nav {
   color: var(--ink);
 }
 
+.service-meta-offer {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(196, 163, 106, 0.22);
+  color: var(--gold-deep, #9a7b4a);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .service-meta-price {
   font-weight: 600;
   color: var(--ink);
