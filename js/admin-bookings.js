@@ -19,6 +19,7 @@ import {
   DEFAULT_BOOKING_CATEGORIES,
   applyCatalogFromRows,
   getServiceById,
+  findServiceByName,
   buildStartSlots,
   filterAvailableStarts,
   pickCabinForSlot,
@@ -26,6 +27,7 @@ import {
   getCabinPool,
   getCabinPoolForServiceName,
   clampCabinToPool,
+  resolveCabinForAppointment,
   CABIN_SHORT,
   CABIN_IDS,
   CABIN_LABELS,
@@ -224,9 +226,44 @@ function renderDayStrip() {
 }
 
 function resolveCabinId(row) {
-  const direct = Number(row.cabin_id);
-  if (direct >= 1 && direct <= 5) return direct;
-  return getCabinPoolForServiceName(row.service)?.[0] || 1;
+  return resolveCabinForAppointment(row);
+}
+
+/** Persist cabin_id when a legacy row sits in the wrong pool (e.g. laser in Κ3). */
+async function healMismatchedCabins(rows) {
+  const active = (rows || []).filter((row) => row.status !== "cancelled");
+  let fixed = 0;
+
+  for (const row of active) {
+    const pool = getCabinPoolForServiceName(row.service);
+    const stored = Number(row.cabin_id);
+    if (Number.isFinite(stored) && pool.includes(stored)) continue;
+
+    const date = String(row.appointment_date || "").slice(0, 10);
+    const time = formatTime(row.appointment_time);
+    const booked = active
+      .filter((other) => other.id !== row.id && String(other.appointment_date || "").slice(0, 10) === date)
+      .map((other) => ({
+        time: formatTime(other.appointment_time),
+        service: other.service,
+        durationMin: other.duration_minutes,
+        cabinId: resolveCabinForAppointment(other),
+      }));
+
+    const match = findServiceByName(row.service);
+    const service = match
+      ? (getServiceById(match.id) || match)
+      : { id: "custom", categoryId: "", durationMin: row.duration_minutes || 60, name: row.service };
+    const nextCabin = pickCabinForSlot(service, booked, time) || pool[0];
+    if (!nextCabin || nextCabin === stored) continue;
+
+    const { error } = await updateAppointment(row.id, { cabin_id: nextCabin });
+    if (error) continue;
+    row.cabin_id = nextCabin;
+    fixed += 1;
+  }
+
+  return fixed;
 }
 
 function buildCalendarChrome() {
@@ -826,6 +863,10 @@ async function renderAppointments() {
   }
 
   appointmentsCache = data || [];
+  const healed = await healMismatchedCabins(appointmentsCache);
+  if (healed > 0) {
+    showToast(`Διορθώθηκαν ${healed} ραντεβού σε σωστή καμπίνα.`);
+  }
   renderCalendar(appointmentsCache);
 
   if (!data?.length) {
@@ -841,7 +882,7 @@ async function renderAppointments() {
       </td>
       <td>
         ${escapeHtml(row.service)}<br />
-        <span class="muted">${escapeHtml(formatPriceCents(row.price_cents))}${row.cabin_id ? ` · Καμπίνα ${escapeHtml(String(row.cabin_id))}` : ""}</span>
+        <span class="muted">${escapeHtml(formatPriceCents(row.price_cents))}${resolveCabinId(row) ? ` · Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}` : ""}</span>
       </td>
       <td>
         ${escapeHtml(row.guest_name)}<br />

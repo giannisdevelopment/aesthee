@@ -294,6 +294,18 @@ export function getCabinPoolForServiceName(serviceName) {
   return [1, 2];
 }
 
+/**
+ * Cabin for an appointment row: keep stored cabin only if it belongs
+ * to the service pool; otherwise fall back to the first pool cabin.
+ * Use for calendar display and conflict checks (legacy wrong cabin_id).
+ */
+export function resolveCabinForAppointment(row) {
+  const pool = getCabinPoolForServiceName(row?.service);
+  const direct = Number(row?.cabin_id ?? row?.cabinId);
+  if (Number.isFinite(direct) && pool.includes(direct)) return direct;
+  return pool[0] || 1;
+}
+
 const byId = new Map();
 const byName = new Map();
 
@@ -464,9 +476,7 @@ export function filterAvailableStarts(candidateStarts, booked, service) {
     const start = timeLabelToMinutes(row.time);
     if (start == null) continue;
     const known = row.durationMin || findServiceByName(row.service)?.durationMin || 60;
-    const cabinId = Number(row.cabinId)
-      || getCabinPoolForServiceName(row.service)[0]
-      || 1;
+    const cabinId = resolveCabinForAppointment(row);
     if (!busyByCabin.has(cabinId)) busyByCabin.set(cabinId, []);
     busyByCabin.get(cabinId).push({ start, end: start + known });
   }
@@ -497,9 +507,7 @@ export function pickCabinForSlot(service, booked, startLabel) {
     const bStart = timeLabelToMinutes(row.time);
     if (bStart == null) continue;
     const known = row.durationMin || findServiceByName(row.service)?.durationMin || 60;
-    const cabinId = Number(row.cabinId)
-      || getCabinPoolForServiceName(row.service)[0]
-      || 1;
+    const cabinId = resolveCabinForAppointment(row);
     if (!busyByCabin.has(cabinId)) busyByCabin.set(cabinId, []);
     busyByCabin.get(cabinId).push({ start: bStart, end: bStart + known });
   }
@@ -521,7 +529,7 @@ export function isCabinFreeForSlot(cabinId, service, booked, startLabel) {
   if (start == null) return false;
   const end = start + duration;
   for (const row of booked || []) {
-    const rowCabin = Number(row.cabinId) || getCabinPoolForServiceName(row.service)[0] || 1;
+    const rowCabin = resolveCabinForAppointment(row);
     if (rowCabin !== id) continue;
     const bStart = timeLabelToMinutes(row.time);
     if (bStart == null) continue;
