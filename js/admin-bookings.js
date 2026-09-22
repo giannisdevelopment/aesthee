@@ -45,8 +45,9 @@ const bkStatus = document.getElementById("bkStatus");
 const bkName = document.getElementById("bkName");
 const bkPhone = document.getElementById("bkPhone");
 const bkEmail = document.getElementById("bkEmail");
-const bkService = document.getElementById("bkService");
-const bkServiceCustom = document.getElementById("bkServiceCustom");
+const bkServiceSearch = document.getElementById("bkServiceSearch");
+const bkServiceId = document.getElementById("bkServiceId");
+const bkServiceSuggest = document.getElementById("bkServiceSuggest");
 const bkDate = document.getElementById("bkDate");
 const bkTime = document.getElementById("bkTime");
 const bkDuration = document.getElementById("bkDuration");
@@ -56,13 +57,16 @@ const bkNotes = document.getElementById("bkNotes");
 const bkLinkClient = document.getElementById("bkLinkClient");
 const bkSubmitBtn = document.getElementById("bkSubmitBtn");
 
-const OTHER_SERVICE = "__other__";
-
 /** @type {Array<{ id: string, name: string, categoryLabel: string, durationMin: number, priceCents: number, priceFrom: boolean, categoryId: string }>} */
 let catalogCache = [];
 
 /** @type {Array<{ id: string, full_name: string, phone: string | null, email: string | null }>} */
 let clientsCache = [];
+
+/** @type {string} */
+let selectedServiceId = "";
+
+let suggestActiveIndex = -1;
 
 function configMissing() {
   const cfg = window.AESTHEE_SUPABASE;
@@ -152,28 +156,115 @@ function catalogFromRows(rows) {
     .filter((row) => row.name);
 }
 
-function renderServiceOptions() {
-  const groups = new Map();
-  for (const row of catalogCache) {
-    if (!groups.has(row.categoryLabel)) groups.set(row.categoryLabel, []);
-    groups.get(row.categoryLabel).push(row);
+function normalizeSearch(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function formatServiceMeta(row) {
+  const euros = eurosFromCents(row.priceCents);
+  const from = row.priceFrom ? "από " : "";
+  const price = euros ? `${from}€${euros}` : "";
+  const duration = `${row.durationMin || 60}′`;
+  return [row.categoryLabel, price, duration].filter(Boolean).join(" · ");
+}
+
+function filterCatalog(query) {
+  const q = normalizeSearch(query);
+  if (!q) return [];
+  return catalogCache
+    .filter((row) => {
+      const hay = normalizeSearch(`${row.name} ${row.categoryLabel}`);
+      return hay.includes(q);
+    })
+    .slice(0, 25);
+}
+
+function hideServiceSuggest() {
+  bkServiceSuggest.classList.add("hidden");
+  bkServiceSuggest.innerHTML = "";
+  suggestActiveIndex = -1;
+}
+
+function showServiceSuggest(rows, query = "") {
+  const q = String(query || "").trim();
+  if (!q) {
+    hideServiceSuggest();
+    return;
   }
 
-  const parts = [`<option value="">Επιλέξτε υπηρεσία…</option>`];
-  for (const [label, rows] of groups) {
-    parts.push(`<optgroup label="${escapeHtml(label)}">`);
-    for (const row of rows) {
-      const euros = eurosFromCents(row.priceCents);
-      const from = row.priceFrom ? "από " : "";
-      const meta = euros ? ` — ${from}€${euros} · ${row.durationMin}′` : ` — ${row.durationMin}′`;
-      parts.push(
-        `<option value="${escapeHtml(row.id)}">${escapeHtml(row.name)}${escapeHtml(meta)}</option>`
-      );
-    }
-    parts.push("</optgroup>");
+  if (!rows.length) {
+    bkServiceSuggest.innerHTML = `<div class="suggest-empty">Δεν βρέθηκε στον κατάλογο — θα αποθηκευτεί ως χειροκίνητη υπηρεσία.</div>`;
+    bkServiceSuggest.classList.remove("hidden");
+    suggestActiveIndex = -1;
+    return;
   }
-  parts.push(`<option value="${OTHER_SERVICE}">Άλλο (χειροκίνητα)…</option>`);
-  bkService.innerHTML = parts.join("");
+
+  bkServiceSuggest.innerHTML = rows.map((row, index) => `
+    <button
+      type="button"
+      class="suggest-item${index === 0 ? " is-active" : ""}"
+      role="option"
+      data-service-id="${escapeHtml(row.id)}"
+      data-index="${index}"
+    >
+      <strong>${escapeHtml(row.name)}</strong>
+      <span>${escapeHtml(formatServiceMeta(row))}</span>
+    </button>
+  `).join("");
+  bkServiceSuggest.classList.remove("hidden");
+  suggestActiveIndex = 0;
+
+  bkServiceSuggest.querySelectorAll("[data-service-id]").forEach((btn) => {
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      pickService(btn.dataset.serviceId);
+    });
+  });
+}
+
+function pickService(id) {
+  const row = catalogCache.find((item) => item.id === id);
+  if (!row) return;
+  selectedServiceId = row.id;
+  bkServiceId.value = row.id;
+  bkServiceSearch.value = row.name;
+  bkDuration.value = String(row.durationMin || 60);
+  bkPrice.value = eurosFromCents(row.priceCents);
+  hideServiceSuggest();
+  refreshTimeOptions().catch(() => {});
+}
+
+function clearPickedServiceKeepText() {
+  selectedServiceId = "";
+  bkServiceId.value = "";
+}
+
+function selectedCatalogService() {
+  if (!selectedServiceId) return null;
+  return catalogCache.find((row) => row.id === selectedServiceId) || getServiceById(selectedServiceId) || null;
+}
+
+function selectedServicePayload() {
+  const fromCatalog = selectedCatalogService();
+  if (fromCatalog) {
+    return {
+      id: fromCatalog.id,
+      name: fromCatalog.name,
+      durationMin: Number(bkDuration.value) || fromCatalog.durationMin || 60,
+      categoryId: fromCatalog.categoryId,
+    };
+  }
+  const name = bkServiceSearch.value.trim();
+  return {
+    id: "custom",
+    name,
+    durationMin: Number(bkDuration.value) || 60,
+    categoryId: "",
+  };
 }
 
 function renderClientOptions() {
@@ -187,54 +278,13 @@ function renderClientOptions() {
   bkClient.innerHTML = parts.join("");
 }
 
-function selectedCatalogService() {
-  if (!bkService.value || bkService.value === OTHER_SERVICE) return null;
-  return catalogCache.find((row) => row.id === bkService.value) || getServiceById(bkService.value) || null;
-}
-
-function selectedServicePayload() {
-  const fromCatalog = selectedCatalogService();
-  if (fromCatalog) {
-    return {
-      id: fromCatalog.id,
-      name: fromCatalog.name,
-      durationMin: Number(bkDuration.value) || fromCatalog.durationMin || 60,
-      categoryId: fromCatalog.categoryId,
-    };
-  }
-  const name = bkServiceCustom.value.trim();
-  return {
-    id: "custom",
-    name,
-    durationMin: Number(bkDuration.value) || 60,
-    categoryId: "",
-  };
-}
-
-function applyServiceDefaults() {
-  const isOther = bkService.value === OTHER_SERVICE;
-  bkServiceCustom.classList.toggle("hidden", !isOther);
-  bkServiceCustom.required = isOther;
-  if (isOther) return;
-
-  const row = selectedCatalogService();
-  if (!row) return;
-  bkDuration.value = String(row.durationMin || 60);
-  bkPrice.value = eurosFromCents(row.priceCents);
-}
-
 async function refreshTimeOptions() {
   const date = bkDate.value;
   const service = selectedServicePayload();
   const duration = Number(bkDuration.value) || service.durationMin || 60;
 
-  if (!date || (!service.name && bkService.value !== OTHER_SERVICE && !bkService.value)) {
+  if (!date || !service.name) {
     bkTime.innerHTML = `<option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>`;
-    return;
-  }
-
-  if (bkService.value === OTHER_SERVICE && !service.name) {
-    bkTime.innerHTML = `<option value="">Συμπληρώστε όνομα υπηρεσίας…</option>`;
     return;
   }
 
@@ -271,14 +321,16 @@ async function refreshTimeOptions() {
 
 function resetBookingForm() {
   bookingForm.reset();
+  selectedServiceId = "";
+  bkServiceId.value = "";
+  bkServiceSearch.value = "";
   bkStatus.value = "confirmed";
   bkLinkClient.checked = true;
-  bkServiceCustom.classList.add("hidden");
-  bkServiceCustom.required = false;
+  hideServiceSuggest();
   const today = new Date();
   bkDate.value = today.toISOString().slice(0, 10);
+  bkDuration.value = "60";
   bkTime.innerHTML = `<option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>`;
-  renderServiceOptions();
 }
 
 function openBookingPanel() {
@@ -305,7 +357,6 @@ async function loadCatalogAndClients() {
   } catch {
     catalogCache = catalogFromDefaults();
   }
-  renderServiceOptions();
 
   try {
     const { data } = await listClients("");
@@ -473,13 +524,56 @@ bkClient?.addEventListener("change", () => {
   onClientPicked().catch(() => {});
 });
 
-bkService?.addEventListener("change", () => {
-  applyServiceDefaults();
-  refreshTimeOptions().catch(() => {});
+bkServiceSearch?.addEventListener("focus", () => {
+  showServiceSuggest(filterCatalog(bkServiceSearch.value), bkServiceSearch.value);
 });
 
-bkServiceCustom?.addEventListener("change", () => {
-  refreshTimeOptions().catch(() => {});
+bkServiceSearch?.addEventListener("input", () => {
+  clearPickedServiceKeepText();
+  showServiceSuggest(filterCatalog(bkServiceSearch.value), bkServiceSearch.value);
+});
+
+bkServiceSearch?.addEventListener("keydown", (event) => {
+  const items = [...bkServiceSuggest.querySelectorAll("[data-service-id]")];
+  if (event.key === "Escape") {
+    hideServiceSuggest();
+    return;
+  }
+  if (event.key === "ArrowDown" && items.length) {
+    event.preventDefault();
+    suggestActiveIndex = Math.min(items.length - 1, suggestActiveIndex + 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === suggestActiveIndex));
+    items[suggestActiveIndex]?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (event.key === "ArrowUp" && items.length) {
+    event.preventDefault();
+    suggestActiveIndex = Math.max(0, suggestActiveIndex - 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === suggestActiveIndex));
+    items[suggestActiveIndex]?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (event.key === "Enter" && !bkServiceSuggest.classList.contains("hidden") && items.length) {
+    const active = items[Math.max(0, suggestActiveIndex)] || items[0];
+    if (active) {
+      event.preventDefault();
+      pickService(active.dataset.serviceId);
+    }
+  }
+});
+
+bkServiceSearch?.addEventListener("blur", () => {
+  window.setTimeout(() => hideServiceSuggest(), 120);
+  const typed = bkServiceSearch.value.trim();
+  if (!typed) {
+    clearPickedServiceKeepText();
+    return;
+  }
+  if (selectedServiceId) return;
+  const exact = catalogCache.find(
+    (row) => normalizeSearch(row.name) === normalizeSearch(typed)
+  );
+  if (exact) pickService(exact.id);
 });
 
 bkDate?.addEventListener("change", () => {
@@ -490,12 +584,18 @@ bkDuration?.addEventListener("change", () => {
   refreshTimeOptions().catch(() => {});
 });
 
+document.addEventListener("click", (event) => {
+  const wrap = document.getElementById("bkServiceSuggestWrap");
+  if (wrap && !wrap.contains(event.target)) hideServiceSuggest();
+});
+
 bookingForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const service = selectedServicePayload();
   if (!service.name) {
     showToast("Επιλέξτε ή πληκτρολογήστε υπηρεσία.", true);
+    bkServiceSearch.focus();
     return;
   }
 

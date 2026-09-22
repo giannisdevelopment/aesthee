@@ -67,9 +67,9 @@
       <button class="btn btn-gold" type="button" id="openBookingBtn">+ Νέο ραντεβού</button>
     </div>
 
-    <div class="panel" id="bookingPanel" hidden>
+    <div class="panel panel-pad" id="bookingPanel" hidden>
       <h2 class="panel-title">Νέο ραντεβού</h2>
-      <form id="bookingForm" class="offer-form">
+      <form id="bookingForm" class="booking-form">
         <div class="field-row">
           <div class="field">
             <label for="bkClient">Υπάρχων πελάτης (προαιρετικά)</label>
@@ -103,17 +103,20 @@
           <input id="bkEmail" type="email" autocomplete="email" placeholder="name@email.com" />
         </div>
         <div class="field">
-          <label for="bkService">Υπηρεσία</label>
-          <select id="bkService" required>
-            <option value="">Φόρτωση καταλόγου…</option>
-          </select>
-          <input
-            id="bkServiceCustom"
-            type="text"
-            class="hidden"
-            placeholder="Όνομα υπηρεσίας"
-            style="margin-top:8px"
-          />
+          <label for="bkServiceSearch">Υπηρεσία</label>
+          <div class="suggest" id="bkServiceSuggestWrap">
+            <input
+              id="bkServiceSearch"
+              type="text"
+              autocomplete="off"
+              required
+              placeholder="Πληκτρολογήστε για αναζήτηση…"
+              aria-autocomplete="list"
+              aria-controls="bkServiceSuggest"
+            />
+            <input type="hidden" id="bkServiceId" value="" />
+            <div id="bkServiceSuggest" class="suggest-list hidden" role="listbox"></div>
+          </div>
         </div>
         <div class="field-row">
           <div class="field">
@@ -152,7 +155,7 @@
           <label for="bkNotes">Σημειώσεις</label>
           <textarea id="bkNotes" rows="2" placeholder="Προαιρετικά"></textarea>
         </div>
-        <label class="check-inline" style="margin-bottom:14px">
+        <label class="check-inline booking-link-client">
           <input type="checkbox" id="bkLinkClient" checked />
           Σύνδεση / δημιουργία κάρτας πελάτη
         </label>
