@@ -535,41 +535,8 @@ function initContact() {
 }
 
 function initServiceGalleries() {
-  const labelFor = (open) => (open ? "Κλείσιμο" : "Φωτογραφίες");
-
-  const wrapProofs = (container, insertAfter = null) => {
-    const proofs = [...container.children].filter(
-      (el) => el.classList.contains("svc-proof") || el.classList.contains("svc-proof-grid")
-    );
-    if (!proofs.length) return;
-
-    const details = document.createElement("details");
-    details.className = "svc-gallery";
-    const summary = document.createElement("summary");
-    const body = document.createElement("div");
-    body.className = "svc-gallery-body";
-    proofs.forEach((node) => body.appendChild(node));
-
-    summary.textContent = labelFor(false);
-    details.addEventListener("toggle", () => {
-      summary.textContent = labelFor(details.open);
-    });
-
-    details.append(summary, body);
-    if (insertAfter) insertAfter.after(details);
-    else container.prepend(details);
-  };
-
-  document.querySelectorAll(".svc-item").forEach((item) => {
-    const body = item.querySelector(":scope > .svc-item-body");
-    if (body) {
-      wrapProofs(body);
-      return;
-    }
-    const row = item.querySelector(":scope > .svc-item-row");
-    wrapProofs(item, row);
-  });
-
+  // Rich service rows already include proof images inside the open body —
+  // show them with Λεπτομέρειες (no nested Φωτογραφίες toggle).
   document.querySelectorAll(".svc-panel > .svc-results").forEach((grid) => {
     const details = document.createElement("details");
     details.className = "svc-gallery svc-gallery--results";
