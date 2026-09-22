@@ -10,6 +10,7 @@
     { "source": "/messages.html", "destination": "/admin/messages", "permanent": false },
     { "source": "/client", "destination": "/admin/client", "permanent": false },
     { "source": "/client.html", "destination": "/admin/client", "permanent": false },
+    { "source": "/services-admin", "destination": "/admin/services", "permanent": false },
     { "source": "/clients", "destination": "/admin", "permanent": false },
     { "source": "/clients.html", "destination": "/admin", "permanent": false }
   ],
@@ -17,6 +18,7 @@
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/admin/", "destination": "/admin/index.html" },
     { "source": "/admin/bookings", "destination": "/admin/bookings.html" },
+    { "source": "/admin/services", "destination": "/admin/services.html" },
     { "source": "/admin/messages", "destination": "/admin/messages.html" },
     { "source": "/admin/client", "destination": "/admin/client.html" }
   ],

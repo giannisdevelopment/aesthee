@@ -3,11 +3,11 @@ export const BOOKING_DAY_START = 10 * 60; // 10:00
 export const BOOKING_DAY_END = 21 * 60; // 21:00
 export const SLOT_STEP_MINUTES = 15;
 
-/** @typedef {{ id: string, name: string, durationMin: number, priceCents: number, priceFrom?: boolean }} BookingService */
+/** @typedef {{ id: string, name: string, durationMin: number, priceCents: number, priceFrom?: boolean, isOffer?: boolean }} BookingService */
 /** @typedef {{ id: string, label: string, services: BookingService[] }} BookingCategory */
 
-/** @type {BookingCategory[]} */
-export const BOOKING_CATEGORIES = [
+/** @type {BookingCategory[]} — defaults; live catalog may replace via applyCatalogFromRows() */
+export const DEFAULT_BOOKING_CATEGORIES = [
   {
     id: "brows",
     label: "Περιποίηση φρυδιών",
@@ -152,6 +152,12 @@ export const BOOKING_CATEGORIES = [
   },
 ];
 
+/** @type {BookingCategory[]} */
+export let BOOKING_CATEGORIES = DEFAULT_BOOKING_CATEGORIES.map((cat) => ({
+  ...cat,
+  services: cat.services.map((s) => ({ ...s })),
+}));
+
 /** Deep-link aliases from services.html (?service=…) → catalog id */
 const SERVICE_ALIASES = {
   "βαθύς καθαρισμός προσώπου": "deep-cleanse",
@@ -265,12 +271,73 @@ export function getCabinPoolForServiceName(serviceName) {
 
 const byId = new Map();
 const byName = new Map();
-for (const category of BOOKING_CATEGORIES) {
-  for (const service of category.services) {
-    const enriched = { ...service, categoryId: category.id, categoryLabel: category.label };
-    byId.set(service.id, enriched);
-    byName.set(service.name.toLowerCase(), enriched);
+
+function rebuildIndexes() {
+  byId.clear();
+  byName.clear();
+  for (const category of BOOKING_CATEGORIES) {
+    for (const service of category.services) {
+      const enriched = {
+        ...service,
+        categoryId: category.id,
+        categoryLabel: category.label,
+      };
+      byId.set(service.id, enriched);
+      byName.set(service.name.toLowerCase(), enriched);
+    }
   }
+}
+
+rebuildIndexes();
+
+/**
+ * Replace live catalog from Supabase rows (active services only).
+ * @param {Array<{
+ *   id: string,
+ *   category_id: string,
+ *   category_label: string,
+ *   name: string,
+ *   duration_minutes: number,
+ *   price_cents: number,
+ *   price_from?: boolean,
+ *   is_offer?: boolean,
+ *   sort_order?: number,
+ * }>} rows
+ */
+export function applyCatalogFromRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) return BOOKING_CATEGORIES;
+
+  const sorted = [...rows].sort((a, b) => {
+    const ao = Number(a.sort_order) || 0;
+    const bo = Number(b.sort_order) || 0;
+    if (ao !== bo) return ao - bo;
+    return String(a.name || "").localeCompare(String(b.name || ""), "el");
+  });
+
+  /** @type {Map<string, BookingCategory>} */
+  const byCat = new Map();
+  for (const row of sorted) {
+    const categoryId = row.category_id;
+    if (!byCat.has(categoryId)) {
+      byCat.set(categoryId, {
+        id: categoryId,
+        label: row.category_label,
+        services: [],
+      });
+    }
+    byCat.get(categoryId).services.push({
+      id: row.id,
+      name: row.name,
+      durationMin: Number(row.duration_minutes) || 60,
+      priceCents: Number(row.price_cents) || 0,
+      priceFrom: Boolean(row.price_from),
+      isOffer: Boolean(row.is_offer),
+    });
+  }
+
+  BOOKING_CATEGORIES = [...byCat.values()];
+  rebuildIndexes();
+  return BOOKING_CATEGORIES;
 }
 
 export function getServiceById(id) {

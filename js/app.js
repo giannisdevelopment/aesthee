@@ -291,7 +291,19 @@ let bookingCatalogPromise = null;
 
 function loadBookingCatalog() {
   if (!bookingCatalogPromise) {
-    bookingCatalogPromise = import("./booking-services.js");
+    bookingCatalogPromise = (async () => {
+      const catalog = await import("./booking-services.js");
+      try {
+        const { isSupabaseConfigured, fetchServiceCatalog } = await import("./booking-api.js");
+        if (isSupabaseConfigured()) {
+          const rows = await fetchServiceCatalog();
+          if (rows?.length) catalog.applyCatalogFromRows(rows);
+        }
+      } catch (error) {
+        console.warn("catalog load fallback to defaults", error);
+      }
+      return catalog;
+    })();
   }
   return bookingCatalogPromise;
 }

@@ -496,3 +496,58 @@ create policy "Staff can update contact_messages"
   on public.contact_messages for update to authenticated using (true) with check (true);
 create policy "Staff can delete contact_messages"
   on public.contact_messages for delete to authenticated using (true);
+
+-- ---------------------------------------------------------------------------
+-- Service catalog (editable prices + offers) — full seed in migrate-catalog.sql
+-- ---------------------------------------------------------------------------
+create table if not exists public.catalog_services (
+  id text primary key,
+  category_id text not null,
+  category_label text not null,
+  name text not null,
+  duration_minutes int not null,
+  price_cents int not null,
+  price_from boolean not null default false,
+  is_offer boolean not null default false,
+  sort_order int not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint catalog_services_name_len check (char_length(trim(name)) >= 2),
+  constraint catalog_services_duration check (duration_minutes >= 5 and duration_minutes <= 480),
+  constraint catalog_services_price check (price_cents >= 0)
+);
+
+create index if not exists catalog_services_category_idx
+  on public.catalog_services (category_id, sort_order);
+create index if not exists catalog_services_active_idx
+  on public.catalog_services (is_active, category_id);
+
+drop trigger if exists catalog_services_set_updated_at on public.catalog_services;
+create trigger catalog_services_set_updated_at
+  before update on public.catalog_services
+  for each row
+  execute function public.set_updated_at();
+
+alter table public.catalog_services enable row level security;
+
+drop policy if exists "Public can read active catalog" on public.catalog_services;
+drop policy if exists "Staff can select catalog" on public.catalog_services;
+drop policy if exists "Staff can insert catalog" on public.catalog_services;
+drop policy if exists "Staff can update catalog" on public.catalog_services;
+drop policy if exists "Staff can delete catalog" on public.catalog_services;
+
+create policy "Public can read active catalog"
+  on public.catalog_services for select to anon
+  using (is_active = true);
+
+create policy "Staff can select catalog"
+  on public.catalog_services for select to authenticated using (true);
+create policy "Staff can insert catalog"
+  on public.catalog_services for insert to authenticated with check (true);
+create policy "Staff can update catalog"
+  on public.catalog_services for update to authenticated using (true) with check (true);
+create policy "Staff can delete catalog"
+  on public.catalog_services for delete to authenticated using (true);
+
+-- Seed rows: run supabase/migrate-catalog.sql (ON CONFLICT DO NOTHING — safe with edits)

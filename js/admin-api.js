@@ -232,6 +232,45 @@ export async function findOrCreateClientFromBooking(appointment) {
   return data.id;
 }
 
+export async function listCatalogServices({ categoryId = "", query = "", includeInactive = true } = {}) {
+  let request = getSupabase()
+    .from("catalog_services")
+    .select("*")
+    .order("category_label", { ascending: true })
+    .order("sort_order", { ascending: true });
+
+  if (categoryId) request = request.eq("category_id", categoryId);
+  if (!includeInactive) request = request.eq("is_active", true);
+
+  const q = query.trim();
+  if (q) {
+    request = request.or(`name.ilike.%${q}%,category_label.ilike.%${q}%`);
+  }
+
+  return request;
+}
+
+export async function updateCatalogService(id, payload) {
+  return getSupabase()
+    .from("catalog_services")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
+}
+
+export async function createCatalogService(payload) {
+  return getSupabase()
+    .from("catalog_services")
+    .insert(payload)
+    .select()
+    .single();
+}
+
+export async function deleteCatalogService(id) {
+  return getSupabase().from("catalog_services").delete().eq("id", id);
+}
+
 export function formatTime(value) {
   if (!value) return "—";
   return String(value).slice(0, 5);

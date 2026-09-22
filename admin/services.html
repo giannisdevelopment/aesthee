@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Τιμές &amp; προσφορές — Aesthée Admin</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body data-admin-page="services">
+  <div id="loginView" class="login-wrap hidden">
+    <form class="panel login-card" id="loginForm">
+      <h1>Aesthée Admin</h1>
+      <p>Σύνδεση προσωπικού για τιμές και προσφορές.</p>
+      <div id="configBanner" class="banner-warn hidden">
+        Λείπει το <code>js/supabase-config.js</code>. Αντιγράψτε από το
+        <code>supabase-config.example.js</code> και βάλτε URL + anon key.
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="password">Κωδικός</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <button class="btn btn-gold" type="submit" style="width:100%">Σύνδεση</button>
+    </form>
+  </div>
+
+  <div id="appView" class="admin-shell hidden">
+    <header class="admin-top">
+      <div class="admin-brand">
+        <img src="/images/logo-emblem.svg" alt="" />
+        <div>
+          <strong>Aesthée</strong>
+          <span>Τιμές &amp; προσφορές</span>
+        </div>
+      </div>
+      <div class="admin-actions">
+        <nav class="admin-nav">
+          <a href="/admin/">Πελάτες</a>
+          <a href="/admin/bookings">Ραντεβού</a>
+          <a class="is-active" href="/admin/services">Τιμές</a>
+          <a href="/admin/messages">Μηνύματα</a>
+        </nav>
+        <button class="btn btn-ghost" type="button" id="signOutBtn">Αποσύνδεση</button>
+      </div>
+    </header>
+
+    <p class="admin-lead">
+      Αρχικές τιμές και πακέτα είναι ήδη φορτωμένα. Αλλάξτε τιμή / διάρκεια / όνομα,
+      απενεργοποιήστε μια υπηρεσία, ή προσθέστε νέα προσφορά — εμφανίζεται αμέσως στο online booking.
+    </p>
+
+    <div class="toolbar toolbar-wrap">
+      <input class="search" id="searchInput" type="search" placeholder="Αναζήτηση υπηρεσίας…" />
+      <select id="categoryFilter" aria-label="Κατηγορία">
+        <option value="">Όλες οι κατηγορίες</option>
+      </select>
+      <label class="check-inline">
+        <input type="checkbox" id="showInactive" />
+        Εμφάνιση ανενεργών
+      </label>
+      <button class="btn btn-gold" type="button" id="openOfferBtn">+ Νέα προσφορά</button>
+    </div>
+
+    <div class="panel" id="offerPanel" hidden>
+      <h2 class="panel-title">Νέα προσφορά / υπηρεσία</h2>
+      <form id="offerForm" class="offer-form">
+        <div class="field-row">
+          <div class="field">
+            <label for="offerCategory">Κατηγορία</label>
+            <select id="offerCategory" required></select>
+          </div>
+          <div class="field">
+            <label for="offerName">Όνομα</label>
+            <input id="offerName" type="text" required placeholder="π.χ. Vacutherm — πακέτο 10+2" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="offerPrice">Τιμή (€)</label>
+            <input id="offerPrice" type="number" min="0" step="0.01" required placeholder="250" />
+          </div>
+          <div class="field">
+            <label for="offerDuration">Διάρκεια (λεπτά)</label>
+            <input id="offerDuration" type="number" min="5" max="480" step="5" required value="30" />
+          </div>
+        </div>
+        <div class="field-row offer-flags">
+          <label class="check-inline">
+            <input type="checkbox" id="offerIsOffer" checked />
+            Προσφορά / πακέτο
+          </label>
+          <label class="check-inline">
+            <input type="checkbox" id="offerPriceFrom" />
+            «από» τιμή
+          </label>
+        </div>
+        <div class="offer-actions">
+          <button class="btn btn-gold" type="submit">Αποθήκευση</button>
+          <button class="btn btn-ghost" type="button" id="cancelOfferBtn">Ακύρωση</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Υπηρεσία</th>
+            <th>Τιμή €</th>
+            <th>Διάρκεια</th>
+            <th>Προσφορά</th>
+            <th>Ενεργή</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="servicesBody">
+          <tr><td colspan="6" class="empty">Φόρτωση…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="toast" id="adminToast" role="status"></div>
+  <script src="/js/supabase-config.js"></script>
+  <script type="module" src="/js/admin-services.js"></script>
+</body>
+</html>

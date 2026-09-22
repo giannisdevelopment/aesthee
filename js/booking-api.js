@@ -87,6 +87,24 @@ export async function fetchBookedTimes(dateKey) {
   return (data || []).map(normalizeTime);
 }
 
+/** @returns {Promise<object[]|null>} active catalog rows, or null if unavailable */
+export async function fetchServiceCatalog() {
+  const sb = getSupabase();
+  if (!sb) return null;
+
+  const { data, error } = await sb
+    .from("catalog_services")
+    .select("id, category_id, category_label, name, duration_minutes, price_cents, price_from, is_offer, sort_order")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.warn("catalog_services", error);
+    return null;
+  }
+  return data || [];
+}
+
 export async function createBooking({
   service,
   date,

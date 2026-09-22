@@ -8,10 +8,9 @@
 ## 2. Run schema
 1. SQL Editor → New query
 2. Paste and run all of `supabase/schema.sql`
-3. Confirm tables: `clients`, `visits`, `appointments`, `contact_messages`
-4. Confirm RPCs: `get_booked_times`, `get_booked_slots`, `create_booking`, `submit_contact`
-
-> **Re-run note:** If you already applied an older schema, re-run the full `schema.sql`. It adds `duration_minutes` / `price_cents` on appointments, replaces `create_booking` (duration-aware overlap checks), and adds `get_booked_slots`.
+3. Also run `supabase/migrate-catalog.sql` (seeds prices + offers; safe to re-run — never overwrites edits)
+4. Confirm tables: `clients`, `visits`, `appointments`, `contact_messages`, `catalog_services`
+5. Confirm RPCs: `get_booked_times`, `get_booked_slots`, `create_booking`, `submit_contact`
 
 ## 3. Create staff login
 1. Authentication → Providers → **Email** enabled
@@ -43,10 +42,11 @@ Set environment variables:
 ## What is connected
 | Surface | Behavior |
 |---|---|
-| `/booking.html` | Priced service catalog; slots sized by duration; overlap-aware availability via `get_booked_slots` + `create_booking` |
+| `/booking.html` | Priced service catalog from `catalog_services` (falls back to defaults); duration-aware slots |
 | `/contact.html` | Saves messages via `submit_contact` |
 | `/admin/` | Staff login → clients CRM |
 | `/admin/bookings.html` | Manage appointments, status, link to client |
+| `/admin/services.html` | Edit prices, toggle active, add package offers |
 | `/admin/messages.html` | Contact inbox |
 
 Public booking never exposes other guests’ names/phones (RPC only returns busy times).
