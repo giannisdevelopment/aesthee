@@ -4,10 +4,10 @@
  * Env (Vercel project):
  *   RESEND_API_KEY   — required
  *   EMAIL_FROM       — e.g. "Aesthée <info@aesthee.gr>" (verified domain)
- *   SITE_URL         — optional, default https://aesthee.gr
+ *   SITE_URL         — optional, default https://www.aesthee.gr
  */
 
-const SITE = () => (process.env.SITE_URL || "https://aesthee.gr").replace(/\/$/, "");
+const SITE = () => (process.env.SITE_URL || "https://www.aesthee.gr").replace(/\/$/, "");
 
 const BRAND = {
   name: "Aesthée",

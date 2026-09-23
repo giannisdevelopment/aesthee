@@ -1,4 +1,4 @@
-# Aesthée — https://aesthee.gr
+# Aesthée — https://www.aesthee.gr
 User-agent: *
 Allow: /
 
@@ -16,4 +16,4 @@ Disallow: /clients
 Disallow: /clients.html
 Disallow: /services-admin
 
-Sitemap: https://aesthee.gr/sitemap.xml
+Sitemap: https://www.aesthee.gr/sitemap.xml
