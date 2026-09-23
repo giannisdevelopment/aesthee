@@ -1,0 +1,19 @@
+# Aesthée — https://aesthee.gr
+User-agent: *
+Allow: /
+
+# Staff / internal surfaces — never index
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /bookings
+Disallow: /bookings.html
+Disallow: /messages
+Disallow: /messages.html
+Disallow: /client
+Disallow: /client.html
+Disallow: /clients
+Disallow: /clients.html
+Disallow: /services-admin
+
+Sitemap: https://aesthee.gr/sitemap.xml

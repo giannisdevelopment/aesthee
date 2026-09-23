@@ -2359,9 +2359,17 @@ textarea {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 1.45rem;
   font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
   color: var(--ink);
+}
+
+/* Latin in Cormorant reads thinner than Greek — bump size/weight to match */
+.seminar-card h3 .seminar-en {
+  font-size: 1.14em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-synthesis: none;
 }
 
 .seminar-card p {

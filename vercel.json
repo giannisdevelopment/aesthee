@@ -4,48 +4,156 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".",
   "redirects": [
-    { "source": "/bookings", "destination": "/admin/bookings", "permanent": false },
-    { "source": "/bookings.html", "destination": "/admin/bookings", "permanent": false },
-    { "source": "/messages", "destination": "/admin/messages", "permanent": false },
-    { "source": "/messages.html", "destination": "/admin/messages", "permanent": false },
-    { "source": "/client", "destination": "/admin/client", "permanent": false },
-    { "source": "/client.html", "destination": "/admin/client", "permanent": false },
-    { "source": "/services-admin", "destination": "/admin/services", "permanent": false },
-    { "source": "/clients", "destination": "/admin", "permanent": false },
-    { "source": "/clients.html", "destination": "/admin", "permanent": false }
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/services.html",
+      "destination": "/services",
+      "permanent": true
+    },
+    {
+      "source": "/seminars.html",
+      "destination": "/seminars",
+      "permanent": true
+    },
+    {
+      "source": "/booking.html",
+      "destination": "/booking",
+      "permanent": true
+    },
+    {
+      "source": "/location.html",
+      "destination": "/location",
+      "permanent": true
+    },
+    {
+      "source": "/contact.html",
+      "destination": "/contact",
+      "permanent": true
+    },
+    {
+      "source": "/bookings",
+      "destination": "/admin/bookings",
+      "permanent": false
+    },
+    {
+      "source": "/bookings.html",
+      "destination": "/admin/bookings",
+      "permanent": false
+    },
+    {
+      "source": "/messages",
+      "destination": "/admin/messages",
+      "permanent": false
+    },
+    {
+      "source": "/messages.html",
+      "destination": "/admin/messages",
+      "permanent": false
+    },
+    {
+      "source": "/client",
+      "destination": "/admin/client",
+      "permanent": false
+    },
+    {
+      "source": "/client.html",
+      "destination": "/admin/client",
+      "permanent": false
+    },
+    {
+      "source": "/services-admin",
+      "destination": "/admin/services",
+      "permanent": false
+    },
+    {
+      "source": "/clients",
+      "destination": "/admin",
+      "permanent": false
+    },
+    {
+      "source": "/clients.html",
+      "destination": "/admin",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/admin", "destination": "/admin/index.html" },
-    { "source": "/admin/", "destination": "/admin/index.html" },
-    { "source": "/admin/bookings", "destination": "/admin/bookings.html" },
-    { "source": "/admin/services", "destination": "/admin/services.html" },
-    { "source": "/admin/messages", "destination": "/admin/messages.html" },
-    { "source": "/admin/client", "destination": "/admin/client.html" }
+    {
+      "source": "/admin",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/bookings",
+      "destination": "/admin/bookings.html"
+    },
+    {
+      "source": "/admin/services",
+      "destination": "/admin/services.html"
+    },
+    {
+      "source": "/admin/messages",
+      "destination": "/admin/messages.html"
+    },
+    {
+      "source": "/admin/client",
+      "destination": "/admin/client.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     },
     {
       "source": "/css/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
       ]
     },
     {
       "source": "/images/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=2592000" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=2592000"
+        }
       ]
     },
     {
       "source": "/admin/(.*)",
       "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
       ]
     }
   ]
