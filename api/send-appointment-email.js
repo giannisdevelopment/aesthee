@@ -175,6 +175,9 @@ function buildHtml(type, appt, extra = {}) {
   const site = SITE();
   const greet = firstName(appt.guest_name);
   const rows = detailRows(appt, extra, type);
+  // PNG exports of the real SVGs — most mail clients block .svg in <img>
+  const logoEmblem = `${site}/images/email-logo-emblem.png`;
+  const logoWordmark = `${site}/images/email-logo-wordmark.png`;
 
   const rowsHtml = rows
     .map((row, i) => {
@@ -220,17 +223,24 @@ function buildHtml(type, appt, extra = {}) {
       <td align="center" style="padding:36px 16px 48px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;margin:0 auto;">
 
-          <!-- Brand (text mark — SVGs often blocked in mail clients) -->
+          <!-- Brand — real Aesthée emblem + wordmark -->
           <tr>
             <td align="center" style="padding:0 0 28px;">
-              <a href="${escapeHtml(site)}" style="text-decoration:none;color:${BRAND.ink};">
-                <span style="display:inline-block;width:36px;height:36px;line-height:36px;border-radius:10px;background:${BRAND.gold};color:${BRAND.ivory};font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:20px;font-weight:700;">é</span>
-                <div style="margin-top:12px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:600;letter-spacing:0.04em;color:${BRAND.ink};">
-                  Aesthée
-                </div>
-                <div style="margin-top:4px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.inkDim};">
-                  Beauty &amp; Tanning Bar
-                </div>
+              <a href="${escapeHtml(site)}" style="text-decoration:none;border:0;">
+                <img
+                  src="${escapeHtml(logoEmblem)}"
+                  width="56"
+                  height="50"
+                  alt=""
+                  style="display:block;margin:0 auto 12px;border:0;outline:none;width:56px;height:auto;"
+                />
+                <img
+                  src="${escapeHtml(logoWordmark)}"
+                  width="180"
+                  height="69"
+                  alt="${escapeHtml(BRAND.fullName)}"
+                  style="display:block;margin:0 auto;border:0;outline:none;width:180px;height:auto;max-width:180px;"
+                />
               </a>
               <p style="margin:14px 0 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;color:${BRAND.goldDeep};letter-spacing:0.02em;">
                 ${escapeHtml(BRAND.tagline)}
