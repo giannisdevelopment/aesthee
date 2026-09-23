@@ -19,8 +19,8 @@
 3. Authentication → Users → **Add user**
 4. Email + password (e.g. `info@aesthee.gr`)
 5. In the user row, ensure status is **Confirmed** (⋯ → Confirm user if needed)
-6. Authentication → URL Configuration → Site URL = `https://aesthee.vercel.app`
-7. Add Redirect URL: `https://aesthee.vercel.app/**`
+6. Authentication → URL Configuration → Site URL = `https://aesthee.gr`
+7. Add Redirect URL: `https://aesthee.gr/**` (optional: also keep `https://aesthee.vercel.app/**` for previews)
 
 Do **not** put the service_role / secret key in the browser. Admin uses the **anon / publishable** key + staff Auth login.
 
@@ -47,8 +47,8 @@ Staff / online booking can email the guest on create, confirm, reschedule, or ca
 1. Create a free [Resend](https://resend.com) account and API key
 2. In Vercel → Project → Settings → Environment Variables add:
    - `RESEND_API_KEY` = your key
-   - `EMAIL_FROM` = `Aesthée <onboarding@resend.dev>` (or a verified domain sender)
-   - optional `SITE_URL` = `https://aesthee.vercel.app`
+   - `EMAIL_FROM` = `Aesthée <info@aesthee.gr>` (domain must be verified in Resend)
+   - optional `SITE_URL` = `https://aesthee.gr`
 3. Redeploy
 
 Endpoint: `POST /api/send-appointment-email`  

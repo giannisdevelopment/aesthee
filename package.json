@@ -2,6 +2,7 @@
   "name": "aesthee",
   "private": true,
   "scripts": {
-    "build": "node scripts/write-supabase-config.js"
+    "build": "node scripts/write-supabase-config.js && node scripts/minify-css.js",
+    "minify:css": "node scripts/minify-css.js"
   }
 }
