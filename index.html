@@ -6,21 +6,23 @@
   <title>Aesthée — Beauty &amp; Tanning Bar | Αρτέμιδα</title>
   <meta name="description" content="Aesthée Beauty & Tanning Bar στην Αρτέμιδα. Laser αποτρίχωση, solarium, θεραπείες προσώπου και σώματος. Κλείστε ραντεβού online." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preload" as="image" href="images/logo-wordmark.svg" fetchpriority="high" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600&display=optional" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600&display=optional" media="print" onload="this.media='all'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600&display=optional" /></noscript>
-  <link rel="preload" as="image" href="images/hero.webp" type="image/webp" fetchpriority="high" />
+  <link rel="preload" as="image" href="images/hero.webp" type="image/webp" />
   <link rel="preload" href="css/styles.min.css" as="style" />
   <link rel="stylesheet" href="css/styles.min.css" />
+  <link rel="preload" href="js/app.js" as="script" />
 </head>
 <body class="page-home" data-page="home">
   <header class="header" id="header">
     <div class="header-inner">
       <a class="brand" href="index.html" aria-label="Aesthée Beauty &amp; Tanning Bar">
         <img class="brand-emblem" src="images/logo-emblem.svg" alt="" width="574" height="509" />
-        <img class="brand-wordmark" src="images/logo-wordmark.svg" alt="Aesthée Beauty &amp; Tanning Bar" width="756" height="291" />
+        <img class="brand-wordmark" src="images/logo-wordmark.svg" alt="Aesthée Beauty &amp; Tanning Bar" width="756" height="291" fetchpriority="high" decoding="async" />
       </a>
       <a class="btn btn-gold header-cta" href="booking.html">Κλείστε Ραντεβού</a>
       <button class="menu-toggle" id="menuToggle" aria-label="Μενού" aria-expanded="false">
@@ -44,7 +46,7 @@
   <main id="top">
     <section class="hero">
       <div class="hero-media">
-        <img src="images/hero.webp" alt="Ο χώρος του Aesthée Beauty &amp; Tanning Bar" width="819" height="1024" fetchpriority="high" decoding="async" />
+        <img src="images/hero.webp" alt="Ο χώρος του Aesthée Beauty &amp; Tanning Bar" width="819" height="1024" decoding="async" />
         <img class="hero-media-soft" src="images/hero.webp" alt="" aria-hidden="true" width="819" height="1024" decoding="async" />
       </div>
       <div class="hero-content">
@@ -266,6 +268,6 @@
     <a class="btn btn-gold" href="booking.html">Κλείστε Ραντεβού</a>
   </div>
   <div class="toast" id="toast" role="status"></div>
-  <script src="js/app.js"></script>
+  <script src="js/app.js" defer></script>
 </body>
 </html>
