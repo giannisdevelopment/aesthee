@@ -30,8 +30,8 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" /></noscript>
-  <link rel="preload" href="css/styles.min.css?v=3" as="style" />
-  <link rel="stylesheet" href="css/styles.min.css?v=3" />
+  <link rel="preload" href="css/styles.min.css?v=4" as="style" />
+  <link rel="stylesheet" href="css/styles.min.css?v=4" />
   <link rel="preload" href="js/app.js" as="script" />
   <!-- jsonld:start -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://www.aesthee.gr/contact#webpage","url":"https://www.aesthee.gr/contact","name":"Επικοινωνία — Aesthée Beauty & Tanning Bar","description":"Επικοινωνήστε με το Aesthée στην Αρτέμιδα. Τηλ. 2294 152510 · 2294 080026 · info@aesthee.gr","isPartOf":{"@id":"https://www.aesthee.gr/#website"},"about":{"@id":"https://www.aesthee.gr/#business"},"inLanguage":"el-GR"}</script>
@@ -95,6 +95,12 @@
             <div class="field">
               <label for="cMsg">Μήνυμα</label>
               <textarea id="cMsg" name="message" required placeholder="Πώς μπορούμε να βοηθήσουμε;"></textarea>
+            </div>
+            <div class="field field-consent">
+              <label class="consent-label">
+                <input type="checkbox" name="privacy" id="contactPrivacy" required />
+                <span>Συμφωνώ με την <a href="privacy.html" target="_blank" rel="noopener">Πολιτική Απορρήτου</a>.</span>
+              </label>
             </div>
             <button class="btn btn-gold" type="submit">Αποστολή</button>
             <p class="form-note">Απαντάμε το συντομότερο, τις εργάσιμες ώρες.</p>
@@ -166,7 +172,9 @@
       <div class="footer-bottom">
         <p>© 2026 Aesthée Beauty &amp; Tanning Bar</p>
         <div class="footer-bottom-meta">
-          <a href="contact.html">Πείτε μας τι χρειάζεστε</a>
+          <a href="privacy.html">Απόρρητο</a>
+          <a href="terms.html">Όροι</a>
+          <a href="cookies.html">Cookies</a>
           <a class="footer-credit" href="https://elasite.com/" target="_blank" rel="noopener">Powered by elasite.com</a>
         </div>
       </div>

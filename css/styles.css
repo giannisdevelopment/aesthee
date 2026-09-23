@@ -1902,6 +1902,39 @@ textarea {
   text-align: center;
 }
 
+.field-consent {
+  margin-top: 4px;
+}
+
+.consent-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.86rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.consent-label input {
+  margin-top: 3px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold-deep);
+}
+
+.consent-label a {
+  color: var(--gold-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.consent-label a:hover {
+  color: var(--ink);
+}
+
 .why {
   background: var(--ivory);
 }
@@ -2822,4 +2855,90 @@ textarea {
   .svc-catalog {
     padding: 28px 0 72px;
   }
+}
+
+/* —— Legal pages —— */
+.legal {
+  padding-top: calc(var(--header-h) + 48px);
+  padding-bottom: 72px;
+}
+
+.legal-wrap {
+  max-width: 720px;
+}
+
+.legal-updated {
+  margin: -8px 0 28px;
+  font-size: 0.88rem;
+  color: var(--ink-dim);
+}
+
+.legal-body {
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.legal-body h2 {
+  margin: 2rem 0 0.75rem;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.legal-body p,
+.legal-body ul {
+  margin: 0 0 1rem;
+}
+
+.legal-body ul {
+  padding-left: 1.2rem;
+}
+
+.legal-body li {
+  margin-bottom: 0.45rem;
+}
+
+.legal-body a {
+  color: var(--gold-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal-body a:hover {
+  color: var(--ink);
+}
+
+.legal-body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.legal-note {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--gold-line);
+  font-size: 0.84rem;
+  color: var(--ink-dim);
+}
+
+.legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  margin: 36px 0 0;
+  padding-top: 24px;
+  border-top: 1px solid rgba(196, 163, 106, 0.28);
+  font-size: 0.92rem;
+}
+
+.legal-nav a {
+  color: var(--gold-deep);
+  font-weight: 500;
+}
+
+.legal-nav a:hover {
+  color: var(--ink);
 }

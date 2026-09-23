@@ -432,6 +432,10 @@ function initBooking() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
     const catalog = await loadBookingCatalog();
     const service = catalog.getServiceById(state.serviceId);
     const name = event.target.name.value.trim();
@@ -526,6 +530,10 @@ function initContact() {
   if (!form) return;
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
     const name = event.target.name.value.trim();
     const email = event.target.email.value.trim();
     const message = event.target.message.value.trim();

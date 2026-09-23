@@ -35,6 +35,21 @@
       "permanent": true
     },
     {
+      "source": "/privacy.html",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/terms.html",
+      "destination": "/terms",
+      "permanent": true
+    },
+    {
+      "source": "/cookies.html",
+      "destination": "/cookies",
+      "permanent": true
+    },
+    {
       "source": "/bookings",
       "destination": "/admin/bookings",
       "permanent": false
