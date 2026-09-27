@@ -609,16 +609,21 @@ textarea {
 
 .team-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
   margin-top: 36px;
+  align-items: stretch;
 }
 
 .team-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: var(--white);
   border: 1px solid rgba(196, 163, 106, 0.22);
   border-radius: 22px;
-  padding: 22px;
+  padding: 0 0 20px;
+  overflow: hidden;
   box-shadow: var(--shadow);
 }
 
@@ -629,54 +634,99 @@ textarea {
 
 .team-photo {
   width: 100%;
-  aspect-ratio: 4 / 5;
-  border-radius: 16px;
-  overflow: hidden;
+  aspect-ratio: 2 / 3;
   margin-bottom: 16px;
+  border-radius: 0;
+  overflow: hidden;
   background: #ebe2d2;
 }
 
 .team-photo img {
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
+  object-position: center top;
 }
 
 .team-photo.is-placeholder {
   display: grid;
   place-items: center;
+  aspect-ratio: 2 / 3;
   background:
     radial-gradient(90% 70% at 50% 30%, rgba(196, 163, 106, 0.22), transparent 60%),
     linear-gradient(160deg, #f0e5d4 0%, #e2d3bc 100%);
-  border: 1px dashed rgba(196, 163, 106, 0.45);
+  border: 0;
   color: var(--gold-deep);
   font-size: 0.78rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
+.team-copy {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding: 0 18px;
+}
+
 .team-copy h3 {
   margin: 0 0 4px;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   font-weight: 500;
   letter-spacing: -0.01em;
 }
 
 .team-role {
   margin: 0 0 12px;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--gold-deep);
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .team-bio {
   margin: 0;
   color: var(--ink-muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.55;
+  flex: 1;
+}
+
+.team-bio p {
+  margin: 0 0 0.75em;
+}
+
+.team-bio p:last-child {
+  margin-bottom: 0;
+}
+
+.team-quote {
+  margin: 1em 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid rgba(196, 163, 106, 0.28);
+}
+
+.team-quote p {
+  margin: 0 0 0.4em;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.15rem;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.team-quote cite {
+  display: block;
+  font-style: normal;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
 }
 
 .svc-hero {
@@ -2538,6 +2588,10 @@ textarea {
 }
 
 @media (max-width: 1080px) {
+  .team-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .footer-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -2631,10 +2685,6 @@ textarea {
   .highlight-orb,
   .highlight-orb--photo {
     width: 96px;
-  }
-
-  .team-grid {
-    grid-template-columns: 1fr;
   }
 
   .cards,
@@ -2756,6 +2806,10 @@ textarea {
 }
 
 @media (max-width: 600px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+
   .section {
     padding: 64px 0;
   }
