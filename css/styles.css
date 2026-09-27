@@ -729,6 +729,15 @@ textarea {
   color: var(--ink-muted);
 }
 
+.team-card--lead .team-photo {
+  aspect-ratio: 795 / 1024;
+  background: transparent;
+}
+
+.team-card--lead .team-photo img {
+  object-fit: cover;
+}
+
 .svc-hero {
   position: relative;
   min-height: min(92svh, 820px);
