@@ -2,3 +2,6 @@
 .DS_Store
 js/supabase-config.js
 .venv/
+
+# Local backups of uncropped before/after service photos
+images/services/_ba-originals/

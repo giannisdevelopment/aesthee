@@ -112,10 +112,10 @@ insert into public.catalog_services (
   ('lw-mustache-chin', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Γυναίκες — Μουστάκι + πηγούνι', 10, 2500, false, false, 550, true),
   ('lw-cheeks', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Γυναίκες — Παρείες', 10, 2000, false, false, 560, true),
   ('lw-belly-line', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Γυναίκες — Γραμμή κοιλιάς', 10, 2000, false, false, 570, true),
-  ('lw-full-10', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Full Body — 10 συνεδρίες', 60, 115000, false, true, 580, true),
-  ('lw-full-6', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Full Body — 6 συνεδρίες', 60, 69000, false, true, 590, true),
-  ('lw-bikini-under-6', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Full Bikini + Armpits — 6 συνεδρίες', 20, 30000, false, true, 600, true),
-  ('lw-bikini-under-10', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Full Bikini + Armpits — 10 συνεδρίες', 20, 50000, false, true, 610, true),
+  ('lw-full-10', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Full Body — 10 συνεδρίες + δώρο Full Face', 60, 110000, false, true, 580, true),
+  ('lw-full-6', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Full Body — 6 συνεδρίες + δώρο Full Face', 60, 69000, false, true, 590, true),
+  ('lw-bikini-under-6', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Full Bikini + Μασχάλες — 6 συνεδρίες', 20, 30000, false, true, 600, true),
+  ('lw-bikini-under-10', 'laser-women', 'Αποτρίχωση Laser — Γυναίκες', 'Laser Full Bikini + Μασχάλες — 10 συνεδρίες', 20, 50000, false, true, 610, true),
   ('lm-full-body', 'laser-men', 'Αποτρίχωση Laser — Άντρες', 'Laser Άντρες — Full Body', 120, 23000, false, false, 620, true),
   ('lm-back', 'laser-men', 'Αποτρίχωση Laser — Άντρες', 'Laser Άντρες — Πλάτη', 20, 7000, false, false, 630, true),
   ('lm-waist', 'laser-men', 'Αποτρίχωση Laser — Άντρες', 'Laser Άντρες — Μέση', 10, 4000, false, false, 640, true),
@@ -151,8 +151,8 @@ insert into public.catalog_services (
   ('madero-pack', 'body', 'Θεραπείες σώματος', 'Μαδεροθεραπεία — πακέτο 10+2 δώρο', 35, 25000, false, true, 940, true),
   ('rf-body', 'body', 'Θεραπείες σώματος', 'RF Microneedling σώματος (έως 3 περιοχές)', 60, 18000, false, false, 950, true),
   ('rf-body-pack', 'body', 'Θεραπείες σώματος', 'RF Microneedling σώματος — πακέτο 3 συνεδριών', 60, 45000, false, true, 960, true),
-  ('massage', 'body', 'Θεραπείες σώματος', 'Μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό', 55, 4000, false, false, 970, true),
-  ('massage-cupping', 'body', 'Θεραπείες σώματος', 'Μασάζ βεντούζες', 40, 4000, false, false, 980, true),
-  ('massage-neck-back', 'body', 'Θεραπείες σώματος', 'Μασάζ αυχένα πλάτη μέση', 30, 3500, false, false, 990, true),
-  ('wax', 'body', 'Θεραπείες σώματος', 'Αποτρίχωση με κερί', 30, 2500, true, false, 1000, true)
+  ('wax', 'body', 'Θεραπείες σώματος', 'Αποτρίχωση με κερί', 30, 2500, true, false, 1000, true),
+  ('massage', 'massage', 'Μασάζ', 'Μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό', 55, 4000, false, false, 1010, true),
+  ('massage-cupping', 'massage', 'Μασάζ', 'Μασάζ βεντούζες', 40, 4000, false, false, 1020, true),
+  ('massage-neck-back', 'massage', 'Μασάζ', 'Μασάζ αυχένα πλάτη μέση', 30, 3500, false, false, 1030, true)
 on conflict (id) do nothing;

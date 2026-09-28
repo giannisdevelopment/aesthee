@@ -93,10 +93,10 @@ export const DEFAULT_BOOKING_CATEGORIES = [
       { id: "lw-mustache-chin", name: "Laser Γυναίκες — Μουστάκι + πηγούνι", durationMin: 10, priceCents: 2500 },
       { id: "lw-cheeks", name: "Laser Γυναίκες — Παρείες", durationMin: 10, priceCents: 2000 },
       { id: "lw-belly-line", name: "Laser Γυναίκες — Γραμμή κοιλιάς", durationMin: 10, priceCents: 2000 },
-      { id: "lw-full-10", name: "Laser Full Body — 10 συνεδρίες", durationMin: 60, priceCents: 115000, isOffer: true },
-      { id: "lw-full-6", name: "Laser Full Body — 6 συνεδρίες", durationMin: 60, priceCents: 69000, isOffer: true },
-      { id: "lw-bikini-under-6", name: "Laser Full Bikini + Armpits — 6 συνεδρίες", durationMin: 20, priceCents: 30000, isOffer: true },
-      { id: "lw-bikini-under-10", name: "Laser Full Bikini + Armpits — 10 συνεδρίες", durationMin: 20, priceCents: 50000, isOffer: true },
+      { id: "lw-full-10", name: "Laser Full Body — 10 συνεδρίες + δώρο Full Face", durationMin: 60, priceCents: 110000, isOffer: true },
+      { id: "lw-full-6", name: "Laser Full Body — 6 συνεδρίες + δώρο Full Face", durationMin: 60, priceCents: 69000, isOffer: true },
+      { id: "lw-bikini-under-6", name: "Laser Full Bikini + Μασχάλες — 6 συνεδρίες", durationMin: 20, priceCents: 30000, isOffer: true },
+      { id: "lw-bikini-under-10", name: "Laser Full Bikini + Μασχάλες — 10 συνεδρίες", durationMin: 20, priceCents: 50000, isOffer: true },
     ],
   },
   {
@@ -144,10 +144,16 @@ export const DEFAULT_BOOKING_CATEGORIES = [
       { id: "madero-pack", name: "Μαδεροθεραπεία — πακέτο 10+2 δώρο", durationMin: 35, priceCents: 25000, isOffer: true },
       { id: "rf-body", name: "RF Microneedling σώματος (έως 3 περιοχές)", durationMin: 60, priceCents: 18000 },
       { id: "rf-body-pack", name: "RF Microneedling σώματος — πακέτο 3 συνεδριών", durationMin: 60, priceCents: 45000, isOffer: true },
+      { id: "wax", name: "Αποτρίχωση με κερί", durationMin: 30, priceCents: 2500, priceFrom: true },
+    ],
+  },
+  {
+    id: "massage",
+    label: "Μασάζ",
+    services: [
       { id: "massage", name: "Μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό", durationMin: 55, priceCents: 4000 },
       { id: "massage-cupping", name: "Μασάζ βεντούζες", durationMin: 40, priceCents: 4000 },
       { id: "massage-neck-back", name: "Μασάζ αυχένα πλάτη μέση", durationMin: 30, priceCents: 3500 },
-      { id: "wax", name: "Αποτρίχωση με κερί", durationMin: 30, priceCents: 2500, priceFrom: true },
     ],
   },
 ];
@@ -204,6 +210,14 @@ const SERVICE_ALIASES = {
   "συντήρηση βλεφαρίδων extensions": "lash-maint-classic",
   "laser αποτρίχωση — διοδικό": "lw-full-body",
   "laser αποτρίχωση — αλεξανδρίτης": "lw-full-body",
+  "laser full body — 10 συνεδρίες": "lw-full-10",
+  "laser full body — 10 συνεδρίες + δώρο full face": "lw-full-10",
+  "laser full body — 6 συνεδρίες": "lw-full-6",
+  "laser full body — 6 συνεδρίες + δώρο full face": "lw-full-6",
+  "laser full bikini + armpits — 6 συνεδρίες": "lw-bikini-under-6",
+  "laser full bikini + μασχάλες — 6 συνεδρίες": "lw-bikini-under-6",
+  "laser full bikini + armpits — 10 συνεδρίες": "lw-bikini-under-10",
+  "laser full bikini + μασχάλες — 10 συνεδρίες": "lw-bikini-under-10",
   "ριζική αποτρίχωση προσώπου & λαιμού": "elec-15",
 };
 
@@ -241,7 +255,13 @@ export function getCabinPool(service) {
   ) {
     return [3];
   }
-  if (service.categoryId === "body") return [5];
+  if (
+    service.categoryId === "body"
+    || service.categoryId === "massage"
+    || id === "massage"
+    || id === "massage-cupping"
+    || id === "massage-neck-back"
+  ) return [5];
   // face, laser, electrolysis → Κ1/Κ2
   return [1, 2];
 }

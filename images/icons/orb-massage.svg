@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#f6ecdc"/>
+      <stop offset="100%" stop-color="#d9c09a"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="122" fill="url(#g)"/>
+  <circle cx="128" cy="128" r="114" fill="none" stroke="#8a6b3d" stroke-width="1.5"/>
+  <circle cx="128" cy="128" r="108" fill="none" stroke="#8a6b3d" stroke-width="0.8"/>
+  <path d="M128 34 A94 94 0 0 1 208 92" fill="none" id="top"/>
+  <text fill="#6e542e" font-family="Georgia, serif" font-size="15" letter-spacing="3" text-anchor="middle">
+    <textPath href="#top" startOffset="50%">MASSAGE</textPath>
+  </text>
+  <path d="M208 164 A94 94 0 0 1 48 164" fill="none" id="bot"/>
+  <text fill="#6e542e" font-family="Georgia, serif" font-size="13" letter-spacing="1.5" text-anchor="middle">
+    <textPath href="#bot" startOffset="50%">ΜΑΣΑΖ</textPath>
+  </text>
+  <path d="M128 78c0 0 18 24 18 40a18 18 0 1 1-36 0c0-16 18-40 18-40z" fill="none" stroke="#8a6b3d" stroke-width="2"/>
+  <path d="M92 150c8-14 22-20 36-20s28 6 36 20" fill="none" stroke="#8a6b3d" stroke-width="2" stroke-linecap="round"/>
+  <path d="M100 168c10-8 22-12 28-12s18 4 28 12" fill="none" stroke="#8a6b3d" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M118 188h20M128 182v12" stroke="#8a6b3d" stroke-width="1.4" stroke-linecap="round"/>
+</svg>
