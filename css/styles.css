@@ -1568,6 +1568,96 @@ textarea {
   padding-bottom: 16px;
 }
 
+.reviews {
+  background: var(--cream);
+  padding-top: 72px;
+  padding-bottom: 88px;
+}
+
+.reviews .section-lead {
+  margin-bottom: 36px;
+}
+
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+}
+
+.review-card {
+  margin: 0;
+  padding: 0 0 4px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.review-card + .review-card {
+  border-top: 0;
+}
+
+.review-stars {
+  margin: 0 0 12px;
+  color: var(--gold-deep);
+  letter-spacing: 0.12em;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.review-text {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin-top: 16px;
+}
+
+.review-meta cite {
+  font-style: normal;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.review-meta span {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.reviews-more {
+  margin: 32px 0 0;
+}
+
+.reviews-more a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  border-bottom: 1px solid rgba(196, 163, 106, 0.45);
+  padding-bottom: 2px;
+  transition: color 180ms ease, border-color 180ms ease;
+}
+
+.reviews-more a:hover {
+  color: var(--ink);
+  border-color: rgba(44, 36, 28, 0.35);
+}
+
 .atm {
   margin-top: 36px;
 }
@@ -2829,6 +2919,11 @@ textarea {
   .svc-facts,
   .svc-subs {
     grid-template-columns: 1fr;
+  }
+
+  .reviews-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
   }
 }
 
