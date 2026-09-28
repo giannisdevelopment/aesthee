@@ -2,6 +2,7 @@
   --cream: #f6f0e6;
   --cream-deep: #ebe2d2;
   --ivory: #fbf7f0;
+  --brand-beige: #efd2b3;
   --gold: #c4a36a;
   --gold-deep: #9a7b4a;
   --gold-soft: #e8d5b0;
@@ -387,10 +388,29 @@ textarea {
 
 .page-home .hero {
   min-height: 100svh;
+  color: var(--ink);
 }
 
 .page-home .hero-content {
   padding-top: 108px;
+}
+
+.page-home .hero-english,
+.page-home .hero-proof {
+  color: var(--gold-deep);
+}
+
+.page-home .hero .btn-ghost {
+  color: var(--ink);
+  border-color: rgba(44, 36, 28, 0.35);
+}
+
+.page-home .hero .btn-ghost:hover {
+  background: rgba(44, 36, 28, 0.06);
+}
+
+.page-home .scroll-hint {
+  color: rgba(44, 36, 28, 0.55);
 }
 
 .hero {
@@ -406,23 +426,22 @@ textarea {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(196, 163, 106, 0.42) 0%, transparent 68%),
-    radial-gradient(ellipse 55% 45% at 18% 78%, rgba(232, 213, 176, 0.18) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 40% at 85% 22%, rgba(154, 123, 74, 0.28) 0%, transparent 72%),
-    linear-gradient(165deg, #3a2f24 0%, #2c241c 42%, #1f1914 100%);
-  filter: blur(0);
+    radial-gradient(ellipse 72% 58% at 50% 40%, rgba(255, 250, 242, 0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 42% at 12% 82%, rgba(196, 163, 106, 0.22) 0%, transparent 72%),
+    radial-gradient(ellipse 48% 40% at 88% 18%, rgba(154, 123, 74, 0.16) 0%, transparent 70%),
+    linear-gradient(165deg, #f4ddc4 0%, var(--brand-beige) 48%, #e6c8a8 100%);
 }
 
 .hero-media::before {
   content: "";
   position: absolute;
-  inset: -12%;
+  inset: -14%;
   background:
-    radial-gradient(circle at 42% 48%, rgba(196, 163, 106, 0.55) 0%, transparent 42%),
-    radial-gradient(circle at 62% 36%, rgba(232, 213, 176, 0.28) 0%, transparent 38%),
-    radial-gradient(circle at 30% 70%, rgba(154, 123, 74, 0.32) 0%, transparent 40%);
-  filter: blur(56px);
-  transform: scale(1.05);
+    radial-gradient(circle at 48% 42%, rgba(255, 252, 246, 0.7) 0%, transparent 40%),
+    radial-gradient(circle at 28% 68%, rgba(196, 163, 106, 0.28) 0%, transparent 42%),
+    radial-gradient(circle at 72% 30%, rgba(232, 213, 176, 0.45) 0%, transparent 38%);
+  filter: blur(52px);
+  transform: scale(1.04);
   pointer-events: none;
 }
 
@@ -431,8 +450,8 @@ textarea {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 58% 64% at 50% 46%, rgba(44, 36, 28, 0.12) 0%, transparent 72%),
-    linear-gradient(180deg, rgba(44, 36, 28, 0.18) 0%, rgba(44, 36, 28, 0.35) 48%, rgba(44, 36, 28, 0.72) 100%);
+    radial-gradient(ellipse 60% 55% at 50% 44%, transparent 35%, rgba(239, 210, 179, 0.35) 100%),
+    linear-gradient(180deg, rgba(239, 210, 179, 0.15) 0%, transparent 40%, rgba(196, 163, 106, 0.18) 100%);
   pointer-events: none;
 }
 
