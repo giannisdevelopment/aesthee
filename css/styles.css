@@ -464,7 +464,7 @@ textarea {
   letter-spacing: 0.01em;
   color: var(--gold-soft);
   margin: 10px auto 0;
-  max-width: 22ch;
+  max-width: 28ch;
 }
 
 .hero-proof {
@@ -2252,7 +2252,7 @@ textarea {
   line-height: 1.2;
   color: var(--gold-soft);
   margin: 0;
-  max-width: 22ch;
+  max-width: 28ch;
 }
 
 .footer-grid {

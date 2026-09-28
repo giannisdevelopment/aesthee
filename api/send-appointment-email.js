@@ -12,7 +12,7 @@ const SITE = () => (process.env.SITE_URL || "https://www.aesthee.gr").replace(/\
 const BRAND = {
   name: "Aesthée",
   fullName: "Aesthée Beauty & Tanning Bar",
-  tagline: "When science meets beauty.",
+  tagline: "Η ομορφιά είναι φροντίδα σε κάθε της μορφή!",
   address: "Λεωφ. Βραυρώνος 45, Αρτέμιδα 190 16",
   phone: "2294 152510",
   phoneAlt: "2294 080026",
