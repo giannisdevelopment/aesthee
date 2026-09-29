@@ -56,7 +56,7 @@
     <div class="page-head">
       <div>
         <h1>Εισαγωγή από Treatwell</h1>
-        <p class="muted">Διάλεξε τα 2 CSV από το Downloads και πάτα «Έναρξη». Δεν χρειάζεται SQL Editor.</p>
+        <p class="muted">Διάλεξε τα 2 CSV και πάτα «Έναρξη». Αν οι πελάτες υπάρχουν ήδη, <strong>δεν διπλοπερνιούνται</strong> (έλεγχος τηλεφώνου/email).</p>
       </div>
     </div>
 
@@ -69,6 +69,7 @@
         <label for="bookingsFile">2. CSV κρατήσεων <span class="muted">(bookings.csv)</span></label>
         <input id="bookingsFile" type="file" accept=".csv,text/csv" />
       </div>
+      <p class="muted" style="margin:0 0 12px">Αν τα βάλεις ανάποδα, το σύστημα τα διορθώνει μόνο του.</p>
       <div class="import-actions">
         <button class="btn btn-gold" type="button" id="startImportBtn">Έναρξη εισαγωγής</button>
         <p class="muted" id="importHint">Μπορεί να πάρει 2–5 λεπτά. Μην κλείσεις την καρτέλα.</p>

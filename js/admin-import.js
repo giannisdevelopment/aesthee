@@ -192,23 +192,27 @@ async function insertBatches(table, rows, onBatch) {
 
 async function loadPhoneIdMap() {
   const map = new Map();
+  const names = new Set();
   let from = 0;
   const page = 1000;
   for (;;) {
     const { data, error } = await getSupabase()
       .from("clients")
-      .select("id, phone")
+      .select("id, phone, full_name, email")
       .range(from, from + page - 1);
     if (error) throw error;
     if (!data?.length) break;
     for (const row of data) {
       const phone = normPhone(row.phone);
       if (phone) map.set(phone, row.id);
+      if (row.full_name) names.add(normName(row.full_name));
+      const email = String(row.email || "").trim().toLowerCase();
+      if (email) map.set(`email:${email}`, row.id);
     }
     if (data.length < page) break;
     from += page;
   }
-  return map;
+  return { phoneMap: map, existingNames: names };
 }
 
 async function loadExistingFingerprints(table, prefix) {
@@ -358,6 +362,35 @@ function buildNamePhoneIndex(clientRows) {
   return map;
 }
 
+function detectCsvKind(rows) {
+  if (!rows?.length) return "unknown";
+  const keys = Object.keys(rows[0]).join("|").toLowerCase();
+  if (keys.includes("ημερομηνία ραντεβού") || keys.includes("υπηρεσία") || keys.includes("status")) {
+    return "bookings";
+  }
+  if (keys.includes("τηλέφωνο") || keys.includes("επώνυμο") || keys.includes("όνομα")) {
+    return "clients";
+  }
+  return "unknown";
+}
+
+function resolveCsvPair(fileA, textA, fileB, textB) {
+  const rowsA = parseCsv(textA);
+  const rowsB = parseCsv(textB);
+  const kindA = detectCsvKind(rowsA);
+  const kindB = detectCsvKind(rowsB);
+
+  if (kindA === "clients" && kindB === "bookings") {
+    return { clientRows: rowsA, bookingRows: rowsB, swapped: false, names: [fileA.name, fileB.name] };
+  }
+  if (kindA === "bookings" && kindB === "clients") {
+    return { clientRows: rowsB, bookingRows: rowsA, swapped: true, names: [fileB.name, fileA.name] };
+  }
+  throw new Error(
+    "Δεν αναγνώρισα τα CSV. Βεβαιώσου ότι είναι η εξαγωγή πελατών + το bookings.csv από το Treatwell.",
+  );
+}
+
 async function runImport() {
   const cFile = clientsFile.files?.[0];
   const bFile = bookingsFile.files?.[0];
@@ -373,33 +406,52 @@ async function runImport() {
 
   try {
     const [cText, bText] = await Promise.all([cFile.text(), bFile.text()]);
-    const clientRows = parseCsv(cText);
-    const bookingRows = parseCsv(bText);
-    log(`Πελάτες CSV: ${clientRows.length} γραμμές`);
-    log(`Κρατήσεις CSV: ${bookingRows.length} γραμμές`);
+    const resolved = resolveCsvPair(cFile, cText, bFile, bText);
+    const { clientRows, bookingRows, swapped } = resolved;
+    if (swapped) {
+      log("⚠ Τα αρχεία ήταν ανάποδα — τα έβαλα στη σωστή σειρά αυτόματα.");
+    }
+    log(`Πελάτες CSV: ${clientRows.length} γραμμές (${resolved.names[0]})`);
+    log(`Κρατήσεις CSV: ${bookingRows.length} γραμμές (${resolved.names[1]})`);
 
     setProgress(8, "Προετοιμασία πελατών…");
     const clients = prepareClients(clientRows);
     const nameIndex = buildNamePhoneIndex(clientRows);
     const { bookings, extras } = prepareBookings(bookingRows, nameIndex);
-    log(`Μοναδικοί πελάτες: ${clients.length}`);
-    log(`Έξτρα πελάτες από κρατήσεις: ${extras.length}`);
+    log(`Μοναδικοί πελάτες από CSV: ${clients.length}`);
+    log(`Έξτρα ονόματα μόνο από κρατήσεις: ${extras.length}`);
     log(`Μοναδικές κρατήσεις: ${bookings.length}`);
 
-    setProgress(12, "Έλεγχος υπάρχοντων πελατών…");
-    let phoneMap = await loadPhoneIdMap();
-    const newClients = [...clients, ...extras].filter((c) => {
-      const phone = normPhone(c.phone);
-      if (!phone) return true;
-      return !phoneMap.has(phone);
-    });
-    // dedupe newClients by phone
+    setProgress(12, "Έλεγχος υπάρχοντων πελατών (χωρίς διπλότυπα)…");
+    let { phoneMap, existingNames } = await loadPhoneIdMap();
+    log(`Ήδη στη βάση: ${phoneMap.size} τηλέφωνα / ${existingNames.size} ονόματα`);
+
+    const candidates = [...clients, ...extras];
+    let skippedExisting = 0;
     const seen = new Set();
     const clientsToInsert = [];
-    for (const c of newClients) {
-      const phone = normPhone(c.phone) || `name:${normName(c.full_name)}`;
-      if (seen.has(phone)) continue;
-      seen.add(phone);
+    for (const c of candidates) {
+      const phone = normPhone(c.phone);
+      const email = String(c.email || "").trim().toLowerCase();
+      const nameKey = normName(c.full_name);
+
+      if (phone && phoneMap.has(phone)) {
+        skippedExisting += 1;
+        continue;
+      }
+      if (email && phoneMap.has(`email:${email}`)) {
+        skippedExisting += 1;
+        continue;
+      }
+      // No phone: skip if same name already exists (avoids duplicate blank-phone rows)
+      if (!phone && nameKey && existingNames.has(nameKey)) {
+        skippedExisting += 1;
+        continue;
+      }
+
+      const dedupeKey = phone || (email ? `email:${email}` : `name:${nameKey}`);
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
       clientsToInsert.push({
         full_name: c.full_name,
         phone: c.phone,
@@ -408,13 +460,21 @@ async function runImport() {
       });
     }
 
-    setProgress(18, `Εισαγωγή ${clientsToInsert.length} πελατών…`);
-    await insertBatches("clients", clientsToInsert, (n, total) => {
-      setProgress(18 + (n / Math.max(total, 1)) * 20, `Πελάτες ${n}/${total}`);
-    });
-    log(`Νέοι πελάτες: ${clientsToInsert.length}`);
+    log(`Παραλείφθηκαν (ήδη υπάρχουν): ${skippedExisting}`);
+    setProgress(18, `Εισαγωγή ${clientsToInsert.length} νέων πελατών…`);
+    if (clientsToInsert.length) {
+      await insertBatches("clients", clientsToInsert, (n, total) => {
+        setProgress(18 + (n / Math.max(total, 1)) * 20, `Πελάτες ${n}/${total}`);
+      });
+    }
+    log(`Νέοι πελάτες που μπήκαν: ${clientsToInsert.length}`);
 
-    phoneMap = await loadPhoneIdMap();
+    ({ phoneMap, existingNames } = await loadPhoneIdMap());
+    // phoneMap now includes email: keys — appointments need phone->id only
+    const idByPhone = new Map();
+    for (const [k, id] of phoneMap.entries()) {
+      if (!String(k).startsWith("email:")) idByPhone.set(k, id);
+    }
 
     setProgress(42, "Έλεγχος υπάρχοντων επισκέψεων…");
     const visitFp = await loadExistingFingerprints("visits", "twv:");
@@ -423,7 +483,7 @@ async function runImport() {
       if (b.status !== "completed" || !b.payment_amount) continue;
       const fp = `twv:${b.fingerprint}`;
       if (visitFp.has(fp)) continue;
-      const clientId = phoneMap.get(normPhone(b.phone));
+      const clientId = idByPhone.get(normPhone(b.phone));
       if (!clientId) continue;
       visits.push({
         client_id: clientId,
@@ -435,10 +495,12 @@ async function runImport() {
     }
 
     setProgress(48, `Εισαγωγή ${visits.length} επισκέψεων (ταμείο)…`);
-    await insertBatches("visits", visits, (n, total) => {
-      setProgress(48 + (n / Math.max(total, 1)) * 20, `Επισκέψεις ${n}/${total}`);
-    });
-    log(`Νέες επισκέψεις: ${visits.length}`);
+    if (visits.length) {
+      await insertBatches("visits", visits, (n, total) => {
+        setProgress(48 + (n / Math.max(total, 1)) * 20, `Επισκέψεις ${n}/${total}`);
+      });
+    }
+    log(`Νέες επισκέψεις: ${visits.length} (παραλείφθηκαν ήδη εισαγμένες: ${visitFp.size})`);
 
     setProgress(70, "Έλεγχος υπάρχοντων ραντεβού…");
     const apptFp = await loadExistingFingerprints("appointments", "twa:");
@@ -458,15 +520,17 @@ async function runImport() {
         status: b.status,
         notes: `${b.notes} · ${fp}`,
         cabin_id: b.cabin_id,
-        client_id: phoneMap.get(normPhone(b.phone)) || null,
+        client_id: idByPhone.get(normPhone(b.phone)) || null,
       });
     }
 
     setProgress(75, `Εισαγωγή ${appts.length} ραντεβού…`);
-    await insertBatches("appointments", appts, (n, total) => {
-      setProgress(75 + (n / Math.max(total, 1)) * 22, `Ραντεβού ${n}/${total}`);
-    });
-    log(`Νέα ραντεβού: ${appts.length}`);
+    if (appts.length) {
+      await insertBatches("appointments", appts, (n, total) => {
+        setProgress(75 + (n / Math.max(total, 1)) * 22, `Ραντεβού ${n}/${total}`);
+      });
+    }
+    log(`Νέα ραντεβού: ${appts.length} (παραλείφθηκαν ήδη εισαγμένα: ${apptFp.size})`);
 
     setProgress(100, "Ολοκληρώθηκε");
     log("Έτοιμο. Άνοιξε Πελάτες / Ταμείο / Ραντεβού για έλεγχο.");
