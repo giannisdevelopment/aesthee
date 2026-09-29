@@ -110,12 +110,44 @@ let editingAppointmentId = null;
 /** Snapshot while editing — for email diffs */
 let editingSnapshot = null;
 
-const PX_PER_MIN = 2;
 const DOW_LABELS = ["Κ", "Δ", "Τ", "Τ", "Π", "Π", "Σ"];
 const MONTH_LABELS = [
   "Ιανουάριος", "Φεβρουάριος", "Μάρτιος", "Απρίλιος", "Μάιος", "Ιούνιος",
   "Ιούλιος", "Αύγουστος", "Σεπτέμβριος", "Οκτώβριος", "Νοέμβριος", "Δεκέμβριος",
 ];
+
+/** @type {number | null} */
+let nowLineTimer = null;
+
+/** @type {{ x: number, y: number, cabin: string, top: number } | null} */
+let emptySlotPointer = null;
+
+function pxPerMin() {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue("--cal-px-min")
+    .trim();
+  const fromGrid = calCols?.closest(".cal-grid");
+  const gridRaw = fromGrid
+    ? getComputedStyle(fromGrid).getPropertyValue("--cal-px-min").trim()
+    : "";
+  const n = Number(gridRaw || raw || 2);
+  return Number.isFinite(n) && n > 0 ? n : 2;
+}
+
+function calBoardEl() {
+  return document.getElementById("calBoard");
+}
+
+function syncCalModeClass() {
+  const bookingOpen = Boolean(bookingPanel && !bookingPanel.hidden);
+  appView?.classList.toggle("is-cal-mode", activeView === "calendar" && !bookingOpen);
+  calFab?.classList.toggle("is-hidden", activeView !== "calendar" || bookingOpen);
+  if (calendarPanel && activeView === "calendar") {
+    calendarPanel.hidden = bookingOpen && window.matchMedia("(max-width: 860px)").matches;
+  } else if (calendarPanel && activeView !== "calendar") {
+    calendarPanel.hidden = true;
+  }
+}
 
 function configMissing() {
   const cfg = window.AESTHEE_SUPABASE;
@@ -185,6 +217,7 @@ function setActiveView(view, { refresh = true } = {}) {
     if (fromDate) fromDate.classList.add("hidden");
     if (toDate) toDate.classList.add("hidden");
   }
+  syncCalModeClass();
   if (refresh) renderAppointments();
 }
 
@@ -222,6 +255,11 @@ function renderDayStrip() {
   calDayStrip.innerHTML = parts.join("");
   calDayStrip.querySelectorAll("[data-day]").forEach((btn) => {
     btn.addEventListener("click", () => setCalendarDay(btn.dataset.day));
+  });
+
+  requestAnimationFrame(() => {
+    const selectedBtn = calDayStrip.querySelector(".is-selected");
+    selectedBtn?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   });
 }
 
@@ -269,6 +307,9 @@ async function healMismatchedCabins(rows) {
 function buildCalendarChrome() {
   if (!calCabinHeads || !calTimes || !calCols) return;
 
+  const ppm = pxPerMin();
+  const dayHeight = (BOOKING_DAY_END - BOOKING_DAY_START) * ppm;
+
   calCabinHeads.innerHTML = CABIN_IDS.map((id) => {
     const meta = CABIN_SHORT[id];
     return `
@@ -281,26 +322,56 @@ function buildCalendarChrome() {
 
   const labels = [];
   for (let mins = BOOKING_DAY_START; mins < BOOKING_DAY_END; mins += 60) {
-    const top = (mins - BOOKING_DAY_START) * PX_PER_MIN;
+    const top = (mins - BOOKING_DAY_START) * ppm;
     labels.push(`<div class="cal-time-label" style="top:${top}px">${minutesToTimeLabel(mins)}</div>`);
   }
   calTimes.innerHTML = labels.join("");
-  calTimes.style.height = `${(BOOKING_DAY_END - BOOKING_DAY_START) * PX_PER_MIN}px`;
+  calTimes.style.height = `${dayHeight}px`;
 
   calCols.innerHTML = CABIN_IDS.map((id) => `
     <div
       class="cal-col"
       data-cabin="${id}"
-      style="height:${(BOOKING_DAY_END - BOOKING_DAY_START) * PX_PER_MIN}px"
+      style="height:${dayHeight}px"
     ></div>
   `).join("");
 
   calCols.querySelectorAll(".cal-col").forEach((col) => {
-    col.addEventListener("click", (event) => {
+    col.addEventListener("pointerdown", (event) => {
       if (event.target.closest(".cal-block")) return;
-      const rect = col.getBoundingClientRect();
-      const y = event.clientY - rect.top;
-      let mins = BOOKING_DAY_START + Math.round(y / PX_PER_MIN);
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      emptySlotPointer = {
+        x: event.clientX,
+        y: event.clientY,
+        cabin: col.dataset.cabin || "",
+        top: col.getBoundingClientRect().top,
+      };
+    });
+    col.addEventListener("pointermove", (event) => {
+      if (!emptySlotPointer) return;
+      if (
+        Math.abs(event.clientX - emptySlotPointer.x) > 10
+        || Math.abs(event.clientY - emptySlotPointer.y) > 10
+      ) {
+        emptySlotPointer = null;
+      }
+    });
+    col.addEventListener("pointerup", (event) => {
+      if (!emptySlotPointer) return;
+      if (event.target.closest(".cal-block")) {
+        emptySlotPointer = null;
+        return;
+      }
+      const dx = Math.abs(event.clientX - emptySlotPointer.x);
+      const dy = Math.abs(event.clientY - emptySlotPointer.y);
+      const cabin = emptySlotPointer.cabin;
+      const top = emptySlotPointer.top;
+      emptySlotPointer = null;
+      if (dx > 10 || dy > 10) return;
+      if (String(col.dataset.cabin) !== cabin) return;
+
+      const y = event.clientY - top;
+      let mins = BOOKING_DAY_START + Math.round(y / pxPerMin());
       mins = Math.round(mins / 10) * 10;
       mins = Math.max(BOOKING_DAY_START, Math.min(BOOKING_DAY_END - 10, mins));
       openBookingPanel({
@@ -309,12 +380,52 @@ function buildCalendarChrome() {
         cabinId: Number(col.dataset.cabin),
       });
     });
+    col.addEventListener("pointercancel", () => {
+      emptySlotPointer = null;
+    });
   });
+}
+
+/** @type {string} */
+let lastFocusScrollDay = "";
+
+function scrollCalToFocus(rows = appointmentsCache, { force = false } = {}) {
+  const board = calBoardEl();
+  if (!board || activeView !== "calendar") return;
+  if (!force && lastFocusScrollDay === calendarDay) return;
+  lastFocusScrollDay = calendarDay;
+
+  const ppm = pxPerMin();
+  const todayKey = toDateKey(new Date());
+  let focusMins = BOOKING_DAY_START;
+
+  if (calendarDay === todayKey) {
+    const now = new Date();
+    focusMins = now.getHours() * 60 + now.getMinutes();
+  } else {
+    const starts = (rows || [])
+      .filter((row) => row.status !== "cancelled")
+      .map((row) => timeLabelToMinutes(formatTime(row.appointment_time)))
+      .filter((m) => m != null)
+      .sort((a, b) => a - b);
+    if (starts.length) focusMins = starts[0];
+  }
+
+  focusMins = Math.max(BOOKING_DAY_START, Math.min(BOOKING_DAY_END, focusMins));
+  const y = Math.max(0, (focusMins - BOOKING_DAY_START) * ppm - board.clientHeight * 0.28);
+  board.scrollTo({ top: y, behavior: "smooth" });
 }
 
 function renderCalendar(data) {
   if (!calCols) return;
   if (!calCols.querySelector(".cal-col")) buildCalendarChrome();
+
+  const ppm = pxPerMin();
+  const dayHeight = (BOOKING_DAY_END - BOOKING_DAY_START) * ppm;
+  if (calTimes) calTimes.style.height = `${dayHeight}px`;
+  calCols.querySelectorAll(".cal-col").forEach((col) => {
+    col.style.height = `${dayHeight}px`;
+  });
 
   calCols.querySelectorAll(".cal-block").forEach((el) => el.remove());
   closeCalDetail();
@@ -330,11 +441,11 @@ function renderCalendar(data) {
     const start = timeLabelToMinutes(startLabel);
     if (start == null) continue;
     const duration = Number(row.duration_minutes) || 60;
-    const top = (start - BOOKING_DAY_START) * PX_PER_MIN;
-    const height = Math.max(duration * PX_PER_MIN, 40);
+    const top = (start - BOOKING_DAY_START) * ppm;
+    const height = Math.max(duration * ppm, 36);
     const endLabel = endTimeLabel(startLabel, duration);
     const status = row.status || "pending";
-    const sizeClass = height < 52 ? "is-xs" : height < 78 ? "is-sm" : height < 110 ? "is-md" : "is-lg";
+    const sizeClass = height < 48 ? "is-xs" : height < 72 ? "is-sm" : height < 104 ? "is-md" : "is-lg";
 
     const btn = document.createElement("button");
     btn.type = "button";
@@ -369,13 +480,26 @@ function renderCalendar(data) {
 
 function closeCalDetail() {
   document.getElementById("calDetail")?.remove();
+  document.getElementById("calSheetBackdrop")?.remove();
+  document.body.style.overflow = "";
 }
 
 function openCalDetail(row) {
   closeCalDetail();
+
+  const backdrop = document.createElement("button");
+  backdrop.type = "button";
+  backdrop.id = "calSheetBackdrop";
+  backdrop.className = "cal-sheet-backdrop";
+  backdrop.setAttribute("aria-label", "Κλείσιμο");
+  backdrop.addEventListener("click", closeCalDetail);
+  document.body.appendChild(backdrop);
+
   const el = document.createElement("div");
   el.id = "calDetail";
   el.className = "cal-detail";
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-modal", "true");
   el.innerHTML = `
     <h3>${escapeHtml(row.guest_name)}</h3>
     <p>${escapeHtml(formatTime(row.appointment_time))} – ${escapeHtml(endTimeLabel(row.appointment_time, row.duration_minutes || 60))} · ${escapeHtml(formatDurationMin(row.duration_minutes || 60))}</p>
@@ -397,6 +521,9 @@ function openCalDetail(row) {
     </div>
   `;
   document.body.appendChild(el);
+  if (window.matchMedia("(max-width: 860px)").matches) {
+    document.body.style.overflow = "hidden";
+  }
 
   el.querySelector("#calDetailClose")?.addEventListener("click", closeCalDetail);
   el.querySelector("#calDetailEdit")?.addEventListener("click", () => {
@@ -509,6 +636,7 @@ function openBookingPanel(prefs = {}) {
     resetBookingForm();
     fillFormFromAppointment(prefs.edit);
     bookingPanel.hidden = false;
+    syncCalModeClass();
     bookingPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     refreshTimeOptions().then(() => {
       const time = formatTime(prefs.edit.appointment_time);
@@ -526,6 +654,7 @@ function openBookingPanel(prefs = {}) {
 
   resetBookingForm(prefs);
   bookingPanel.hidden = false;
+  syncCalModeClass();
   bookingPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   if (prefs.time && bkDate.value) {
     refreshTimeOptions().then(() => {
@@ -546,6 +675,7 @@ function openBookingPanel(prefs = {}) {
 function closeBookingPanel() {
   bookingPanel.hidden = true;
   resetBookingForm();
+  syncCalModeClass();
 }
 
 function formatPriceCents(cents) {
@@ -580,14 +710,27 @@ function updateCalNowLine() {
   const now = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
   if (mins < BOOKING_DAY_START || mins > BOOKING_DAY_END) return;
-  const top = (mins - BOOKING_DAY_START) * PX_PER_MIN;
-  calCols?.querySelectorAll(".cal-col").forEach((col) => {
+  const top = (mins - BOOKING_DAY_START) * pxPerMin();
+
+  const lineHtml = () => {
     const line = document.createElement("div");
     line.className = "cal-now";
     line.style.top = `${top}px`;
     line.setAttribute("aria-hidden", "true");
-    col.appendChild(line);
+    return line;
+  };
+
+  calTimes?.appendChild(lineHtml());
+  calCols?.querySelectorAll(".cal-col").forEach((col) => {
+    col.appendChild(lineHtml());
   });
+}
+
+function ensureNowLineTimer() {
+  if (nowLineTimer != null) return;
+  nowLineTimer = window.setInterval(() => {
+    if (activeView === "calendar") updateCalNowLine();
+  }, 30000);
 }
 
 function eurosFromCents(cents) {
@@ -906,6 +1049,9 @@ async function renderAppointments() {
     showToast(`Διορθώθηκαν ${healed} ραντεβού σε σωστή καμπίνα.`);
   }
   renderCalendar(appointmentsCache);
+  if (activeView === "calendar") {
+    requestAnimationFrame(() => scrollCalToFocus(appointmentsCache));
+  }
 
   if (!data?.length) {
     rowsBody.innerHTML = `<tr><td colspan="7" class="empty">Δεν βρέθηκαν ραντεβού.</td></tr>`;
@@ -1066,10 +1212,66 @@ calNext?.addEventListener("click", () => {
   setCalendarDay(toDateKey(d));
 });
 
-calToday?.addEventListener("click", () => setCalendarDay(toDateKey(new Date())));
+calToday?.addEventListener("click", () => {
+  lastFocusScrollDay = "";
+  setCalendarDay(toDateKey(new Date()));
+});
+
+function shiftCalendarDay(deltaDays) {
+  if (!calendarDay) return;
+  const d = parseDateKey(calendarDay);
+  d.setDate(d.getDate() + deltaDays);
+  setCalendarDay(toDateKey(d));
+}
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeCalDetail();
+  if (event.key === "Escape") {
+    closeCalDetail();
+    return;
+  }
+  if (activeView !== "calendar") return;
+  const tag = (event.target?.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select") return;
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    shiftCalendarDay(-1);
+  } else if (event.key === "ArrowRight") {
+    event.preventDefault();
+    shiftCalendarDay(1);
+  } else if (event.key === "t" || event.key === "T") {
+    event.preventDefault();
+    setCalendarDay(toDateKey(new Date()));
+  }
+});
+
+/** Horizontal swipe on the day strip → previous / next day */
+(() => {
+  if (!calDayStrip) return;
+  let startX = 0;
+  let startY = 0;
+  calDayStrip.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 1) return;
+    startX = event.touches[0].clientX;
+    startY = event.touches[0].clientY;
+  }, { passive: true });
+  calDayStrip.addEventListener("touchend", (event) => {
+    const t = event.changedTouches[0];
+    if (!t) return;
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    shiftCalendarDay(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
+
+window.addEventListener("resize", () => {
+  if (activeView !== "calendar") return;
+  window.clearTimeout(window.__calResizeTimer);
+  window.__calResizeTimer = window.setTimeout(() => {
+    if (!calCols?.querySelector(".cal-col")) return;
+    buildCalendarChrome();
+    renderCalendar(appointmentsCache);
+  }, 180);
 });
 
 bkClient?.addEventListener("change", () => {
@@ -1334,9 +1536,7 @@ async function boot() {
   renderDayStrip();
   setActiveView("calendar", { refresh: false });
   await renderAppointments();
-  window.setInterval(() => {
-    if (activeView === "calendar") updateCalNowLine();
-  }, 60_000);
+  ensureNowLineTimer();
 }
 
 boot();

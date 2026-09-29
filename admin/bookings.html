@@ -2,8 +2,10 @@
 <html lang="el">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Ραντεβού — Aesthée Admin</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -32,7 +34,7 @@
     </form>
   </div>
 
-  <div id="appView" class="admin-shell hidden">
+  <div id="appView" class="admin-shell admin-shell--bookings is-cal-mode hidden">
     <header class="admin-top">
       <div class="admin-brand">
         <img src="/images/logo-emblem.svg" alt="" />
@@ -47,19 +49,18 @@
           <a class="is-active" href="/admin/bookings">Ραντεβού</a>
           <a href="/admin/till">Ταμείο</a>
           <a href="/admin/services">Τιμές</a>
-          <a href="/admin/import">Εισαγωγή</a>
           <a href="/admin/messages">Μηνύματα</a>
         </nav>
         <button class="btn btn-ghost" type="button" id="signOutBtn">Αποσύνδεση</button>
       </div>
     </header>
 
-    <div class="toolbar toolbar-wrap">
+    <div class="toolbar toolbar-wrap bookings-toolbar">
       <div class="view-toggle" role="group" aria-label="Προβολή">
         <button class="btn btn-ghost btn-sm is-active" type="button" id="viewCalBtn" data-view="calendar">Ημερολόγιο</button>
         <button class="btn btn-ghost btn-sm" type="button" id="viewListBtn" data-view="list">Λίστα</button>
       </div>
-      <input class="search" id="searchInput" type="search" placeholder="Αναζήτηση ονόματος, τηλεφώνου ή υπηρεσίας…" />
+      <input class="search" id="searchInput" type="search" enterkeyhint="search" placeholder="Αναζήτηση…" />
       <select id="statusFilter" aria-label="Κατάσταση">
         <option value="">Όλες οι καταστάσεις</option>
         <option value="pending">Σε αναμονή</option>
@@ -70,17 +71,19 @@
       </select>
       <input id="fromDate" type="date" aria-label="Από ημερομηνία" class="hidden" />
       <input id="toDate" type="date" aria-label="Έως ημερομηνία" class="hidden" />
-      <button class="btn btn-gold" type="button" id="openBookingBtn">+ Νέο ραντεβού</button>
+      <button class="btn btn-gold bookings-new-desktop" type="button" id="openBookingBtn">+ Νέο ραντεβού</button>
     </div>
 
     <section class="panel cal-panel" id="calendarPanel" aria-label="Ημερολόγιο καμπινών">
-      <div class="cal-top">
-        <button class="btn btn-ghost btn-sm" type="button" id="calPrev" aria-label="Προηγούμενη εβδομάδα">‹</button>
-        <h2 class="cal-month" id="calMonthLabel">—</h2>
-        <button class="btn btn-ghost btn-sm" type="button" id="calNext" aria-label="Επόμενη εβδομάδα">›</button>
-        <button class="btn btn-ghost btn-sm" type="button" id="calToday">Σήμερα</button>
+      <div class="cal-chrome">
+        <div class="cal-top">
+          <button class="cal-nav-btn" type="button" id="calPrev" aria-label="Προηγούμενη εβδομάδα">‹</button>
+          <h2 class="cal-month" id="calMonthLabel">—</h2>
+          <button class="cal-nav-btn" type="button" id="calNext" aria-label="Επόμενη εβδομάδα">›</button>
+          <button class="btn btn-ghost btn-sm cal-today-btn" type="button" id="calToday">Σήμερα</button>
+        </div>
+        <div class="cal-days" id="calDayStrip" role="tablist" aria-label="Ημέρες"></div>
       </div>
-      <div class="cal-days" id="calDayStrip" role="tablist" aria-label="Ημέρες"></div>
       <div class="cal-board" id="calBoard">
         <div class="cal-grid" id="calGrid">
           <div class="cal-head-spacer" aria-hidden="true"></div>
