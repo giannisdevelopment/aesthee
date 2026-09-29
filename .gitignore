@@ -14,4 +14,5 @@ supabase/treatwell-import/
 supabase/import-google-contacts.sql
 supabase/import-habitol-calendar.sql
 supabase/import-habitol-calendar.README.sql
-supabase/habitol-import/
+# Habitol chunk data dumps (PII) — keep merge/fix scripts tracked
+supabase/habitol-import/01-chunk-*.sql
