@@ -184,18 +184,10 @@ async function renderTill() {
   }
 
   const rows = mergeRows(visitsRes.data, bookingsRes.data);
-  const visitTotal = rows.filter((r) => r.source === "Επίσκεψη").reduce((sum, r) => sum + r.amount, 0);
-  const bookingTotal = rows.filter((r) => r.source === "Ραντεβού").reduce((sum, r) => sum + r.amount, 0);
-  const visitCount = rows.filter((r) => r.source === "Επίσκεψη").length;
-  const bookingCount = rows.filter((r) => r.source === "Ραντεβού").length;
-  const total = visitTotal + bookingTotal;
+  const total = rows.reduce((sum, r) => sum + r.amount, 0);
 
   document.getElementById("statTotal").textContent = formatMoney(total).replace("—", "€ 0");
   document.getElementById("statCount").textContent = `${rows.length} εγγραφές`;
-  document.getElementById("statVisits").textContent = formatMoney(visitTotal).replace("—", "€ 0");
-  document.getElementById("statVisitsCount").textContent = `${visitCount} πληρωμές`;
-  document.getElementById("statBookings").textContent = formatMoney(bookingTotal).replace("—", "€ 0");
-  document.getElementById("statBookingsCount").textContent = `${bookingCount} ραντεβού`;
 
   if (!rows.length) {
     tillBody.innerHTML = `<tr><td colspan="5" class="empty">Καμία είσπραξη σε αυτή την περίοδο.</td></tr>`;

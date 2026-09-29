@@ -1196,7 +1196,7 @@ tr.is-inactive {
 
 .till-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 320px);
   gap: 14px;
   margin-bottom: 22px;
 }
