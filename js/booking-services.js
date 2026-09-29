@@ -26,9 +26,9 @@ export const DEFAULT_BOOKING_CATEGORIES = [
       { id: "lash-lift-tint", name: "Lash Lift & Tint", durationMin: 60, priceCents: 3500 },
       { id: "lash-ext-classic", name: "Extensions βλεφαρίδων — τοποθέτηση one by one", durationMin: 120, priceCents: 5000 },
       { id: "lash-maint-classic", name: "Extension βλεφαρίδων — συντήρηση one by one", durationMin: 90, priceCents: 2500 },
-      { id: "lash-ext-volume", name: "Extensions βλεφαρίδων — τοποθέτηση volume (3D)", durationMin: 120, priceCents: 6000 },
+      { id: "lash-ext-volume", name: "Extensions βλεφαρίδων — τοποθέτηση volume (3D)", durationMin: 120, priceCents: 5000 },
       { id: "lash-maint-volume", name: "Extension βλεφαρίδων — συντήρηση volume (3D)", durationMin: 90, priceCents: 3500 },
-      { id: "lash-ext-mix", name: "Extensions βλεφαρίδων — τοποθέτηση mix (3D & one by one)", durationMin: 120, priceCents: 5500 },
+      { id: "lash-ext-mix", name: "Extensions βλεφαρίδων — τοποθέτηση mix (3D & one by one)", durationMin: 120, priceCents: 5000 },
       { id: "lash-maint-mix", name: "Extension βλεφαρίδων — συντήρηση mix (3D & one by one)", durationMin: 90, priceCents: 3000 },
     ],
   },
@@ -304,7 +304,18 @@ export function getCabinPoolForServiceName(serviceName) {
     return [4];
   }
 
-  // Κ3 — brows / lashes / wax (avoid bare συντηρηση/τοποθέτηση — those appear on laser too)
+  // Κ3 — brows / lashes / wax
+  // Laser face areas (μουστάκι / πηγούνι alone) stay in Κ1–Κ2 — not brows cabin
+  if (
+    (key.includes("μουστακ") || key.includes("πηγουν"))
+    && !key.includes("φρυδ")
+    && !key.includes("βλεφαριδ")
+    && !key.includes("brow")
+    && !key.includes("lash")
+  ) {
+    return [1, 2];
+  }
+
   if (
     key.includes("brow")
     || key.includes("lash")
@@ -313,7 +324,6 @@ export function getCabinPoolForServiceName(serviceName) {
     || key.includes("κερι")
     || key.includes("σχηματισμ")
     || key.includes("lamination")
-    || key.includes("μουστακ")
     || (key.includes("τοποθετηση") && key.includes("βλεφαριδ"))
     || (key.includes("συντηρηση") && (key.includes("βλεφαριδ") || key.includes("φρυδ")))
   ) {
