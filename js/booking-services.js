@@ -151,7 +151,9 @@ export const DEFAULT_BOOKING_CATEGORIES = [
     id: "massage",
     label: "Μασάζ",
     services: [
-      { id: "massage", name: "Μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό", durationMin: 55, priceCents: 4000 },
+      { id: "massage-relaxing", name: "Χαλαρωτικό μασάζ", durationMin: 55, priceCents: 4000 },
+      { id: "massage-myorelax", name: "Μυοχαλαρωτικό μασάζ", durationMin: 55, priceCents: 4000 },
+      { id: "massage-sports", name: "Αθλητικό μασάζ", durationMin: 55, priceCents: 4000 },
       { id: "massage-cupping", name: "Μασάζ βεντούζες", durationMin: 40, priceCents: 4000 },
       { id: "massage-neck-back", name: "Μασάζ αυχένα πλάτη μέση", durationMin: 30, priceCents: 3500 },
     ],
@@ -197,8 +199,11 @@ const SERVICE_ALIASES = {
   "rf microneedling σώματος": "rf-body",
   "rf microneedling σώματος (έως 3 περιοχές)": "rf-body",
   "μαδεροθεραπεία": "madero",
-  "μασάζ": "massage",
-  "μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό": "massage",
+  "μασάζ": "massage-relaxing",
+  "μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό": "massage-relaxing",
+  "χαλαρωτικό μασάζ": "massage-relaxing",
+  "μυοχαλαρωτικό μασάζ": "massage-myorelax",
+  "αθλητικό μασάζ": "massage-sports",
   "μασάζ βεντούζες": "massage-cupping",
   "μασάζ αυχένα πλάτη μέση": "massage-neck-back",
   "αποτρίχωση με κερί": "wax",
@@ -258,9 +263,7 @@ export function getCabinPool(service) {
   if (
     service.categoryId === "body"
     || service.categoryId === "massage"
-    || id === "massage"
-    || id === "massage-cupping"
-    || id === "massage-neck-back"
+    || id.startsWith("massage")
   ) return [5];
   // face, laser, electrolysis → Κ1/Κ2
   return [1, 2];
@@ -416,7 +419,8 @@ export function resolveServiceQuery(value) {
   if (!value) return null;
   const raw = String(value).trim();
   if (!raw) return null;
-  const byExactId = getServiceById(raw);
+  const legacyIds = { massage: "massage-relaxing" };
+  const byExactId = getServiceById(legacyIds[raw] || raw);
   if (byExactId) return byExactId;
   const key = raw.toLowerCase();
   const aliasId = SERVICE_ALIASES[key];

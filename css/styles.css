@@ -797,7 +797,7 @@ textarea {
   z-index: 1;
   width: min(1120px, calc(100% - 40px));
   margin: 0 auto;
-  padding: calc(var(--header-h) + 72px) 0 88px;
+  padding: calc(var(--header-h) + 72px) 0 132px;
 }
 
 .svc-hero-brand {
@@ -832,13 +832,14 @@ textarea {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 28px;
+  margin-bottom: 8px;
 }
 
 .svc-hero-meta {
   position: absolute;
   z-index: 1;
   right: max(20px, calc((100% - 1120px) / 2));
-  bottom: 36px;
+  bottom: 56px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2893,7 +2894,7 @@ textarea {
   }
 
   .svc-hero-content {
-    padding: calc(var(--header-h) + 48px) 0 72px;
+    padding: calc(var(--header-h) + 48px) 0 112px;
   }
 
   .svc-hero-meta {

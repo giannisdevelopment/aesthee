@@ -152,7 +152,9 @@ insert into public.catalog_services (
   ('rf-body', 'body', 'Θεραπείες σώματος', 'RF Microneedling σώματος (έως 3 περιοχές)', 60, 18000, false, false, 950, true),
   ('rf-body-pack', 'body', 'Θεραπείες σώματος', 'RF Microneedling σώματος — πακέτο 3 συνεδριών', 60, 45000, false, true, 960, true),
   ('wax', 'body', 'Θεραπείες σώματος', 'Αποτρίχωση με κερί', 30, 2500, true, false, 1000, true),
-  ('massage', 'massage', 'Μασάζ', 'Μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό', 55, 4000, false, false, 1010, true),
-  ('massage-cupping', 'massage', 'Μασάζ', 'Μασάζ βεντούζες', 40, 4000, false, false, 1020, true),
-  ('massage-neck-back', 'massage', 'Μασάζ', 'Μασάζ αυχένα πλάτη μέση', 30, 3500, false, false, 1030, true)
+  ('massage-relaxing', 'massage', 'Μασάζ', 'Χαλαρωτικό μασάζ', 55, 4000, false, false, 1010, true),
+  ('massage-myorelax', 'massage', 'Μασάζ', 'Μυοχαλαρωτικό μασάζ', 55, 4000, false, false, 1015, true),
+  ('massage-sports', 'massage', 'Μασάζ', 'Αθλητικό μασάζ', 55, 4000, false, false, 1020, true),
+  ('massage-cupping', 'massage', 'Μασάζ', 'Μασάζ βεντούζες', 40, 4000, false, false, 1030, true),
+  ('massage-neck-back', 'massage', 'Μασάζ', 'Μασάζ αυχένα πλάτη μέση', 30, 3500, false, false, 1040, true)
 on conflict (id) do nothing;
