@@ -1,5 +1,5 @@
 /** Bookable services: duration in minutes, price in euro cents. */
-export const BOOKING_DAY_START = 8 * 60; // 08:00 — Habitol / early appointments
+export const BOOKING_DAY_START = 7 * 60; // 07:00 — Habitol early lashes / body
 export const BOOKING_DAY_END = 21 * 60; // 21:00
 export const SLOT_STEP_MINUTES = 10;
 
