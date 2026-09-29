@@ -273,6 +273,9 @@ async function healMismatchedCabins(rows) {
   let fixed = 0;
 
   for (const row of active) {
+    // Never rewrite Habitol / Google Calendar cabins — set by import SQL
+    if (String(row.notes || "").includes("gcal:")) continue;
+
     const pool = getCabinPoolForServiceName(row.service);
     const stored = Number(row.cabin_id);
     if (Number.isFinite(stored) && pool.includes(stored)) continue;

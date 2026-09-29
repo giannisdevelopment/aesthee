@@ -1,5 +1,5 @@
 /** Bookable services: duration in minutes, price in euro cents. */
-export const BOOKING_DAY_START = 10 * 60; // 10:00
+export const BOOKING_DAY_START = 8 * 60; // 08:00 — Habitol / early appointments
 export const BOOKING_DAY_END = 21 * 60; // 21:00
 export const SLOT_STEP_MINUTES = 10;
 
@@ -282,50 +282,77 @@ export function clampCabinToPool(service, cabinId) {
   return pool[0];
 }
 
-/** Infer cabin pool from a stored appointment service name (legacy rows). */
+/** Infer cabin pool from a stored appointment service name (legacy / Google Calendar rows). */
 export function getCabinPoolForServiceName(serviceName) {
   const service = findServiceByName(serviceName);
   if (service) {
     const withCat = getServiceById(service.id);
     return getCabinPool(withCat || service);
   }
-  const key = String(serviceName || "").toLowerCase();
-  if (key.includes("vacutherm")) return [4];
+  // Strip accents so Habitol titles like ΜΑΣΑΖ / φρυδια / vacum still match
+  const key = String(serviceName || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  // Κ4 — Vacutherm
   if (
-    key.includes("μασάζ")
-    || key.includes("endosphere")
-    || key.includes("cavitation")
-    || key.includes("vacuum bbl")
-    || key.includes("vacum bbl")
-    || key.includes("πρεσσο")
-    || key.includes("κρυολιπ")
-    || key.includes("μαδερο")
-    || (key.includes("rf") && key.includes("σώμα"))
+    key.includes("vacutherm")
+    || key.includes("vacum")
+    || key.includes("vacuum")
   ) {
-    return [5];
+    return [4];
   }
+
+  // Κ3 — brows / lashes / wax (avoid bare συντηρηση/τοποθέτηση — those appear on laser too)
   if (
     key.includes("brow")
     || key.includes("lash")
-    || key.includes("φρύδ")
-    || key.includes("βλεφαρίδ")
-    || key.includes("κερί")
-    || key.includes("σχηματισμός")
+    || key.includes("φρυδ")
+    || key.includes("βλεφαριδ")
+    || key.includes("κερι")
+    || key.includes("σχηματισμ")
+    || key.includes("lamination")
+    || key.includes("μουστακ")
+    || (key.includes("τοποθετηση") && key.includes("βλεφαριδ"))
+    || (key.includes("συντηρηση") && (key.includes("βλεφαριδ") || key.includes("φρυδ")))
   ) {
     return [3];
   }
+
+  // Κ5 — body / massage
+  if (
+    key.includes("μασαζ")
+    || key.includes("massage")
+    || key.includes("endosphere")
+    || key.includes("cavitation")
+    || key.includes("πρεσσο")
+    || key.includes("presso")
+    || key.includes("κρυολιπ")
+    || key.includes("μαδερο")
+    || key.includes("madero")
+    || key.includes("morpheus")
+    || key.includes("lemon")
+    || (key.includes("rf") && key.includes("σωμα"))
+    || key.includes("σολ")
+    || /\bsol\b/.test(key)
+  ) {
+    return [5];
+  }
+
   return [1, 2];
 }
 
 /**
- * Cabin for an appointment row: keep stored cabin only if it belongs
- * to the service pool; otherwise fall back to the first pool cabin.
- * Use for calendar display and conflict checks (legacy wrong cabin_id).
+ * Cabin for an appointment row.
+ * Trust a stored cabin_id (1–5) — Google Calendar imports set this in SQL.
+ * Only infer from the service name when cabin_id is missing.
  */
 export function resolveCabinForAppointment(row) {
-  const pool = getCabinPoolForServiceName(row?.service);
   const direct = Number(row?.cabin_id ?? row?.cabinId);
-  if (Number.isFinite(direct) && pool.includes(direct)) return direct;
+  if (Number.isFinite(direct) && direct >= 1 && direct <= 5) return direct;
+  const blob = [row?.service, row?.notes].filter(Boolean).join(" ");
+  const pool = getCabinPoolForServiceName(blob);
   return pool[0] || 1;
 }
 
