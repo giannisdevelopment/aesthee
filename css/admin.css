@@ -1090,13 +1090,40 @@ tr.is-inactive {
   background: #fff;
   box-shadow: 0 1px 2px rgba(44, 36, 28, 0.05);
   padding: 0;
-  cursor: pointer;
+  cursor: grab;
   text-align: left;
   font: inherit;
   color: var(--ink);
   transition: box-shadow 140ms var(--ease), border-color 140ms var(--ease), transform 140ms var(--ease);
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+  touch-action: none;
+  user-select: none;
+}
+
+.cal-block.is-dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.cal-block-ghost {
+  cursor: grabbing;
+  box-shadow: 0 12px 28px rgba(44, 36, 28, 0.22);
+  border-color: rgba(196, 163, 106, 0.7);
+  opacity: 0.95;
+  transform: scale(1.03);
+}
+
+.cal-col.is-drop-target {
+  background: rgba(196, 163, 106, 0.12);
+}
+
+body.is-cal-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+body.is-cal-dragging .cal-board {
+  overflow: hidden;
 }
 
 @media (hover: hover) {

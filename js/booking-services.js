@@ -345,15 +345,14 @@ export function getCabinPoolForServiceName(serviceName) {
 
 /**
  * Cabin for an appointment row.
- * Keep stored cabin_id only when it belongs to the service pool
- * (so MORPHEUS cannot stay in Κ1, brows cannot stay in Laser).
- * Otherwise use the first cabin in the inferred pool.
+ * Prefer stored cabin_id (1–5) so staff can drag to any cabin.
+ * Infer from service name only when cabin_id is missing.
  */
 export function resolveCabinForAppointment(row) {
+  const direct = Number(row?.cabin_id ?? row?.cabinId);
+  if (Number.isFinite(direct) && direct >= 1 && direct <= 5) return direct;
   const blob = [row?.service, row?.notes].filter(Boolean).join(" ");
   const pool = getCabinPoolForServiceName(blob);
-  const direct = Number(row?.cabin_id ?? row?.cabinId);
-  if (Number.isFinite(direct) && pool.includes(direct)) return direct;
   return pool[0] || 1;
 }
 

@@ -33,6 +33,7 @@ import {
   CABIN_LABELS,
   BOOKING_DAY_START,
   BOOKING_DAY_END,
+  SLOT_STEP_MINUTES,
   timeLabelToMinutes,
   minutesToTimeLabel,
 } from "./booking-services.js";
@@ -121,6 +122,25 @@ let nowLineTimer = null;
 
 /** @type {{ x: number, y: number, cabin: string, top: number } | null} */
 let emptySlotPointer = null;
+
+/**
+ * Active calendar block drag (cabin ± time).
+ * @type {{
+ *   row: object,
+ *   el: HTMLElement,
+ *   pointerId: number,
+ *   startX: number,
+ *   startY: number,
+ *   origTop: number,
+ *   origCabin: number,
+ *   duration: number,
+ *   moved: boolean,
+ *   ghost: HTMLElement | null,
+ *   targetCabin: number | null,
+ *   targetMins: number | null,
+ * } | null}
+ */
+let blockDrag = null;
 
 function pxPerMin() {
   const raw = getComputedStyle(document.documentElement)
@@ -268,61 +288,224 @@ function resolveCabinId(row) {
 }
 
 /**
- * Fix wrong-pool cabins and spread overlapping laser (Κ1/Κ2) slots.
- * Processes earliest-first so later bookings land in the free cabin.
+ * Fill missing cabin_id only — never move a cabin staff already chose
+ * (drag / edit must stick).
  */
 async function healMismatchedCabins(rows) {
-  const active = (rows || [])
-    .filter((row) => row.status !== "cancelled")
-    .slice()
-    .sort((a, b) => {
-      const da = String(a.appointment_date || "");
-      const db = String(b.appointment_date || "");
-      if (da !== db) return da.localeCompare(db);
-      return String(a.appointment_time || "").localeCompare(String(b.appointment_time || ""));
-    });
-
+  const active = (rows || []).filter((row) => row.status !== "cancelled");
   let fixed = 0;
-  /** @type {Map<string, { start: number, end: number, cabin: number }[]>} */
-  const placedByDate = new Map();
 
   for (const row of active) {
+    const stored = Number(row.cabin_id);
+    if (Number.isFinite(stored) && stored >= 1 && stored <= 5) continue;
+
     const blob = [row.service, row.notes].filter(Boolean).join(" ");
     const pool = getCabinPoolForServiceName(blob);
-    const date = String(row.appointment_date || "").slice(0, 10);
-    const time = formatTime(row.appointment_time);
-    const start = timeLabelToMinutes(time);
-    const duration = Math.max(5, Number(row.duration_minutes) || 60);
-    if (start == null) continue;
-    const end = start + duration;
-
-    if (!placedByDate.has(date)) placedByDate.set(date, []);
-    const placed = placedByDate.get(date);
-    const freeInPool = (cabinId) =>
-      !placed.some((p) => p.cabin === cabinId && start < p.end && end > p.start);
-
-    const stored = Number(row.cabin_id);
-    let next;
-    if (Number.isFinite(stored) && pool.includes(stored) && freeInPool(stored)) {
-      next = stored;
-    } else {
-      next = pool.find((cabinId) => freeInPool(cabinId)) || pool[0] || 1;
-    }
-
-    placed.push({ start, end, cabin: next });
-
-    if (next === stored) continue;
+    const next = pool[0] || 1;
 
     const { error } = await updateAppointment(row.id, { cabin_id: next });
-    if (error) {
-      placed[placed.length - 1].cabin = Number.isFinite(stored) && stored >= 1 ? stored : next;
-      continue;
-    }
+    if (error) continue;
     row.cabin_id = next;
     fixed += 1;
   }
 
   return fixed;
+}
+
+function snapMinutes(raw) {
+  const step = SLOT_STEP_MINUTES || 10;
+  const clamped = Math.max(
+    BOOKING_DAY_START,
+    Math.min(BOOKING_DAY_END - step, Number(raw) || BOOKING_DAY_START),
+  );
+  return Math.round(clamped / step) * step;
+}
+
+function cabinColFromPoint(clientX, clientY) {
+  const stack = document.elementsFromPoint(clientX, clientY);
+  for (const node of stack) {
+    const col = node?.closest?.(".cal-col");
+    if (col?.dataset?.cabin) return col;
+  }
+  return null;
+}
+
+function clearBlockDragChrome() {
+  document.querySelectorAll(".cal-col.is-drop-target").forEach((el) => {
+    el.classList.remove("is-drop-target");
+  });
+  document.body.classList.remove("is-cal-dragging");
+}
+
+function endBlockDrag(cancelled = false) {
+  const drag = blockDrag;
+  blockDrag = null;
+  clearBlockDragChrome();
+  if (!drag) return null;
+
+  if (drag.ghost) {
+    drag.ghost.remove();
+    drag.ghost = null;
+  }
+  drag.el.classList.remove("is-dragging");
+  drag.el.style.opacity = "";
+  drag.el.style.transform = "";
+  drag.el.style.zIndex = "";
+
+  try {
+    drag.el.releasePointerCapture(drag.pointerId);
+  } catch {
+    /* already released */
+  }
+
+  return cancelled ? null : drag;
+}
+
+async function commitBlockDrag(drag) {
+  if (!drag?.moved) return;
+
+  const cabin = drag.targetCabin ?? drag.origCabin;
+  const mins = drag.targetMins != null
+    ? snapMinutes(drag.targetMins)
+    : timeLabelToMinutes(formatTime(drag.row.appointment_time));
+  if (mins == null) return;
+
+  const timeLabel = minutesToTimeLabel(mins);
+  const prevTime = formatTime(drag.row.appointment_time);
+  const prevCabin = Number(drag.row.cabin_id) || drag.origCabin;
+  const prevTimeRaw = drag.row.appointment_time;
+  const cabinChanged = cabin !== prevCabin;
+  const timeChanged = timeLabel !== prevTime;
+  if (!cabinChanged && !timeChanged) {
+    renderCalendar(appointmentsCache);
+    return;
+  }
+
+  const payload = {
+    cabin_id: cabin,
+    appointment_time: `${timeLabel}:00`,
+  };
+
+  drag.row.cabin_id = cabin;
+  drag.row.appointment_time = payload.appointment_time;
+  renderCalendar(appointmentsCache);
+
+  const { error } = await updateAppointment(drag.row.id, payload);
+  if (error) {
+    drag.row.cabin_id = prevCabin;
+    drag.row.appointment_time = prevTimeRaw;
+    showToast(error.message || "Αποτυχία μετακίνησης", true);
+    renderCalendar(appointmentsCache);
+    return;
+  }
+
+  const bits = [];
+  if (cabinChanged) bits.push(`Κ${cabin}`);
+  if (timeChanged) bits.push(timeLabel);
+  showToast(`Μετακινήθηκε → ${bits.join(" · ")}`);
+}
+
+function onBlockPointerMove(event) {
+  const drag = blockDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+
+  const dx = event.clientX - drag.startX;
+  const dy = event.clientY - drag.startY;
+  if (!drag.moved) {
+    if (Math.hypot(dx, dy) < 10) return;
+    drag.moved = true;
+    drag.el.dataset.didDrag = "1";
+    document.body.classList.add("is-cal-dragging");
+    drag.el.classList.add("is-dragging");
+    drag.el.style.opacity = "0.35";
+    try {
+      drag.el.setPointerCapture(drag.pointerId);
+    } catch {
+      /* ignore */
+    }
+
+    const ghost = drag.el.cloneNode(true);
+    ghost.classList.add("cal-block-ghost");
+    ghost.removeAttribute("id");
+    ghost.style.position = "fixed";
+    ghost.style.margin = "0";
+    ghost.style.pointerEvents = "none";
+    ghost.style.zIndex = "80";
+    ghost.style.width = `${drag.el.getBoundingClientRect().width}px`;
+    ghost.style.height = `${drag.el.getBoundingClientRect().height}px`;
+    document.body.appendChild(ghost);
+    drag.ghost = ghost;
+    closeCalDetail();
+  }
+
+  event.preventDefault();
+
+  const rect = drag.el.getBoundingClientRect();
+  if (drag.ghost) {
+    drag.ghost.style.left = `${event.clientX - rect.width / 2}px`;
+    drag.ghost.style.top = `${event.clientY - 24}px`;
+  }
+
+  const col = cabinColFromPoint(event.clientX, event.clientY);
+  document.querySelectorAll(".cal-col.is-drop-target").forEach((el) => {
+    el.classList.remove("is-drop-target");
+  });
+  if (col) {
+    col.classList.add("is-drop-target");
+    drag.targetCabin = Number(col.dataset.cabin) || drag.origCabin;
+    const colRect = col.getBoundingClientRect();
+    const yInCol = event.clientY - colRect.top;
+    const rawMins = BOOKING_DAY_START + yInCol / pxPerMin() - drag.duration / 2;
+    drag.targetMins = snapMinutes(rawMins);
+    // Live preview position in original column while dragging
+    drag.el.style.top = `${Math.max(0, (drag.targetMins - BOOKING_DAY_START) * pxPerMin())}px`;
+  }
+}
+
+function onBlockPointerUp(event) {
+  const drag = blockDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  const finished = endBlockDrag(false);
+  if (finished?.moved) {
+    event.preventDefault();
+    event.stopPropagation();
+    commitBlockDrag(finished);
+  }
+}
+
+function onBlockPointerCancel(event) {
+  const drag = blockDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  endBlockDrag(true);
+  renderCalendar(appointmentsCache);
+}
+
+function bindBlockDrag(btn, row) {
+  btn.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (blockDrag) return;
+    const start = timeLabelToMinutes(formatTime(row.appointment_time));
+    blockDrag = {
+      row,
+      el: btn,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      origTop: parseFloat(btn.style.top) || 0,
+      origCabin: resolveCabinId(row),
+      duration: Number(row.duration_minutes) || 60,
+      moved: false,
+      ghost: null,
+      targetCabin: null,
+      targetMins: start,
+    };
+  });
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pointermove", onBlockPointerMove, { passive: false });
+  window.addEventListener("pointerup", onBlockPointerUp);
+  window.addEventListener("pointercancel", onBlockPointerCancel);
 }
 
 function buildCalendarChrome() {
@@ -489,10 +672,15 @@ function renderCalendar(data) {
     `;
     btn.addEventListener("click", (event) => {
       event.stopPropagation();
+      if (btn.dataset.didDrag === "1") {
+        delete btn.dataset.didDrag;
+        return;
+      }
       calCols.querySelectorAll(".cal-block.is-selected").forEach((el) => el.classList.remove("is-selected"));
       btn.classList.add("is-selected");
       openCalDetail(row);
     });
+    bindBlockDrag(btn, row);
     col.appendChild(btn);
   }
 
@@ -884,10 +1072,11 @@ function pickService(id) {
   refreshTimeOptions().catch(() => {});
 }
 
-/** Limit cabin dropdown to the pool allowed for this service; auto-fix wrong picks. */
+/** Cabin dropdown — all cabins; staff may place any service in any cabin. */
 function syncCabinSelectForService(service, preferredCabinId = null) {
   if (!bkCabin) return;
-  const pool = service ? getCabinPool(service) : CABIN_IDS.slice();
+  const pool = CABIN_IDS.slice();
+  const suggested = service ? getCabinPool(service) : pool;
   const current = preferredCabinId != null
     ? Number(preferredCabinId)
     : (bkCabin.value ? Number(bkCabin.value) : null);
@@ -896,7 +1085,8 @@ function syncCabinSelectForService(service, preferredCabinId = null) {
     `<option value="">Αυτόματα</option>`,
     ...pool.map((id) => {
       const meta = CABIN_SHORT[id] || { code: `Κ${id}`, role: "" };
-      return `<option value="${id}">${escapeHtml(meta.code)} — ${escapeHtml(meta.role)}</option>`;
+      const tip = suggested.includes(id) ? "" : " · χειροκίνητα";
+      return `<option value="${id}">${escapeHtml(meta.code)} — ${escapeHtml(meta.role)}${tip}</option>`;
     }),
   ].join("");
 
@@ -905,14 +1095,7 @@ function syncCabinSelectForService(service, preferredCabinId = null) {
     return;
   }
 
-  if (current != null && !pool.includes(current)) {
-    bkCabin.value = pool.length === 1 ? String(pool[0]) : "";
-    const labels = pool.map((id) => CABIN_SHORT[id]?.code || `Κ${id}`).join(" / ");
-    showToast(`Η θεραπεία μπαίνει μόνο σε ${labels}. Διορθώθηκε αυτόματα.`);
-    return;
-  }
-
-  bkCabin.value = pool.length === 1 ? String(pool[0]) : "";
+  bkCabin.value = suggested.length === 1 ? String(suggested[0]) : "";
 }
 
 function clearPickedServiceKeepText() {
@@ -1396,12 +1579,7 @@ bookingForm?.addEventListener("submit", async (event) => {
   let cabinId = bkCabin.value ? Number(bkCabin.value) : null;
   const pool = getCabinPool(service);
   const poolLabel = pool.map((id) => CABIN_SHORT[id]?.code || `Κ${id}`).join(" / ");
-
-  if (cabinId && !pool.includes(cabinId)) {
-    showToast(`Η θεραπεία δεν μπαίνει σε Κ${cabinId}. Επιτρέπονται: ${poolLabel}.`);
-    cabinId = null;
-    syncCabinSelectForService(service, null);
-  }
+  const manualCabin = Number.isFinite(cabinId) && cabinId >= 1 && cabinId <= 5;
 
   try {
     let booked = await fetchBookedSlots(date);
@@ -1418,26 +1596,22 @@ bookingForm?.addEventListener("submit", async (event) => {
       }
     }
 
-    const freeInPool = pickCabinForSlot(service, booked, time);
-    if (!freeInPool) {
-      showToast(`Καμία ελεύθερη καμπίνα (${poolLabel}) για αυτή την ώρα.`, true);
-      await refreshTimeOptions();
-      return;
-    }
-
-    if (cabinId && isCabinFreeForSlot(cabinId, service, booked, time)) {
-      // keep preferred
-    } else if (cabinId) {
-      showToast(`Η επιλεγμένη καμπίνα δεν ήταν ελεύθερη — μπήκε στη ${CABIN_SHORT[freeInPool]?.code || `Κ${freeInPool}`}.`);
-      cabinId = freeInPool;
+    if (manualCabin) {
+      // Staff override — keep the chosen cabin even outside the usual pool
+      cabinId = Number(cabinId);
     } else {
+      const freeInPool = pickCabinForSlot(service, booked, time);
+      if (!freeInPool) {
+        showToast(`Καμία ελεύθερη καμπίνα (${poolLabel}) για αυτή την ώρα.`, true);
+        await refreshTimeOptions();
+        return;
+      }
       cabinId = freeInPool;
     }
 
-    cabinId = clampCabinToPool(service, cabinId);
     syncCabinSelectForService(service, cabinId);
   } catch (error) {
-    cabinId = clampCabinToPool(service, cabinId || pool[0]);
+    if (!manualCabin) cabinId = pool[0] || 1;
     console.warn("cabin pick fallback", error);
   }
 
