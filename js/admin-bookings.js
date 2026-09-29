@@ -267,40 +267,58 @@ function resolveCabinId(row) {
   return resolveCabinForAppointment(row);
 }
 
-/** Persist cabin_id when a legacy row sits in the wrong pool (e.g. laser in Κ3). */
+/**
+ * Fix wrong-pool cabins and spread overlapping laser (Κ1/Κ2) slots.
+ * Processes earliest-first so later bookings land in the free cabin.
+ */
 async function healMismatchedCabins(rows) {
-  const active = (rows || []).filter((row) => row.status !== "cancelled");
+  const active = (rows || [])
+    .filter((row) => row.status !== "cancelled")
+    .slice()
+    .sort((a, b) => {
+      const da = String(a.appointment_date || "");
+      const db = String(b.appointment_date || "");
+      if (da !== db) return da.localeCompare(db);
+      return String(a.appointment_time || "").localeCompare(String(b.appointment_time || ""));
+    });
+
   let fixed = 0;
+  /** @type {Map<string, { start: number, end: number, cabin: number }[]>} */
+  const placedByDate = new Map();
 
   for (const row of active) {
-    // Never rewrite Habitol / Google Calendar cabins — set by import SQL
-    if (String(row.notes || "").includes("gcal:")) continue;
-
-    const pool = getCabinPoolForServiceName(row.service);
-    const stored = Number(row.cabin_id);
-    if (Number.isFinite(stored) && pool.includes(stored)) continue;
-
+    const blob = [row.service, row.notes].filter(Boolean).join(" ");
+    const pool = getCabinPoolForServiceName(blob);
     const date = String(row.appointment_date || "").slice(0, 10);
     const time = formatTime(row.appointment_time);
-    const booked = active
-      .filter((other) => other.id !== row.id && String(other.appointment_date || "").slice(0, 10) === date)
-      .map((other) => ({
-        time: formatTime(other.appointment_time),
-        service: other.service,
-        durationMin: other.duration_minutes,
-        cabinId: resolveCabinForAppointment(other),
-      }));
+    const start = timeLabelToMinutes(time);
+    const duration = Math.max(5, Number(row.duration_minutes) || 60);
+    if (start == null) continue;
+    const end = start + duration;
 
-    const match = findServiceByName(row.service);
-    const service = match
-      ? (getServiceById(match.id) || match)
-      : { id: "custom", categoryId: "", durationMin: row.duration_minutes || 60, name: row.service };
-    const nextCabin = pickCabinForSlot(service, booked, time) || pool[0];
-    if (!nextCabin || nextCabin === stored) continue;
+    if (!placedByDate.has(date)) placedByDate.set(date, []);
+    const placed = placedByDate.get(date);
+    const freeInPool = (cabinId) =>
+      !placed.some((p) => p.cabin === cabinId && start < p.end && end > p.start);
 
-    const { error } = await updateAppointment(row.id, { cabin_id: nextCabin });
-    if (error) continue;
-    row.cabin_id = nextCabin;
+    const stored = Number(row.cabin_id);
+    let next;
+    if (Number.isFinite(stored) && pool.includes(stored) && freeInPool(stored)) {
+      next = stored;
+    } else {
+      next = pool.find((cabinId) => freeInPool(cabinId)) || pool[0] || 1;
+    }
+
+    placed.push({ start, end, cabin: next });
+
+    if (next === stored) continue;
+
+    const { error } = await updateAppointment(row.id, { cabin_id: next });
+    if (error) {
+      placed[placed.length - 1].cabin = Number.isFinite(stored) && stored >= 1 ? stored : next;
+      continue;
+    }
+    row.cabin_id = next;
     fixed += 1;
   }
 

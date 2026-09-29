@@ -345,14 +345,15 @@ export function getCabinPoolForServiceName(serviceName) {
 
 /**
  * Cabin for an appointment row.
- * Trust a stored cabin_id (1–5) — Google Calendar imports set this in SQL.
- * Only infer from the service name when cabin_id is missing.
+ * Keep stored cabin_id only when it belongs to the service pool
+ * (so MORPHEUS cannot stay in Κ1, brows cannot stay in Laser).
+ * Otherwise use the first cabin in the inferred pool.
  */
 export function resolveCabinForAppointment(row) {
-  const direct = Number(row?.cabin_id ?? row?.cabinId);
-  if (Number.isFinite(direct) && direct >= 1 && direct <= 5) return direct;
   const blob = [row?.service, row?.notes].filter(Boolean).join(" ");
   const pool = getCabinPoolForServiceName(blob);
+  const direct = Number(row?.cabin_id ?? row?.cabinId);
+  if (Number.isFinite(direct) && pool.includes(direct)) return direct;
   return pool[0] || 1;
 }
 
