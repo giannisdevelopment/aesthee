@@ -11,3 +11,7 @@ data/
 supabase/import-treatwell-clients.sql
 supabase/import-treatwell-bookings.sql
 supabase/treatwell-import/
+supabase/import-google-contacts.sql
+supabase/import-habitol-calendar.sql
+supabase/import-habitol-calendar.README.sql
+supabase/habitol-import/
