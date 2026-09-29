@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Ταμείο — Aesthée Admin</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body data-admin-page="till">
+  <div id="loginView" class="login-wrap hidden">
+    <form class="panel login-card" id="loginForm">
+      <h1>Aesthée Admin</h1>
+      <p>Σύνδεση προσωπικού για ταμείο.</p>
+      <div id="configBanner" class="banner-warn hidden">
+        Λείπει το <code>js/supabase-config.js</code>. Αντιγράψτε από το
+        <code>supabase-config.example.js</code> και βάλτε URL + anon key.
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="password">Κωδικός</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <button class="btn btn-gold" type="submit" style="width:100%">Σύνδεση</button>
+    </form>
+  </div>
+
+  <div id="appView" class="admin-shell hidden">
+    <header class="admin-top">
+      <div class="admin-brand">
+        <img src="/images/logo-emblem.svg" alt="" />
+        <div>
+          <strong>Aesthée</strong>
+          <span>Ταμείο</span>
+        </div>
+      </div>
+      <div class="admin-actions">
+        <nav class="admin-nav">
+          <a href="/admin/">Πελάτες</a>
+          <a href="/admin/bookings">Ραντεβού</a>
+          <a class="is-active" href="/admin/till">Ταμείο</a>
+          <a href="/admin/services">Τιμές</a>
+          <a href="/admin/import">Εισαγωγή</a>
+          <a href="/admin/messages">Μηνύματα</a>
+        </nav>
+        <button class="btn btn-ghost" type="button" id="signOutBtn">Αποσύνδεση</button>
+      </div>
+    </header>
+
+    <div class="toolbar toolbar-wrap till-toolbar">
+      <div class="view-toggle" role="group" aria-label="Περίοδος">
+        <button class="btn btn-ghost btn-sm is-active" type="button" data-period="day">Ημέρα</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-period="month">Μήνας</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-period="year">Έτος</button>
+      </div>
+      <input id="tillDate" type="date" aria-label="Ημερομηνία" />
+      <input id="tillMonth" type="month" aria-label="Μήνας" class="hidden" />
+      <input id="tillYear" type="number" min="2020" max="2100" step="1" aria-label="Έτος" class="hidden" />
+      <button class="btn btn-ghost btn-sm" type="button" id="tillToday">Σήμερα</button>
+    </div>
+
+    <p class="till-period-label muted" id="tillPeriodLabel">—</p>
+
+    <div class="till-stats" id="tillStats">
+      <article class="till-stat">
+        <span class="till-stat-kicker">Σύνολο</span>
+        <strong id="statTotal">€ 0</strong>
+        <p id="statCount">0 εγγραφές</p>
+      </article>
+      <article class="till-stat">
+        <span class="till-stat-kicker">Επισκέψεις CRM</span>
+        <strong id="statVisits">€ 0</strong>
+        <p id="statVisitsCount">0 πληρωμές</p>
+      </article>
+      <article class="till-stat">
+        <span class="till-stat-kicker">Ολοκληρωμένα ραντεβού</span>
+        <strong id="statBookings">€ 0</strong>
+        <p id="statBookingsCount">0 ραντεβού</p>
+      </article>
+    </div>
+
+    <p class="till-hint muted">Το σύνολο μετράει πληρωμές καρτέλας πελάτη και ολοκληρωμένα ραντεβού που δεν έχουν ήδη καταχωρηθεί ως επίσκεψη την ίδια ημέρα (ίδιο όνομα + ίδιο ποσό).</p>
+
+    <div class="panel table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ημερομηνία</th>
+            <th>Πελάτης</th>
+            <th>Υπηρεσία</th>
+            <th>Πηγή</th>
+            <th>Ποσό</th>
+          </tr>
+        </thead>
+        <tbody id="tillBody">
+          <tr><td colspan="5" class="empty">Φόρτωση…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="toast" id="adminToast" role="status"></div>
+  <script src="/js/supabase-config.js"></script>
+  <script type="module" src="/js/admin-till.js"></script>
+</body>
+</html>

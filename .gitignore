@@ -5,3 +5,9 @@ js/supabase-config.js
 
 # Local backups of uncropped before/after service photos
 images/services/_ba-originals/
+
+# Treatwell / CRM exports contain personal data — do not commit
+data/
+supabase/import-treatwell-clients.sql
+supabase/import-treatwell-bookings.sql
+supabase/treatwell-import/

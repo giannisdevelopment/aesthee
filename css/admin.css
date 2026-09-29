@@ -1070,3 +1070,133 @@ tr.is-inactive {
     padding: 12px;
   }
 }
+
+.till-toolbar {
+  align-items: center;
+}
+
+.till-period-label {
+  margin: -12px 0 18px;
+  font-size: 0.95rem;
+  text-transform: capitalize;
+}
+
+.till-hint {
+  margin: 0 0 16px;
+  max-width: 72ch;
+  font-size: 0.86rem;
+}
+
+.till-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.till-stat {
+  background: var(--white);
+  border: 1px solid rgba(196, 163, 106, 0.22);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+}
+
+.till-stat-kicker {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 8px;
+}
+
+.till-stat strong {
+  display: block;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.till-stat p {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: var(--ink-muted);
+}
+
+.till-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .till-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.import-panel {
+  max-width: 720px;
+}
+
+.import-panel .field {
+  margin-bottom: 18px;
+}
+
+.import-panel input[type="file"] {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed rgba(196, 163, 106, 0.45);
+  border-radius: 12px;
+  background: var(--ivory);
+}
+
+.import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.import-progress {
+  margin-top: 22px;
+}
+
+.import-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(196, 163, 106, 0.18);
+  overflow: hidden;
+}
+
+.import-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--gold), var(--gold-deep));
+  transition: width 200ms ease;
+}
+
+.import-progress p {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.import-log {
+  margin: 16px 0 0;
+  max-height: 240px;
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #2c241c;
+  color: #f6f0e6;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
