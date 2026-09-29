@@ -5,8 +5,8 @@
 begin;
 
 -- Catalog live prices (site + admin booking)
-update public.services
-set price_cents = 5000, updated_at = now()
+update public.catalog_services
+set price_cents = 5000
 where id in ('lash-ext-classic', 'lash-ext-volume', 'lash-ext-mix')
    or (
      lower(name) like '%τοποθέτηση%'
@@ -62,7 +62,7 @@ where not exists (
 commit;
 
 -- Verify
-select id, name, price_cents from public.services
+select id, name, price_cents from public.catalog_services
 where id like 'lash-ext%'
 order by id;
 
