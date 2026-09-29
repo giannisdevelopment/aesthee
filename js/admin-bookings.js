@@ -110,7 +110,7 @@ let editingAppointmentId = null;
 /** Snapshot while editing — for email diffs */
 let editingSnapshot = null;
 
-const PX_PER_MIN = 1.35;
+const PX_PER_MIN = 2;
 const DOW_LABELS = ["Κ", "Δ", "Τ", "Τ", "Π", "Π", "Σ"];
 const MONTH_LABELS = [
   "Ιανουάριος", "Φεβρουάριος", "Μάρτιος", "Απρίλιος", "Μάιος", "Ιούνιος",
@@ -326,30 +326,45 @@ function renderCalendar(data) {
     const col = calCols.querySelector(`.cal-col[data-cabin="${cabinId}"]`);
     if (!col) continue;
 
-    const start = timeLabelToMinutes(formatTime(row.appointment_time));
+    const startLabel = formatTime(row.appointment_time);
+    const start = timeLabelToMinutes(startLabel);
     if (start == null) continue;
     const duration = Number(row.duration_minutes) || 60;
     const top = (start - BOOKING_DAY_START) * PX_PER_MIN;
-    const height = Math.max(duration * PX_PER_MIN, 34);
+    const height = Math.max(duration * PX_PER_MIN, 40);
+    const endLabel = endTimeLabel(startLabel, duration);
+    const status = row.status || "pending";
+    const sizeClass = height < 52 ? "is-xs" : height < 78 ? "is-sm" : height < 110 ? "is-md" : "is-lg";
 
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `cal-block is-${row.status || "pending"}`;
+    btn.className = `cal-block is-${status} ${sizeClass}`;
     btn.style.top = `${Math.max(0, top)}px`;
     btn.style.height = `${height}px`;
     btn.dataset.id = row.id;
+    btn.title = `${row.guest_name} · ${row.service} · ${startLabel}–${endLabel}`;
     btn.innerHTML = `
-      <span class="t">${escapeHtml(formatTime(row.appointment_time))}</span>
-      <span class="n">${escapeHtml(row.guest_name)}</span>
-      <span class="s">${escapeHtml(row.service)}</span>
-      <span class="d">${escapeHtml(formatDurationMin(duration))}${row.price_cents != null ? ` · ${escapeHtml(formatPriceCents(row.price_cents))}` : ""}</span>
+      <span class="cal-block-accent" aria-hidden="true"></span>
+      <span class="cal-block-body">
+        <span class="cal-block-time">${escapeHtml(startLabel)} – ${escapeHtml(endLabel)}</span>
+        <span class="cal-block-name">${escapeHtml(row.guest_name)}</span>
+        <span class="cal-block-service">${escapeHtml(row.service)}</span>
+        <span class="cal-block-meta">
+          <span class="cal-block-dur">${escapeHtml(formatDurationMin(duration))}</span>
+          ${row.price_cents != null ? `<span class="cal-block-price">${escapeHtml(formatPriceCents(row.price_cents))}</span>` : ""}
+        </span>
+      </span>
     `;
     btn.addEventListener("click", (event) => {
       event.stopPropagation();
+      calCols.querySelectorAll(".cal-block.is-selected").forEach((el) => el.classList.remove("is-selected"));
+      btn.classList.add("is-selected");
       openCalDetail(row);
     });
     col.appendChild(btn);
   }
+
+  updateCalNowLine();
 }
 
 function closeCalDetail() {
@@ -363,7 +378,7 @@ function openCalDetail(row) {
   el.className = "cal-detail";
   el.innerHTML = `
     <h3>${escapeHtml(row.guest_name)}</h3>
-    <p>${escapeHtml(formatTime(row.appointment_time))} · ${escapeHtml(formatDurationMin(row.duration_minutes || 60))}</p>
+    <p>${escapeHtml(formatTime(row.appointment_time))} – ${escapeHtml(endTimeLabel(row.appointment_time, row.duration_minutes || 60))} · ${escapeHtml(formatDurationMin(row.duration_minutes || 60))}</p>
     <p>${escapeHtml(row.service)}</p>
     <p>${escapeHtml(formatPriceCents(row.price_cents))} · Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}</p>
     <p>${statusBadge(row.status)} · <a href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a></p>
@@ -550,6 +565,29 @@ function formatDurationMin(minutes) {
   const rest = value % 60;
   if (!rest) return `${hours}ώ`;
   return `${hours}ώ ${rest}′`;
+}
+
+function endTimeLabel(startLabel, durationMin) {
+  const start = timeLabelToMinutes(formatTime(startLabel));
+  if (start == null) return "";
+  const end = start + (Number(durationMin) || 0);
+  return minutesToTimeLabel(end);
+}
+
+function updateCalNowLine() {
+  document.querySelectorAll(".cal-now").forEach((el) => el.remove());
+  if (!calendarDay || calendarDay !== toDateKey(new Date())) return;
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  if (mins < BOOKING_DAY_START || mins > BOOKING_DAY_END) return;
+  const top = (mins - BOOKING_DAY_START) * PX_PER_MIN;
+  calCols?.querySelectorAll(".cal-col").forEach((col) => {
+    const line = document.createElement("div");
+    line.className = "cal-now";
+    line.style.top = `${top}px`;
+    line.setAttribute("aria-hidden", "true");
+    col.appendChild(line);
+  });
 }
 
 function eurosFromCents(cents) {
@@ -1296,6 +1334,9 @@ async function boot() {
   renderDayStrip();
   setActiveView("calendar", { refresh: false });
   await renderAppointments();
+  window.setInterval(() => {
+    if (activeView === "calendar") updateCalNowLine();
+  }, 60_000);
 }
 
 boot();

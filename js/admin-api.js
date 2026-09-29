@@ -153,34 +153,56 @@ export async function listVisits(clientId) {
 }
 
 /**
+ * Paginate a Supabase query until exhausted (PostgREST default max is 1000 rows).
+ * @param {() => any} buildQuery factory returning a filtered query without .range()
+ * @param {number} [pageSize]
+ */
+async function fetchAllRows(buildQuery, pageSize = 1000) {
+  const rows = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+    if (error) return { data: null, error };
+    if (!data?.length) break;
+    rows.push(...data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return { data: rows, error: null };
+}
+
+/**
  * Paid visits in a date range (inclusive). Used by till / ταμείο.
  * @param {{ fromDate: string, toDate: string }} range ISO dates YYYY-MM-DD
  */
 export async function listVisitsInRange({ fromDate, toDate }) {
-  return getSupabase()
-    .from("visits")
-    .select("id, client_id, treatment, payment_amount, payment_date, notes, created_at, clients(full_name, phone)")
-    .not("payment_amount", "is", null)
-    .gt("payment_amount", 0)
-    .gte("payment_date", fromDate)
-    .lte("payment_date", toDate)
-    .order("payment_date", { ascending: false })
-    .order("created_at", { ascending: false });
+  return fetchAllRows(() =>
+    getSupabase()
+      .from("visits")
+      .select("id, client_id, treatment, payment_amount, payment_date, notes, created_at, clients(full_name, phone)")
+      .not("payment_amount", "is", null)
+      .gt("payment_amount", 0)
+      .gte("payment_date", fromDate)
+      .lte("payment_date", toDate)
+      .order("payment_date", { ascending: false })
+      .order("created_at", { ascending: false })
+  );
 }
 
 /**
- * Completed appointments in a date range (listAppointments already paginates poorly —
- * we cap at 1000 which is enough for a year of a salon).
+ * Completed appointments in a date range (paginated — no 1000-row cap).
  */
 export async function listCompletedAppointmentsInRange({ fromDate, toDate }) {
-  return getSupabase()
-    .from("appointments")
-    .select("id, service, appointment_date, appointment_time, price_cents, guest_name, guest_phone, status")
-    .eq("status", "completed")
-    .gte("appointment_date", fromDate)
-    .lte("appointment_date", toDate)
-    .order("appointment_date", { ascending: false })
-    .order("appointment_time", { ascending: false });
+  return fetchAllRows(() =>
+    getSupabase()
+      .from("appointments")
+      .select("id, service, appointment_date, appointment_time, price_cents, guest_name, guest_phone, status")
+      .eq("status", "completed")
+      .gte("appointment_date", fromDate)
+      .lte("appointment_date", toDate)
+      .order("appointment_date", { ascending: false })
+      .order("appointment_time", { ascending: false })
+  );
 }
 
 export async function saveVisit(payload, id = null) {
