@@ -93,10 +93,9 @@ def parse_ics_events(text: str) -> list[dict]:
 
 
 def parse_dt(raw: str) -> datetime | None:
-    """Parse ICS datetime.
+    """Parse ICS datetime into Europe/Athens wall clock.
 
-    Habitol / Outlook exports wall-clock Athens times with a trailing Z
-    (fake UTC). Treat Z like local Europe/Athens — do NOT convert UTC→Athens.
+    Trailing Z is treated as real UTC (Habitol/Google), then converted to Athens.
     """
     raw = (raw or "").strip()
     if re.fullmatch(r"\d{8}", raw):
@@ -105,7 +104,8 @@ def parse_dt(raw: str) -> datetime | None:
     if not m:
         return None
     dt = datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H%M%S")
-    # Z and floating both = Athens local wall clock for this export
+    if m.group(3) == "Z":
+        return dt.replace(tzinfo=timezone.utc).astimezone(ATHENS)
     return dt.replace(tzinfo=ATHENS)
 
 
