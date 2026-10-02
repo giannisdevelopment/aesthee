@@ -635,53 +635,117 @@ function renderCalendar(data) {
   closeCalDetail();
 
   const visible = (data || []).filter((row) => row.status !== "cancelled");
+  const GAP_PX = 3;
+
+  /** @type {Map<number, { row: object, start: number, end: number, top: number, height: number, col: number, cols: number }[]>} */
+  const byCabin = new Map();
 
   for (const row of visible) {
     const cabinId = resolveCabinId(row);
-    const col = calCols.querySelector(`.cal-col[data-cabin="${cabinId}"]`);
-    if (!col) continue;
-
     const startLabel = formatTime(row.appointment_time);
     const start = timeLabelToMinutes(startLabel);
     if (start == null) continue;
-    const duration = Number(row.duration_minutes) || 60;
+    const duration = Math.max(5, Number(row.duration_minutes) || 60);
+    const end = start + duration;
     const top = (start - BOOKING_DAY_START) * ppm;
-    const height = Math.max(duration * ppm, 36);
-    const endLabel = endTimeLabel(startLabel, duration);
-    const status = row.status || "pending";
-    const sizeClass = height < 48 ? "is-xs" : height < 72 ? "is-sm" : height < 104 ? "is-md" : "is-lg";
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = `cal-block is-${status} ${sizeClass}`;
-    btn.style.top = `${Math.max(0, top)}px`;
-    btn.style.height = `${height}px`;
-    btn.dataset.id = row.id;
-    btn.title = `${row.guest_name} · ${row.service} · ${startLabel}–${endLabel}`;
-    btn.innerHTML = `
-      <span class="cal-block-accent" aria-hidden="true"></span>
-      <span class="cal-block-body">
-        <span class="cal-block-time">${escapeHtml(startLabel)} – ${escapeHtml(endLabel)}</span>
-        <span class="cal-block-name">${escapeHtml(row.guest_name)}</span>
-        <span class="cal-block-service">${escapeHtml(row.service)}</span>
-        <span class="cal-block-meta">
-          <span class="cal-block-dur">${escapeHtml(formatDurationMin(duration))}</span>
-          ${row.price_cents != null ? `<span class="cal-block-price">${escapeHtml(formatPriceCents(row.price_cents))}</span>` : ""}
-        </span>
-      </span>
-    `;
-    btn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      if (btn.dataset.didDrag === "1") {
-        delete btn.dataset.didDrag;
-        return;
-      }
-      calCols.querySelectorAll(".cal-block.is-selected").forEach((el) => el.classList.remove("is-selected"));
-      btn.classList.add("is-selected");
-      openCalDetail(row);
+    if (!byCabin.has(cabinId)) byCabin.set(cabinId, []);
+    byCabin.get(cabinId).push({
+      row,
+      start,
+      end,
+      top,
+      height: duration * ppm,
+      col: 0,
+      cols: 1,
     });
-    bindBlockDrag(btn, row);
-    col.appendChild(btn);
+  }
+
+  for (const [cabinId, items] of byCabin) {
+    const colEl = calCols.querySelector(`.cal-col[data-cabin="${cabinId}"]`);
+    if (!colEl) continue;
+
+    items.sort((a, b) => a.start - b.start || a.end - b.end);
+
+    // Side-by-side layout only when times actually overlap
+    for (let i = 0; i < items.length; i++) {
+      const cur = items[i];
+      /** @type {number[]} */
+      const used = [];
+      for (let j = 0; j < i; j++) {
+        const prev = items[j];
+        if (prev.start < cur.end && cur.start < prev.end) {
+          used.push(prev.col);
+        }
+      }
+      let col = 0;
+      while (used.includes(col)) col += 1;
+      cur.col = col;
+    }
+    const maxCol = items.reduce((m, it) => Math.max(m, it.col), 0);
+    const cols = maxCol + 1;
+    for (const it of items) it.cols = cols;
+
+    // Cap height so non-overlapping neighbours never paint over each other
+    for (let i = 0; i < items.length; i++) {
+      const cur = items[i];
+      let limit = Infinity;
+      for (let j = i + 1; j < items.length; j++) {
+        if (items[j].start >= cur.end) {
+          limit = items[j].top;
+          break;
+        }
+      }
+      const natural = Math.max(14, cur.height - GAP_PX);
+      const maxH = Number.isFinite(limit) ? limit - cur.top - GAP_PX : natural;
+      cur.height = Math.max(14, Math.min(natural, maxH));
+    }
+
+    for (const it of items) {
+      const row = it.row;
+      const startLabel = formatTime(row.appointment_time);
+      const duration = Math.max(5, Number(row.duration_minutes) || 60);
+      const endLabel = endTimeLabel(startLabel, duration);
+      const status = row.status || "pending";
+      const sizeClass = it.height < 48 ? "is-xs" : it.height < 72 ? "is-sm" : it.height < 104 ? "is-md" : "is-lg";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `cal-block is-${status} ${sizeClass}`;
+      btn.style.top = `${Math.max(0, it.top)}px`;
+      btn.style.height = `${it.height}px`;
+      if (it.cols > 1) {
+        const widthPct = 100 / it.cols;
+        btn.style.left = `calc(${it.col * widthPct}% + 2px)`;
+        btn.style.right = "auto";
+        btn.style.width = `calc(${widthPct}% - 4px)`;
+      }
+      btn.dataset.id = row.id;
+      btn.title = `${row.guest_name} · ${row.service} · ${startLabel}–${endLabel}`;
+      btn.innerHTML = `
+        <span class="cal-block-accent" aria-hidden="true"></span>
+        <span class="cal-block-body">
+          <span class="cal-block-time">${escapeHtml(startLabel)} – ${escapeHtml(endLabel)}</span>
+          <span class="cal-block-name">${escapeHtml(row.guest_name)}</span>
+          <span class="cal-block-service">${escapeHtml(row.service)}</span>
+          <span class="cal-block-meta">
+            <span class="cal-block-dur">${escapeHtml(formatDurationMin(duration))}</span>
+            ${row.price_cents != null ? `<span class="cal-block-price">${escapeHtml(formatPriceCents(row.price_cents))}</span>` : ""}
+          </span>
+        </span>
+      `;
+      btn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (btn.dataset.didDrag === "1") {
+          delete btn.dataset.didDrag;
+          return;
+        }
+        calCols.querySelectorAll(".cal-block.is-selected").forEach((el) => el.classList.remove("is-selected"));
+        btn.classList.add("is-selected");
+        openCalDetail(row);
+      });
+      bindBlockDrag(btn, row);
+      colEl.appendChild(btn);
+    }
   }
 
   updateCalNowLine();
