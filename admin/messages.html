@@ -15,7 +15,7 @@
   <div id="loginView" class="login-wrap hidden">
     <form class="panel login-card" id="loginForm">
       <h1>Aesthée Admin</h1>
-      <p>Σύνδεση προσωπικού για μηνύματα επικοινωνίας.</p>
+      <p>Σύνδεση προσωπικού για μηνύματα και νέες κρατήσεις.</p>
       <div id="configBanner" class="banner-warn hidden">
         Λείπει το <code>js/supabase-config.js</code>. Αντιγράψτε από το
         <code>supabase-config.example.js</code> και βάλτε URL + anon key.
@@ -52,6 +52,16 @@
         <button class="btn btn-ghost" type="button" id="signOutBtn">Αποσύνδεση</button>
       </div>
     </header>
+
+    <p class="admin-lead">
+      Νέες online κρατήσεις για έγκριση/απόρριψη, μαζί με τα μηνύματα από τη φόρμα επικοινωνίας.
+    </p>
+
+    <div class="inbox-filters" id="inboxFilters" role="tablist" aria-label="Φίλτρο εισερχομένων">
+      <button type="button" class="is-active" data-filter="all" role="tab" aria-selected="true">Όλα</button>
+      <button type="button" data-filter="bookings" role="tab" aria-selected="false">Ραντεβού <em id="pendingCount">0</em></button>
+      <button type="button" data-filter="messages" role="tab" aria-selected="false">Επικοινωνία <em id="unreadCount">0</em></button>
+    </div>
 
     <div id="messagesList" class="messages-list"></div>
   </div>

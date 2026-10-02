@@ -511,6 +511,49 @@ tr:last-child td {
   gap: 14px;
 }
 
+.inbox-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.inbox-filters button {
+  border: 1px solid rgba(196, 163, 106, 0.35);
+  background: var(--white);
+  color: var(--ink-muted);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inbox-filters button.is-active {
+  background: rgba(196, 163, 106, 0.18);
+  color: var(--ink);
+  border-color: rgba(196, 163, 106, 0.55);
+}
+
+.inbox-filters em {
+  font-style: normal;
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 1.4em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(44, 36, 28, 0.08);
+  color: var(--ink);
+}
+
+.inbox-filters button.is-active em {
+  background: var(--gold);
+  color: var(--ink);
+}
+
 .message-card {
   background: var(--white);
   border: 1px solid rgba(196, 163, 106, 0.2);
@@ -521,6 +564,29 @@ tr:last-child td {
 .message-card.is-unread {
   border-color: var(--gold);
   box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.message-card--booking {
+  background: linear-gradient(180deg, #fffaf2 0%, var(--white) 48%);
+}
+
+.inbox-kind {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+.message-contact {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.booking-summary {
+  margin: 0 0 8px;
+  line-height: 1.55;
 }
 
 .message-head {
