@@ -813,6 +813,10 @@ tr.is-inactive {
   z-index: 5;
 }
 
+.suggest:focus-within {
+  z-index: 60;
+}
+
 .suggest input[type="text"] {
   appearance: none;
   border: 1px solid rgba(196, 163, 106, 0.35);

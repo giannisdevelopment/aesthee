@@ -36,7 +36,7 @@ import {
   SLOT_STEP_MINUTES,
   timeLabelToMinutes,
   minutesToTimeLabel,
-} from "./booking-services.js?v=month-appts-1";
+} from "./booking-services.js?v=lw-solos-1";
 import { fetchBookedSlots } from "./booking-api.js";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
@@ -1295,16 +1295,28 @@ function filterCatalog(query) {
   const q = normalizeSearch(query);
   if (!q) return [];
   const digits = q.replace(/\D/g, "");
-  return catalogCache
-    .filter((row) => {
-      const hay = normalizeSearch(`${row.name} ${row.categoryLabel}`);
-      if (hay.includes(q)) return true;
-      if (digits && Number(row.durationMin) === Number(digits) && (row.categoryId === "duration" || String(row.id || "").startsWith("dur-"))) {
-        return true;
-      }
-      return false;
-    })
-    .slice(0, 25);
+  const scored = [];
+  for (const row of catalogCache) {
+    const name = normalizeSearch(row.name);
+    const hay = normalizeSearch(`${row.name} ${row.categoryLabel}`);
+    let score = -1;
+    if (name === q) score = 100;
+    else if (name.startsWith(q) || name.includes(` — ${q}`) || name.endsWith(` — ${q}`)) score = 80;
+    else if (hay.includes(q)) score = 50;
+    else if (
+      digits
+      && Number(row.durationMin) === Number(digits)
+      && (row.categoryId === "duration" || String(row.id || "").startsWith("dur-"))
+    ) {
+      score = 40;
+    }
+    if (score < 0) continue;
+    // Prefer solo areas over "&" / "+" combos when the query is a single area word
+    if (/[&+]/.test(row.name) && !/[&+]/.test(query)) score -= 15;
+    scored.push({ row, score, name });
+  }
+  scored.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "el"));
+  return scored.slice(0, 40).map((item) => item.row);
 }
 
 function hideServiceSuggest() {
