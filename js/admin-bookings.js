@@ -14,7 +14,7 @@ import {
   formatDate,
   formatTime,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=fix-load-1";
+} from "./admin-api.js?v=month-appts-1";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   applyCatalogFromRows,
@@ -36,7 +36,7 @@ import {
   SLOT_STEP_MINUTES,
   timeLabelToMinutes,
   minutesToTimeLabel,
-} from "./booking-services.js";
+} from "./booking-services.js?v=month-appts-1";
 import { fetchBookedSlots } from "./booking-api.js";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
@@ -57,6 +57,11 @@ const viewCalBtn = document.getElementById("viewCalBtn");
 const viewListBtn = document.getElementById("viewListBtn");
 const calDayStrip = document.getElementById("calDayStrip");
 const calMonthLabel = document.getElementById("calMonthLabel");
+const calMonthPop = document.getElementById("calMonthPop");
+const calMonthGrid = document.getElementById("calMonthGrid");
+const calYearLabel = document.getElementById("calYearLabel");
+const calYearPrev = document.getElementById("calYearPrev");
+const calYearNext = document.getElementById("calYearNext");
 const calCabinHeads = document.getElementById("calCabinHeads");
 const calTimes = document.getElementById("calTimes");
 const calCols = document.getElementById("calCols");
@@ -86,6 +91,11 @@ const bkDuration = document.getElementById("bkDuration");
 const bkPrice = document.getElementById("bkPrice");
 const bkCabin = document.getElementById("bkCabin");
 const bkNotes = document.getElementById("bkNotes");
+const bkRepeat = document.getElementById("bkRepeat");
+const bkRepeatBlock = document.getElementById("bkRepeatBlock");
+const bkRepeatExtra = document.getElementById("bkRepeatExtra");
+const bkRepeatDows = document.getElementById("bkRepeatDows");
+const bkRepeatUntil = document.getElementById("bkRepeatUntil");
 const bkLinkClient = document.getElementById("bkLinkClient");
 const bkSubmitBtn = document.getElementById("bkSubmitBtn");
 
@@ -114,6 +124,8 @@ let activeView = "calendar";
 /** Calendar selected day as YYYY-MM-DD */
 let calendarDay = "";
 
+let monthPickerYear = new Date().getFullYear();
+
 /** @type {object[]} */
 let appointmentsCache = [];
 
@@ -138,6 +150,15 @@ let editingAppointmentId = null;
 let editingSnapshot = null;
 
 const DOW_LABELS = ["Κ", "Δ", "Τ", "Τ", "Π", "Π", "Σ"];
+const REPEAT_DOWS = [
+  { js: 1, label: "Δε" },
+  { js: 2, label: "Τρ" },
+  { js: 3, label: "Τε" },
+  { js: 4, label: "Πε" },
+  { js: 5, label: "Πα" },
+  { js: 6, label: "Σα" },
+  { js: 0, label: "Κυ" },
+];
 const MONTH_LABELS = [
   "Ιανουάριος", "Φεβρουάριος", "Μάρτιος", "Απρίλιος", "Μάιος", "Ιούνιος",
   "Ιούλιος", "Αύγουστος", "Σεπτέμβριος", "Οκτώβριος", "Νοέμβριος", "Δεκέμβριος",
@@ -309,6 +330,60 @@ function toDateKey(date) {
   return `${y}-${m}-${d}`;
 }
 
+function addDaysKey(key, days) {
+  const d = parseDateKey(key);
+  d.setDate(d.getDate() + days);
+  return toDateKey(d);
+}
+
+function selectedRepeatWeekdays() {
+  return new Set(
+    [...(bkRepeatDows?.querySelectorAll(".repeat-dow.is-on") || [])]
+      .map((btn) => Number(btn.dataset.js))
+  );
+}
+
+function expandRepeatDates(startKey, untilKey, weekdays) {
+  const dates = [];
+  if (!startKey) return dates;
+  if (!weekdays.size) return [startKey];
+  const start = parseDateKey(startKey);
+  const until = parseDateKey(untilKey || addDaysKey(startKey, 56));
+  if (until < start) return [startKey];
+  for (let d = new Date(start); d <= until; d.setDate(d.getDate() + 1)) {
+    if (weekdays.has(d.getDay())) dates.push(toDateKey(d));
+    if (dates.length >= 40) break;
+  }
+  return dates.length ? dates : [startKey];
+}
+
+function syncRepeatUi() {
+  const weekly = bkRepeat?.value === "weekly";
+  bkRepeatExtra?.classList.toggle("hidden", !weekly);
+  if (!weekly) return;
+  if (!selectedRepeatWeekdays().size && bkDate?.value) {
+    const js = parseDateKey(bkDate.value).getDay();
+    bkRepeatDows?.querySelectorAll(".repeat-dow").forEach((btn) => {
+      btn.classList.toggle("is-on", Number(btn.dataset.js) === js);
+    });
+  }
+  if (bkRepeatUntil && !bkRepeatUntil.value && bkDate?.value) {
+    bkRepeatUntil.value = addDaysKey(bkDate.value, 56);
+  }
+}
+
+function buildRepeatDows() {
+  if (!bkRepeatDows) return;
+  bkRepeatDows.innerHTML = REPEAT_DOWS.map((d) => (
+    `<button type="button" class="repeat-dow" data-js="${d.js}">${d.label}</button>`
+  )).join("");
+  bkRepeatDows.querySelectorAll(".repeat-dow").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("is-on");
+    });
+  });
+}
+
 function parseDateKey(key) {
   const [y, m, d] = String(key).split("-").map(Number);
   return new Date(y, m - 1, d, 12, 0, 0);
@@ -339,10 +414,57 @@ function setActiveView(view, { refresh = true } = {}) {
   if (refresh) renderAppointments();
 }
 
+function hideMonthPicker() {
+  calMonthPop?.classList.add("hidden");
+  calMonthLabel?.setAttribute("aria-expanded", "false");
+}
+
+function renderMonthPicker() {
+  if (!calMonthGrid || !calYearLabel) return;
+  const today = new Date();
+  const selected = calendarDay ? parseDateKey(calendarDay) : today;
+  calYearLabel.textContent = String(monthPickerYear);
+  calMonthGrid.innerHTML = MONTH_LABELS.map((label, month) => {
+    const isNow = today.getFullYear() === monthPickerYear && today.getMonth() === month;
+    const isSelected = selected.getFullYear() === monthPickerYear && selected.getMonth() === month;
+    return `<button type="button" class="cal-month-cell${isNow ? " is-now" : ""}${isSelected ? " is-selected" : ""}" data-month="${month}">${label.slice(0, 3)}</button>`;
+  }).join("");
+  calMonthGrid.querySelectorAll("[data-month]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const month = Number(btn.dataset.month);
+      const today = new Date();
+      let next;
+      if (today.getFullYear() === monthPickerYear && today.getMonth() === month) {
+        next = today;
+      } else {
+        next = new Date(monthPickerYear, month, 1, 12, 0, 0);
+      }
+      hideMonthPicker();
+      setCalendarDay(toDateKey(next));
+    });
+  });
+}
+
+function toggleMonthPicker() {
+  if (!calMonthPop) return;
+  const open = calMonthPop.classList.contains("hidden");
+  if (open) {
+    const selected = calendarDay ? parseDateKey(calendarDay) : new Date();
+    monthPickerYear = selected.getFullYear();
+    renderMonthPicker();
+    calMonthPop.classList.remove("hidden");
+    calMonthLabel?.setAttribute("aria-expanded", "true");
+  } else {
+    hideMonthPicker();
+  }
+}
+
 function renderDayStrip() {
   if (!calDayStrip || !calendarDay) return;
   const selected = parseDateKey(calendarDay);
   calMonthLabel.textContent = `${MONTH_LABELS[selected.getMonth()]} ${selected.getFullYear()}`;
+  monthPickerYear = selected.getFullYear();
+  if (calMonthPop && !calMonthPop.classList.contains("hidden")) renderMonthPicker();
 
   const start = new Date(selected);
   start.setDate(selected.getDate() - selected.getDay() + 1); // Monday start
@@ -970,6 +1092,9 @@ function resetBookingForm(prefs = {}) {
   bkDuration.value = "60";
   syncCabinSelectForService(null, prefs.cabinId || null);
   if (bkTime) bkTime.value = prefs.time || "";
+  if (bkRepeat) bkRepeat.value = "";
+  syncRepeatUi();
+  if (bkRepeatBlock) bkRepeatBlock.hidden = false;
   const title = document.querySelector("#bookingPanel .panel-title");
   if (title) title.textContent = "Νέο ραντεβού";
   if (bkSubmitBtn) bkSubmitBtn.textContent = "Αποθήκευση ραντεβού";
@@ -1017,6 +1142,9 @@ function fillFormFromAppointment(row) {
   const title = document.querySelector("#bookingPanel .panel-title");
   if (title) title.textContent = "Επεξεργασία ραντεβού";
   if (bkSubmitBtn) bkSubmitBtn.textContent = "Αποθήκευση αλλαγών";
+  if (bkRepeatBlock) bkRepeatBlock.hidden = true;
+  if (bkRepeat) bkRepeat.value = "";
+  syncRepeatUi();
 }
 
 function openBookingPanel(prefs = {}) {
@@ -1166,10 +1294,15 @@ function formatServiceMeta(row) {
 function filterCatalog(query) {
   const q = normalizeSearch(query);
   if (!q) return [];
+  const digits = q.replace(/\D/g, "");
   return catalogCache
     .filter((row) => {
       const hay = normalizeSearch(`${row.name} ${row.categoryLabel}`);
-      return hay.includes(q);
+      if (hay.includes(q)) return true;
+      if (digits && Number(row.durationMin) === Number(digits) && (row.categoryId === "duration" || String(row.id || "").startsWith("dur-"))) {
+        return true;
+      }
+      return false;
     })
     .slice(0, 25);
 }
@@ -1537,8 +1670,16 @@ async function loadCatalogAndClients() {
     const { data, error } = await listCatalogServices({ includeInactive: false });
     if (error) throw error;
     if (data?.length) {
-      applyCatalogFromRows(data);
-      catalogCache = catalogFromRows(data);
+      const patched = data.map((row) => {
+        if (row.id === "massage-relaxing") return { ...row, price_cents: 2500 };
+        return row;
+      });
+      applyCatalogFromRows(patched);
+      const fromDb = catalogFromRows(patched);
+      const extra = catalogFromDefaults().filter((row) =>
+        !fromDb.some((d) => d.id === row.id || normalizeSearch(d.name) === normalizeSearch(row.name))
+      );
+      catalogCache = [...fromDb, ...extra];
     } else {
       catalogCache = catalogFromDefaults();
     }
@@ -1774,6 +1915,7 @@ loginForm?.addEventListener("submit", async (event) => {
     return;
   }
   showApp();
+  buildRepeatDows();
   await loadCatalogAndClients();
   buildCalendarChrome();
   renderDayStrip();
@@ -1809,6 +1951,23 @@ calToday?.addEventListener("click", () => {
   lastFocusScrollDay = "";
   setCalendarDay(toDateKey(new Date()));
 });
+
+calMonthLabel?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toggleMonthPicker();
+});
+calYearPrev?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  monthPickerYear -= 1;
+  renderMonthPicker();
+});
+calYearNext?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  monthPickerYear += 1;
+  renderMonthPicker();
+});
+calMonthPop?.addEventListener("click", (event) => event.stopPropagation());
+document.addEventListener("click", () => hideMonthPicker());
 
 function shiftCalendarDay(deltaDays) {
   if (!calendarDay) return;
@@ -1979,6 +2138,7 @@ bkServiceSearch?.addEventListener("blur", () => {
 
 bkDate?.addEventListener("change", () => {
   refreshTimeOptions().catch(() => {});
+  if (bkRepeat?.value === "weekly") syncRepeatUi();
 });
 
 bkDuration?.addEventListener("change", () => {
@@ -2133,6 +2293,16 @@ bookingForm?.addEventListener("submit", async (event) => {
     client_id: selectedClientId || bkClientId?.value || null,
   };
 
+  const weekly = !editingAppointmentId && bkRepeat?.value === "weekly";
+  const repeatDays = weekly ? selectedRepeatWeekdays() : new Set();
+  if (weekly && !repeatDays.size) {
+    showToast("Επιλέξτε τουλάχιστον μία ημέρα επανάληψης.", true);
+    return;
+  }
+  const dates = weekly
+    ? expandRepeatDates(date, bkRepeatUntil?.value, repeatDays)
+    : [date];
+
   bkSubmitBtn.disabled = true;
   try {
     if (editingAppointmentId) {
@@ -2168,26 +2338,56 @@ bookingForm?.addEventListener("submit", async (event) => {
 
       showToast("Το ραντεβού ενημερώθηκε.");
     } else {
-      const { data, error } = await createAppointment(payload);
-      if (error) {
-        showToast(error.message || "Αποτυχία αποθήκευσης", true);
-        return;
-      }
+      let created = 0;
+      let skipped = 0;
+      let firstSaved = null;
+      let linkId = payload.client_id;
 
-      let saved = data;
-      if (bkLinkClient.checked && data && !data.client_id) {
+      for (const day of dates) {
+        let dayCabin = cabinId;
         try {
-          const clientId = await findOrCreateClientFromBooking(data);
-          const linked = await updateAppointment(data.id, { client_id: clientId });
-          saved = linked.data || data;
-        } catch (linkErr) {
-          console.warn(linkErr);
+          const booked = await fetchBookedSlots(day);
+          if (manualCabin) {
+            dayCabin = Number(cabinId);
+          } else {
+            const freeInPool = pickCabinForSlot(service, booked, time);
+            if (!freeInPool) {
+              skipped += 1;
+              continue;
+            }
+            dayCabin = freeInPool;
+          }
+        } catch {
+          /* keep chosen cabin */
+        }
+
+        const row = { ...payload, appointment_date: day, cabin_id: dayCabin };
+        const { data, error } = await createAppointment(row);
+        if (error) {
+          skipped += 1;
+          continue;
+        }
+        created += 1;
+        if (!firstSaved) firstSaved = data;
+        if (bkLinkClient.checked && data && !data.client_id) {
+          try {
+            if (!linkId) linkId = await findOrCreateClientFromBooking(data);
+            await updateAppointment(data.id, { client_id: linkId });
+          } catch (linkErr) {
+            console.warn(linkErr);
+          }
         }
       }
 
+      if (!created) {
+        showToast("Δεν δημιουργήθηκε ραντεβού — δοκιμάστε άλλη ώρα ή καμπίνα.", true);
+        return;
+      }
+
       const mailType = payload.status === "confirmed" ? "confirmed" : "created";
-      notifyAppointmentEmail({ type: mailType, appointment: saved || payload }).catch(() => {});
-      showToast("Το ραντεβού καταχωρήθηκε.");
+      notifyAppointmentEmail({ type: mailType, appointment: firstSaved || payload }).catch(() => {});
+      if (created === 1 && !skipped) showToast("Το ραντεβού καταχωρήθηκε.");
+      else showToast(`Καταχωρήθηκαν ${created} ραντεβού${skipped ? ` · ${skipped} ημέρες παραλείφθηκαν` : ""}.`);
     }
 
     closeBookingPanel();
@@ -2217,6 +2417,8 @@ searchInput?.addEventListener("focus", () => {
   });
 });
 
+bkRepeat?.addEventListener("change", () => syncRepeatUi());
+
 async function boot() {
   const today = toDateKey(new Date());
   calendarDay = today;
@@ -2233,6 +2435,7 @@ async function boot() {
     return;
   }
   showApp();
+  buildRepeatDows();
   await loadCatalogAndClients();
   buildCalendarChrome();
   renderDayStrip();

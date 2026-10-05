@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=search-all-1" />
+  <link rel="stylesheet" href="/css/admin.css?v=month-appts-1" />
 </head>
 <body data-admin-page="bookings">
   <div id="loginView" class="login-wrap hidden">
@@ -81,7 +81,17 @@
       <div class="cal-chrome">
         <div class="cal-top">
           <button class="cal-nav-btn" type="button" id="calPrev" aria-label="Προηγούμενη εβδομάδα">‹</button>
-          <h2 class="cal-month" id="calMonthLabel">—</h2>
+          <div class="cal-month-wrap">
+            <button class="cal-month" type="button" id="calMonthLabel" aria-haspopup="dialog" aria-expanded="false">—</button>
+            <div class="cal-month-pop hidden" id="calMonthPop" role="dialog" aria-label="Επιλογή μήνα">
+              <div class="cal-month-pop-head">
+                <button class="cal-nav-btn" type="button" id="calYearPrev" aria-label="Προηγούμενο έτος">‹</button>
+                <span id="calYearLabel">2026</span>
+                <button class="cal-nav-btn" type="button" id="calYearNext" aria-label="Επόμενο έτος">›</button>
+              </div>
+              <div class="cal-month-grid" id="calMonthGrid"></div>
+            </div>
+          </div>
           <button class="cal-nav-btn" type="button" id="calNext" aria-label="Επόμενη εβδομάδα">›</button>
           <button class="btn btn-ghost btn-sm cal-today-btn" type="button" id="calToday">Σήμερα</button>
         </div>
@@ -204,6 +214,21 @@
           <label for="bkNotes">Σημειώσεις</label>
           <textarea id="bkNotes" rows="2" placeholder="Προαιρετικά"></textarea>
         </div>
+        <div class="field" id="bkRepeatBlock">
+          <label for="bkRepeat">Επανάληψη</label>
+          <select id="bkRepeat">
+            <option value="">Μία φορά</option>
+            <option value="weekly">Κάθε εβδομάδα</option>
+          </select>
+        </div>
+        <div class="repeat-extra hidden" id="bkRepeatExtra">
+          <p class="repeat-hint">Ημέρες</p>
+          <div class="repeat-dows" id="bkRepeatDows" role="group" aria-label="Ημέρες επανάληψης"></div>
+          <div class="field">
+            <label for="bkRepeatUntil">Μέχρι</label>
+            <input id="bkRepeatUntil" type="date" />
+          </div>
+        </div>
         <label class="check-inline booking-link-client">
           <input type="checkbox" id="bkLinkClient" checked />
           Σύνδεση / δημιουργία κάρτας πελάτη
@@ -239,6 +264,6 @@
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
-  <script type="module" src="/js/admin-bookings.js?v=fix-load-1"></script>
+  <script type="module" src="/js/admin-bookings.js?v=month-appts-1"></script>
 </body>
 </html>

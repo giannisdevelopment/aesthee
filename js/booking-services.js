@@ -9,6 +9,20 @@ export const SLOT_STEP_MINUTES = 10;
 /** @type {BookingCategory[]} — defaults; live catalog may replace via applyCatalogFromRows() */
 export const DEFAULT_BOOKING_CATEGORIES = [
   {
+    id: "duration",
+    label: "Διάρκεια",
+    services: [
+      { id: "dur-10", name: "10 λεπτά", durationMin: 10, priceCents: 0 },
+      { id: "dur-15", name: "15 λεπτά", durationMin: 15, priceCents: 0 },
+      { id: "dur-20", name: "20 λεπτά", durationMin: 20, priceCents: 0 },
+      { id: "dur-30", name: "30 λεπτά", durationMin: 30, priceCents: 0 },
+      { id: "dur-45", name: "45 λεπτά", durationMin: 45, priceCents: 0 },
+      { id: "dur-60", name: "1 ώρα", durationMin: 60, priceCents: 0 },
+      { id: "dur-90", name: "1 ώρα 30′", durationMin: 90, priceCents: 0 },
+      { id: "dur-120", name: "2 ώρες", durationMin: 120, priceCents: 0 },
+    ],
+  },
+  {
     id: "brows",
     label: "Περιποίηση φρυδιών",
     services: [
@@ -144,6 +158,7 @@ export const DEFAULT_BOOKING_CATEGORIES = [
       { id: "madero-pack", name: "Μαδεροθεραπεία — πακέτο 10+2 δώρο", durationMin: 35, priceCents: 25000, isOffer: true },
       { id: "rf-body", name: "RF Microneedling σώματος (έως 3 περιοχές)", durationMin: 60, priceCents: 18000 },
       { id: "rf-body-pack", name: "RF Microneedling σώματος — πακέτο 3 συνεδριών", durationMin: 60, priceCents: 45000, isOffer: true },
+      { id: "morpheus", name: "Morpheus", durationMin: 60, priceCents: 15000 },
       { id: "wax", name: "Αποτρίχωση με κερί", durationMin: 30, priceCents: 2500, priceFrom: true },
     ],
   },
@@ -151,7 +166,7 @@ export const DEFAULT_BOOKING_CATEGORIES = [
     id: "massage",
     label: "Μασάζ",
     services: [
-      { id: "massage-relaxing", name: "Χαλαρωτικό μασάζ", durationMin: 55, priceCents: 4000 },
+      { id: "massage-relaxing", name: "Χαλαρωτικό μασάζ", durationMin: 55, priceCents: 2500 },
       { id: "massage-myorelax", name: "Μυοχαλαρωτικό μασάζ", durationMin: 55, priceCents: 4000 },
       { id: "massage-sports", name: "Αθλητικό μασάζ", durationMin: 55, priceCents: 4000 },
       { id: "massage-cupping", name: "Μασάζ βεντούζες", durationMin: 40, priceCents: 4000 },
@@ -199,6 +214,9 @@ const SERVICE_ALIASES = {
   "rf microneedling σώματος": "rf-body",
   "rf microneedling σώματος (έως 3 περιοχές)": "rf-body",
   "μαδεροθεραπεία": "madero",
+  "morpheus": "morpheus",
+  "μόρφιους": "morpheus",
+  "μορφεους": "morpheus",
   "μασάζ": "massage-relaxing",
   "μασάζ χαλαρωτικό / αθλητικό / μυοχαλαρωτικό": "massage-relaxing",
   "χαλαρωτικό μασάζ": "massage-relaxing",
@@ -206,6 +224,11 @@ const SERVICE_ALIASES = {
   "αθλητικό μασάζ": "massage-sports",
   "μασάζ βεντούζες": "massage-cupping",
   "μασάζ αυχένα πλάτη μέση": "massage-neck-back",
+  "1 ωρα": "dur-60",
+  "μια ωρα": "dur-60",
+  "10 λεπτα": "dur-10",
+  "20 λεπτα": "dur-20",
+  "30 λεπτα": "dur-30",
   "αποτρίχωση με κερί": "wax",
   "brow lamination & tint": "brow-lamination-tint",
   "lash lift & tint": "lash-lift-tint",
@@ -252,6 +275,7 @@ export const CABIN_IDS = [1, 2, 3, 4, 5];
 export function getCabinPool(service) {
   if (!service) return [1, 2];
   const id = service.id;
+  if (id.startsWith("dur-") || service.categoryId === "duration") return CABIN_IDS.slice();
   if (id === "vacutherm" || id === "vacutherm-pack") return [4];
   if (
     id === "wax"

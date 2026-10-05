@@ -238,7 +238,23 @@ export async function listAppointments({ status = "", fromDate = "", toDate = ""
   return request;
 }
 
-export async function createAppointment(payload) {
+export async function listAppointmentsForClient({ clientId = "", phone = "" } = {}) {
+  let request = getSupabase()
+    .from("appointments")
+    .select("id, service, appointment_date, appointment_time, duration_minutes, price_cents, cabin_id, guest_name, guest_phone, status, notes, client_id")
+    .order("appointment_date", { ascending: false })
+    .order("appointment_time", { ascending: false });
+
+  const parts = [];
+  if (clientId) parts.push(`client_id.eq.${clientId}`);
+  const phoneDigits = String(phone || "").replace(/\D/g, "");
+  if (phoneDigits.length >= 8) {
+    parts.push(`guest_phone.ilike.%${phoneDigits.slice(-10)}%`);
+  }
+  if (!parts.length) return { data: [], error: null };
+  request = request.or(parts.join(","));
+  return request;
+}
   return getSupabase()
     .from("appointments")
     .insert(payload)

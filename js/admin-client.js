@@ -8,11 +8,14 @@ import {
   saveVisit,
   deleteVisit,
   listCatalogServices,
+  listAppointmentsForClient,
   showToast,
   formatDate,
+  formatTime,
   formatMoney,
-} from "./admin-api.js";
-import { DEFAULT_BOOKING_CATEGORIES } from "./booking-services.js";
+  APPOINTMENT_STATUS_LABELS,
+} from "./admin-api.js?v=month-appts-1";
+import { DEFAULT_BOOKING_CATEGORIES } from "./booking-services.js?v=month-appts-1";
 
 const params = new URLSearchParams(location.search);
 let clientId = params.get("id");
@@ -241,35 +244,82 @@ async function renderVisits() {
 
   toggleVisitFormBtn.disabled = false;
   visitsList.innerHTML = `<p class="empty">Φόρτωση…</p>`;
-  const { data, error } = await listVisits(clientId);
-  if (error) {
+
+  const phone = document.getElementById("phone")?.value || "";
+  const [{ data: visits, error: visitErr }, { data: appts, error: apptErr }] = await Promise.all([
+    listVisits(clientId),
+    listAppointmentsForClient({ clientId, phone }),
+  ]);
+
+  if (visitErr) {
     visitsList.innerHTML = `<p class="empty">Σφάλμα φόρτωσης επισκέψεων.</p>`;
-    showToast(error.message || "Αποτυχία φόρτωσης", true);
+    showToast(visitErr.message || "Αποτυχία φόρτωσης", true);
     return;
   }
-  if (!data?.length) {
-    visitsList.innerHTML = `<p class="empty">Καμία επίσκεψη ακόμα.</p>`;
+  if (apptErr) {
+    showToast(apptErr.message || "Αποτυχία φόρτωσης ραντεβού", true);
+  }
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  /** @type {Array<{ kind: string, sort: string, html: string, visit?: object }>} */
+  const items = [];
+
+  for (const row of appts || []) {
+    const day = String(row.appointment_date || "").slice(0, 10);
+    const upcoming = day >= todayKey && row.status !== "cancelled" && row.status !== "completed" && row.status !== "no_show";
+    const status = APPOINTMENT_STATUS_LABELS[row.status] || row.status || "";
+    const euros = row.price_cents != null ? Number(row.price_cents) / 100 : null;
+    items.push({
+      kind: "appointment",
+      sort: `${day}T${formatTime(row.appointment_time)}`,
+      html: `
+        <article class="visit-card${upcoming ? " is-upcoming" : ""}${row.status === "cancelled" ? " is-cancelled" : ""}">
+          <h3>${escapeHtml(row.service || "Ραντεβού")}</h3>
+          <div class="visit-meta">
+            <span>${escapeHtml(formatDate(row.appointment_date))} · ${escapeHtml(formatTime(row.appointment_time))}</span>
+            <span>${euros != null ? escapeHtml(formatMoney(euros)) : "—"}</span>
+            <span>${escapeHtml(status)}</span>
+          </div>
+          ${row.notes ? `<p class="muted">${escapeHtml(row.notes)}</p>` : ""}
+        </article>
+      `,
+    });
+  }
+
+  for (const visit of visits || []) {
+    items.push({
+      kind: "visit",
+      sort: `${visit.payment_date || "0000-00-00"}T00:00`,
+      visit,
+      html: `
+        <article class="visit-card" data-visit-id="${escapeHtml(visit.id)}">
+          <h3>${escapeHtml(visit.treatment)}</h3>
+          <div class="visit-meta">
+            <span>${escapeHtml(formatMoney(visit.payment_amount))}</span>
+            <span>${escapeHtml(formatDate(visit.payment_date))}</span>
+          </div>
+          ${visit.notes ? `<p class="muted">${escapeHtml(visit.notes)}</p>` : ""}
+          <div class="visit-actions">
+            <button class="btn btn-ghost btn-sm" type="button" data-edit-visit="${escapeHtml(visit.id)}">Επεξεργασία</button>
+            <button class="btn btn-danger btn-sm" type="button" data-delete-visit="${escapeHtml(visit.id)}">Διαγραφή</button>
+          </div>
+        </article>
+      `,
+    });
+  }
+
+  items.sort((a, b) => String(b.sort).localeCompare(String(a.sort)));
+
+  if (!items.length) {
+    visitsList.innerHTML = `<p class="empty">Κανένα ραντεβού ή επίσκεψη ακόμα.</p>`;
     return;
   }
 
-  visitsList.innerHTML = data.map((visit) => `
-    <article class="visit-card" data-visit-id="${escapeHtml(visit.id)}">
-      <h3>${escapeHtml(visit.treatment)}</h3>
-      <div class="visit-meta">
-        <span>${formatMoney(visit.payment_amount)}</span>
-        <span>${formatDate(visit.payment_date)}</span>
-      </div>
-      ${visit.notes ? `<p class="muted">${escapeHtml(visit.notes)}</p>` : ""}
-      <div class="visit-actions">
-        <button class="btn btn-ghost btn-sm" type="button" data-edit-visit="${escapeHtml(visit.id)}">Επεξεργασία</button>
-        <button class="btn btn-danger btn-sm" type="button" data-delete-visit="${escapeHtml(visit.id)}">Διαγραφή</button>
-      </div>
-    </article>
-  `).join("");
+  visitsList.innerHTML = items.map((item) => item.html).join("");
 
   visitsList.querySelectorAll("[data-edit-visit]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const visit = data.find((row) => row.id === btn.dataset.editVisit);
+      const visit = (visits || []).find((row) => row.id === btn.dataset.editVisit);
       if (visit) openVisitForm(visit);
     });
   });
