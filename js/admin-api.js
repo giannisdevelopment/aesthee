@@ -227,6 +227,7 @@ export async function listAppointments({ status = "", fromDate = "", toDate = ""
   if (fromDate) request = request.gte("appointment_date", fromDate);
   if (toDate) request = request.lte("appointment_date", toDate);
 
+  const q = String(query || "").trim();
   if (q) {
     const safe = q.replace(/[%_,()\\]/g, " ").replace(/\s+/g, " ").trim();
     if (safe) {
