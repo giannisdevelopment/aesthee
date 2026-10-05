@@ -13,7 +13,7 @@
 </head>
 <body data-admin-page="messages">
   <div id="loginView" class="login-wrap hidden">
-    <form class="panel login-card" id="loginForm">
+    <form class="panel login-card" id="loginForm" method="post" action="/admin/messages" autocomplete="on">
       <h1>Aesthée Admin</h1>
       <p>Σύνδεση προσωπικού για μηνύματα και νέες κρατήσεις.</p>
       <div id="configBanner" class="banner-warn hidden">
@@ -68,6 +68,6 @@
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
-  <script type="module" src="/js/admin-messages.js"></script>
+  <script type="module" src="/js/admin-messages.js?v=login-fix-1"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@ import {
   formatDate,
   formatTime,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=month-appts-1";
+} from "./admin-api.js?v=login-fix-1";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   applyCatalogFromRows,

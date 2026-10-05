@@ -13,7 +13,7 @@ import {
   formatDate,
   formatTime,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js";
+} from "./admin-api.js?v=login-fix-1";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
 const loginView = document.getElementById("loginView");

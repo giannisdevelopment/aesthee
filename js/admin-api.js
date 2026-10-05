@@ -1,5 +1,15 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
+try {
+  const url = new URL(location.href);
+  if ([...url.searchParams.keys()].some((key) => /pass|email|token/i.test(key))) {
+    url.search = "";
+    history.replaceState({}, "", `${url.pathname}${url.hash}`);
+  }
+} catch {
+  /* ignore */
+}
+
 function readConfig() {
   const cfg = window.AESTHEE_SUPABASE || {};
   const url = cfg.url || "";
@@ -255,6 +265,8 @@ export async function listAppointmentsForClient({ clientId = "", phone = "" } = 
   request = request.or(parts.join(","));
   return request;
 }
+
+export async function createAppointment(payload) {
   return getSupabase()
     .from("appointments")
     .insert(payload)

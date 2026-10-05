@@ -7,7 +7,7 @@ import {
   createCatalogService,
   deleteCatalogService,
   showToast,
-} from "./admin-api.js";
+} from "./admin-api.js?v=login-fix-1";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
