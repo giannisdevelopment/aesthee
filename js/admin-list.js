@@ -48,12 +48,18 @@ async function renderClients(query = "") {
     showToast(error.message || "Αποτυχία φόρτωσης πελατών", true);
     return;
   }
-  if (!data?.length) {
+  const rows = [...(data || [])].sort((a, b) =>
+    String(a.full_name || "").localeCompare(String(b.full_name || ""), "el", {
+      sensitivity: "base",
+      numeric: true,
+    })
+  );
+  if (!rows.length) {
     clientsBody.innerHTML = `<tr><td colspan="5" class="empty">Δεν βρέθηκαν πελάτες.</td></tr>`;
     return;
   }
 
-  clientsBody.innerHTML = data.map((client) => {
+  clientsBody.innerHTML = rows.map((client) => {
     const visitCount = client.visits?.[0]?.count ?? 0;
     return `
       <tr>

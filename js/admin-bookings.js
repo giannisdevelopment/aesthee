@@ -1548,12 +1548,16 @@ async function loadCatalogAndClients() {
 
   try {
     const { data } = await listClients("");
-    clientsCache = (data || []).map((row) => ({
-      id: row.id,
-      full_name: row.full_name,
-      phone: row.phone,
-      email: row.email,
-    }));
+    clientsCache = (data || [])
+      .map((row) => ({
+        id: row.id,
+        full_name: row.full_name,
+        phone: row.phone,
+        email: row.email,
+      }))
+      .sort((a, b) =>
+        String(a.full_name || "").localeCompare(String(b.full_name || ""), "el", { sensitivity: "base" })
+      );
   } catch {
     clientsCache = [];
   }

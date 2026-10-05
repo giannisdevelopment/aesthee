@@ -114,7 +114,7 @@ export async function listClients(query = "") {
   let request = getSupabase()
     .from("clients")
     .select("id, full_name, phone, email, updated_at, visits(count)")
-    .order("updated_at", { ascending: false });
+    .order("full_name", { ascending: true });
 
   const q = query.trim();
   if (q) {
