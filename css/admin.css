@@ -462,6 +462,84 @@ tr:last-child td {
   flex: 1 1 220px;
 }
 
+.search-wrap {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: min(100%, 240px);
+  z-index: 30;
+}
+
+.search-wrap .search {
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.search-hits {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: min(340px, 50vh);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--white);
+  border: 1px solid rgba(196, 163, 106, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(44, 36, 28, 0.14);
+  z-index: 40;
+}
+
+.search-hits.hidden {
+  display: none !important;
+}
+
+.search-hits-meta {
+  padding: 10px 14px 6px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+
+.search-hit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-top: 1px solid rgba(196, 163, 106, 0.12);
+  background: transparent;
+  padding: 11px 14px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+
+.search-hit:hover,
+.search-hit.is-active {
+  background: rgba(196, 163, 106, 0.14);
+}
+
+.search-hit strong {
+  display: block;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.search-hit span {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+}
+
+.search-hits-empty {
+  padding: 14px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
 .toolbar-wrap select,
 .toolbar-wrap input[type="date"] {
   border: 1px solid rgba(196, 163, 106, 0.35);
@@ -950,8 +1028,9 @@ tr.is-inactive {
   color: var(--ink-dim);
 }
 
-.cal-day.is-today:not(.is-selected) .dom {
+.cal-day.is-hit:not(.is-selected) .dom {
   box-shadow: inset 0 0 0 1.5px var(--gold);
+  background: rgba(196, 163, 106, 0.16);
 }
 
 .cal-day.is-selected .dom {
@@ -1211,6 +1290,16 @@ body.is-cal-dragging .cal-board {
   z-index: 4;
 }
 
+.cal-block.is-search-hit {
+  border-color: rgba(196, 163, 106, 0.7);
+  box-shadow: 0 0 0 2px rgba(196, 163, 106, 0.28);
+  z-index: 3;
+}
+
+.cal-block.is-search-dim {
+  opacity: 0.38;
+}
+
 .cal-block-accent {
   flex: 0 0 4px;
   align-self: stretch;
@@ -1465,6 +1554,12 @@ body.is-cal-dragging .cal-board {
 
   .bookings-toolbar {
     gap: 8px;
+  }
+
+  .bookings-toolbar .search-wrap {
+    flex: 1 1 100%;
+    order: 3;
+    min-width: 0;
   }
 
   .bookings-toolbar .search {

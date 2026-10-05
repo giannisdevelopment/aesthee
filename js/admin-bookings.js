@@ -45,6 +45,7 @@ const appView = document.getElementById("appView");
 const loginForm = document.getElementById("loginForm");
 const rowsBody = document.getElementById("appointmentsBody");
 const searchInput = document.getElementById("searchInput");
+const calSearchHits = document.getElementById("calSearchHits");
 const statusFilter = document.getElementById("statusFilter");
 const fromDate = document.getElementById("fromDate");
 const toDate = document.getElementById("toDate");
@@ -68,7 +69,9 @@ const openBookingBtn = document.getElementById("openBookingBtn");
 const cancelBookingBtn = document.getElementById("cancelBookingBtn");
 const bookingPanel = document.getElementById("bookingPanel");
 const bookingForm = document.getElementById("bookingForm");
-const bkClient = document.getElementById("bkClient");
+const bkClientSearch = document.getElementById("bkClientSearch");
+const bkClientId = document.getElementById("bkClientId");
+const bkClientSuggest = document.getElementById("bkClientSuggest");
 const bkStatus = document.getElementById("bkStatus");
 const bkName = document.getElementById("bkName");
 const bkPhone = document.getElementById("bkPhone");
@@ -78,6 +81,7 @@ const bkServiceId = document.getElementById("bkServiceId");
 const bkServiceSuggest = document.getElementById("bkServiceSuggest");
 const bkDate = document.getElementById("bkDate");
 const bkTime = document.getElementById("bkTime");
+const bkTimeSuggest = document.getElementById("bkTimeSuggest");
 const bkDuration = document.getElementById("bkDuration");
 const bkPrice = document.getElementById("bkPrice");
 const bkCabin = document.getElementById("bkCabin");
@@ -94,7 +98,15 @@ let clientsCache = [];
 /** @type {string} */
 let selectedServiceId = "";
 
+/** @type {string} */
+let selectedClientId = "";
+
 let suggestActiveIndex = -1;
+let clientSuggestActiveIndex = -1;
+let timeSuggestActiveIndex = -1;
+
+/** @type {string[]} */
+let availableTimes = [];
 
 /** @type {"calendar" | "list"} */
 let activeView = "calendar";
@@ -104,6 +116,20 @@ let calendarDay = "";
 
 /** @type {object[]} */
 let appointmentsCache = [];
+
+/** @type {object[]} */
+let searchHitsCache = [];
+
+/** @type {Set<string>} */
+let searchHitIds = new Set();
+
+/** @type {Set<string>} */
+let searchHitDates = new Set();
+
+/** @type {string} */
+let pendingHighlightId = "";
+
+let renderSeq = 0;
 
 /** @type {string | null} */
 let editingAppointmentId = null;
@@ -188,20 +214,92 @@ function statusBadge(status) {
 }
 
 function filters() {
+  const query = searchInput?.value || "";
+  const status = statusFilter?.value || "";
+  if (query.trim()) {
+    return { status, fromDate: "", toDate: "", query };
+  }
   if (activeView === "calendar" && calendarDay) {
-    return {
-      status: statusFilter?.value || "",
-      fromDate: calendarDay,
-      toDate: calendarDay,
-      query: searchInput?.value || "",
-    };
+    return { status, fromDate: calendarDay, toDate: calendarDay, query };
   }
   return {
-    status: statusFilter?.value || "",
+    status,
     fromDate: fromDate?.value || "",
     toDate: toDate?.value || "",
-    query: searchInput?.value || "",
+    query,
   };
+}
+
+function appointmentDateKey(row) {
+  return String(row?.appointment_date || "").slice(0, 10);
+}
+
+function pickBestSearchHit(hits) {
+  if (!hits?.length) return null;
+  const today = toDateKey(new Date());
+  const upcoming = hits.filter((row) => appointmentDateKey(row) >= today);
+  return upcoming[0] || hits[hits.length - 1];
+}
+
+function hideSearchHits() {
+  if (!calSearchHits) return;
+  calSearchHits.classList.add("hidden");
+  calSearchHits.innerHTML = "";
+}
+
+function renderSearchHits(hits) {
+  if (!calSearchHits) return;
+  const q = (searchInput?.value || "").trim();
+  if (!q || activeView !== "calendar") {
+    hideSearchHits();
+    return;
+  }
+  if (!hits.length) {
+    calSearchHits.innerHTML = `<div class="search-hits-empty">Δεν βρέθηκαν ραντεβού.</div>`;
+    calSearchHits.classList.remove("hidden");
+    return;
+  }
+  const shown = hits.slice(0, 25);
+  const extra = hits.length - shown.length;
+  calSearchHits.innerHTML = `
+    <div class="search-hits-meta">${hits.length} αποτέλεσμα${hits.length === 1 ? "" : "τα"}</div>
+    ${shown.map((row) => `
+      <button type="button" class="search-hit" data-id="${escapeHtml(row.id)}" data-day="${escapeHtml(appointmentDateKey(row))}">
+        <strong>${escapeHtml(row.guest_name || "—")}</strong>
+        <span>${escapeHtml(formatDate(row.appointment_date))} · ${escapeHtml(formatTime(row.appointment_time))} · ${escapeHtml(row.service || "")}</span>
+      </button>
+    `).join("")}
+    ${extra > 0 ? `<div class="search-hits-empty">και άλλα ${extra}…</div>` : ""}
+  `;
+  calSearchHits.classList.remove("hidden");
+  calSearchHits.querySelectorAll(".search-hit").forEach((btn) => {
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      jumpToSearchHit(btn.dataset.id, btn.dataset.day);
+    });
+  });
+}
+
+function jumpToSearchHit(id, day) {
+  pendingHighlightId = id || "";
+  if (day && day !== calendarDay) {
+    setCalendarDay(day);
+    return;
+  }
+  highlightSearchBlock(id);
+}
+
+function highlightSearchBlock(id) {
+  if (!id || !calCols) return;
+  calCols.querySelectorAll(".cal-block.is-selected").forEach((el) => el.classList.remove("is-selected"));
+  const safeId = (typeof CSS !== "undefined" && CSS.escape) ? CSS.escape(id) : id;
+  const btn = calCols.querySelector(`.cal-block[data-id="${safeId}"]`);
+  if (!btn) return;
+  btn.classList.add("is-selected");
+  btn.scrollIntoView({ block: "center", behavior: "smooth" });
+  const row = appointmentsCache.find((item) => item.id === id)
+    || searchHitsCache.find((item) => item.id === id);
+  if (row) openCalDetail(row);
 }
 
 function toDateKey(date) {
@@ -259,10 +357,11 @@ function renderDayStrip() {
     const dow = DOW_LABELS[day.getDay()];
     const isWeekend = day.getDay() === 0 || day.getDay() === 6;
     const isSelected = key === calendarDay;
+    const isHit = searchHitDates.has(key);
     parts.push(`
       <button
         type="button"
-        class="cal-day${isSelected ? " is-selected" : ""}${isWeekend ? " is-weekend" : ""}${key === todayKey ? " is-today" : ""}"
+        class="cal-day${isSelected ? " is-selected" : ""}${isWeekend ? " is-weekend" : ""}${key === todayKey ? " is-today" : ""}${isHit ? " is-hit" : ""}"
         data-day="${key}"
         role="tab"
         aria-selected="${isSelected ? "true" : "false"}"
@@ -709,8 +808,10 @@ function renderCalendar(data) {
       const sizeClass = it.height < 48 ? "is-xs" : it.height < 72 ? "is-sm" : it.height < 104 ? "is-md" : "is-lg";
 
       const btn = document.createElement("button");
+      const searching = searchHitIds.size > 0;
+      const isHit = searching && searchHitIds.has(row.id);
       btn.type = "button";
-      btn.className = `cal-block is-${status} ${sizeClass}`;
+      btn.className = `cal-block is-${status} ${sizeClass}${isHit ? " is-search-hit" : searching ? " is-search-dim" : ""}`;
       btn.style.top = `${Math.max(0, it.top)}px`;
       btn.style.height = `${it.height}px`;
       if (it.cols > 1) {
@@ -749,6 +850,11 @@ function renderCalendar(data) {
   }
 
   updateCalNowLine();
+  if (pendingHighlightId) {
+    const id = pendingHighlightId;
+    pendingHighlightId = "";
+    requestAnimationFrame(() => highlightSearchBlock(id));
+  }
 }
 
 function closeCalDetail() {
@@ -852,15 +958,18 @@ function resetBookingForm(prefs = {}) {
   selectedServiceId = "";
   bkServiceId.value = "";
   bkServiceSearch.value = "";
+  selectedClientId = "";
+  if (bkClientId) bkClientId.value = "";
+  if (bkClientSearch) bkClientSearch.value = "";
   bkStatus.value = "confirmed";
   bkLinkClient.checked = true;
   hideServiceSuggest();
+  hideClientSuggest();
+  hideTimeSuggest();
   bkDate.value = prefs.date || calendarDay || toDateKey(new Date());
   bkDuration.value = "60";
   syncCabinSelectForService(null, prefs.cabinId || null);
-  bkTime.innerHTML = prefs.time
-    ? `<option value="${escapeHtml(prefs.time)}" selected>${escapeHtml(prefs.time)}</option>`
-    : `<option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>`;
+  if (bkTime) bkTime.value = prefs.time || "";
   const title = document.querySelector("#bookingPanel .panel-title");
   if (title) title.textContent = "Νέο ραντεβού";
   if (bkSubmitBtn) bkSubmitBtn.textContent = "Αποθήκευση ραντεβού";
@@ -888,7 +997,14 @@ function fillFormFromAppointment(row) {
   bkCabin.value = row.cabin_id ? String(row.cabin_id) : "";
   bkStatus.value = row.status || "confirmed";
   bkNotes.value = row.notes || "";
-  bkClient.value = row.client_id || "";
+  selectedClientId = row.client_id || "";
+  if (bkClientId) bkClientId.value = selectedClientId;
+  if (bkClientSearch) {
+    const linked = clientsCache.find((c) => c.id === selectedClientId);
+    bkClientSearch.value = linked
+      ? clientSearchLabel(linked)
+      : (selectedClientId ? (row.guest_name || "") : "");
+  }
   bkLinkClient.checked = Boolean(row.client_id);
   const serviceObj = selectedCatalogService() || {
     id: selectedServiceId || "custom",
@@ -897,8 +1013,7 @@ function fillFormFromAppointment(row) {
     durationMin: row.duration_minutes || 60,
   };
   syncCabinSelectForService(serviceObj, row.cabin_id);
-  const time = formatTime(row.appointment_time);
-  bkTime.innerHTML = `<option value="${escapeHtml(time)}" selected>${escapeHtml(time)}</option>`;
+  if (bkTime) bkTime.value = formatTime(row.appointment_time);
   const title = document.querySelector("#bookingPanel .panel-title");
   if (title) title.textContent = "Επεξεργασία ραντεβού";
   if (bkSubmitBtn) bkSubmitBtn.textContent = "Αποθήκευση αλλαγών";
@@ -913,14 +1028,7 @@ function openBookingPanel(prefs = {}) {
     bookingPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     refreshTimeOptions().then(() => {
       const time = formatTime(prefs.edit.appointment_time);
-      const exists = [...bkTime.options].some((o) => o.value === time);
-      if (!exists && time) {
-        const opt = document.createElement("option");
-        opt.value = time;
-        opt.textContent = time;
-        bkTime.appendChild(opt);
-      }
-      bkTime.value = time;
+      if (bkTime && time) bkTime.value = time;
     }).catch(() => {});
     return;
   }
@@ -931,16 +1039,7 @@ function openBookingPanel(prefs = {}) {
   bookingPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   if (prefs.time && bkDate.value) {
     refreshTimeOptions().then(() => {
-      if (prefs.time) {
-        const exists = [...bkTime.options].some((o) => o.value === prefs.time);
-        if (!exists) {
-          const opt = document.createElement("option");
-          opt.value = prefs.time;
-          opt.textContent = prefs.time;
-          bkTime.appendChild(opt);
-        }
-        bkTime.value = prefs.time;
-      }
+      if (prefs.time && bkTime) bkTime.value = prefs.time;
     }).catch(() => {});
   }
 }
@@ -1191,29 +1290,120 @@ function selectedServicePayload() {
   };
 }
 
-function renderClientOptions() {
-  const parts = [`<option value="">— Χωρίς σύνδεση / νέος —</option>`];
-  for (const client of clientsCache) {
-    const phone = client.phone ? ` · ${client.phone}` : "";
-    parts.push(
-      `<option value="${escapeHtml(client.id)}">${escapeHtml(client.full_name)}${escapeHtml(phone)}</option>`
-    );
+function clientSearchLabel(client) {
+  const phone = client.phone ? ` · ${client.phone}` : "";
+  return `${client.full_name || ""}${phone}`.trim();
+}
+
+function filterClients(query) {
+  const q = normalizeSearch(query);
+  const digits = String(query || "").replace(/\D/g, "");
+  if (!q && digits.length < 3) return [];
+  return clientsCache
+    .filter((row) => {
+      const hay = normalizeSearch(`${row.full_name} ${row.phone || ""} ${row.email || ""}`);
+      if (q && hay.includes(q)) return true;
+      if (digits.length >= 3) {
+        const phoneDigits = String(row.phone || "").replace(/\D/g, "");
+        if (phoneDigits.includes(digits)) return true;
+      }
+      return false;
+    })
+    .slice(0, 25);
+}
+
+function hideClientSuggest() {
+  if (!bkClientSuggest) return;
+  bkClientSuggest.classList.add("hidden");
+  bkClientSuggest.innerHTML = "";
+  clientSuggestActiveIndex = -1;
+}
+
+function showClientSuggest(rows, query = "") {
+  if (!bkClientSuggest) return;
+  const q = String(query || "").trim();
+  if (!q) {
+    hideClientSuggest();
+    return;
   }
-  bkClient.innerHTML = parts.join("");
+
+  if (!rows.length) {
+    bkClientSuggest.innerHTML = `<div class="suggest-empty">Δεν βρέθηκε πελάτης — συμπληρώστε τα στοιχεία ως νέος.</div>`;
+    bkClientSuggest.classList.remove("hidden");
+    clientSuggestActiveIndex = -1;
+    return;
+  }
+
+  bkClientSuggest.innerHTML = rows.map((row, index) => `
+    <button
+      type="button"
+      class="suggest-item${index === 0 ? " is-active" : ""}"
+      role="option"
+      data-client-id="${escapeHtml(row.id)}"
+      data-index="${index}"
+    >
+      <strong>${escapeHtml(row.full_name || "—")}</strong>
+      <span>${escapeHtml([row.phone, row.email].filter(Boolean).join(" · ") || "Χωρίς τηλέφωνο")}</span>
+    </button>
+  `).join("");
+  bkClientSuggest.classList.remove("hidden");
+  clientSuggestActiveIndex = 0;
+
+  bkClientSuggest.querySelectorAll("[data-client-id]").forEach((btn) => {
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      pickClient(btn.dataset.clientId).catch(() => {});
+    });
+  });
+}
+
+function clearPickedClient() {
+  selectedClientId = "";
+  if (bkClientId) bkClientId.value = "";
+}
+
+async function pickClient(id) {
+  if (!id) {
+    clearPickedClient();
+    hideClientSuggest();
+    return;
+  }
+  selectedClientId = id;
+  if (bkClientId) bkClientId.value = id;
+  hideClientSuggest();
+
+  const cached = clientsCache.find((c) => c.id === id);
+  if (cached) {
+    if (bkClientSearch) bkClientSearch.value = clientSearchLabel(cached);
+    bkName.value = cached.full_name || "";
+    bkPhone.value = cached.phone || "";
+    bkEmail.value = cached.email || "";
+    if (bkLinkClient) bkLinkClient.checked = true;
+    return;
+  }
+  const { data } = await getClient(id);
+  if (data) {
+    if (bkClientSearch) bkClientSearch.value = clientSearchLabel(data);
+    bkName.value = data.full_name || "";
+    bkPhone.value = data.phone || "";
+    bkEmail.value = data.email || "";
+    if (bkLinkClient) bkLinkClient.checked = true;
+  }
 }
 
 async function refreshTimeOptions() {
   const date = bkDate.value;
   const service = selectedServicePayload();
   const duration = Number(bkDuration.value) || service.durationMin || 60;
+  const prev = parseTimeInput(bkTime?.value) || String(bkTime?.value || "").trim();
 
   if (!date || !service.name) {
-    bkTime.innerHTML = `<option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>`;
+    availableTimes = [];
+    if (bkTimeSuggest && !bkTimeSuggest.classList.contains("hidden")) {
+      showTimeSuggest(filterTimes(bkTime?.value), bkTime?.value);
+    }
     return;
   }
-
-  const prev = bkTime.value;
-  bkTime.innerHTML = `<option value="">Φόρτωση ωρών…</option>`;
 
   try {
     let booked = await fetchBookedSlots(date);
@@ -1230,29 +1420,116 @@ async function refreshTimeOptions() {
       }
     }
     const candidates = buildStartSlots(duration);
-    const available = filterAvailableStarts(candidates, booked, {
+    availableTimes = filterAvailableStarts(candidates, booked, {
       id: service.id,
       categoryId: service.categoryId,
       durationMin: duration,
     });
-
-    if (!available.length) {
-      bkTime.innerHTML = `<option value="">Καμία διαθέσιμη ώρα</option>`;
-      return;
-    }
-
-    bkTime.innerHTML = [
-      `<option value="">Επιλέξτε ώρα…</option>`,
-      ...available.map((t) => `<option value="${t}" ${t === prev ? "selected" : ""}>${t}</option>`),
-    ].join("");
   } catch (error) {
     console.warn(error);
-    const candidates = buildStartSlots(duration);
-    bkTime.innerHTML = [
-      `<option value="">Επιλέξτε ώρα…</option>`,
-      ...candidates.map((t) => `<option value="${t}">${t}</option>`),
-    ].join("");
+    availableTimes = buildStartSlots(duration);
   }
+
+  if (prev && (availableTimes.includes(prev) || parseTimeInput(prev))) {
+    if (bkTime) bkTime.value = parseTimeInput(prev) || prev;
+  }
+
+  if (bkTimeSuggest && !bkTimeSuggest.classList.contains("hidden")) {
+    showTimeSuggest(filterTimes(bkTime?.value), bkTime?.value);
+  }
+}
+
+function parseTimeInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  let hours = 0;
+  let mins = 0;
+  if (digits.length === 1 || digits.length === 2) {
+    hours = Number(digits);
+    mins = 0;
+  } else if (digits.length === 3) {
+    hours = Number(digits.slice(0, 1));
+    mins = Number(digits.slice(1));
+  } else {
+    hours = Number(digits.slice(0, 2));
+    mins = Number(digits.slice(2, 4));
+  }
+  if (!Number.isFinite(hours) || !Number.isFinite(mins) || hours > 23 || mins > 59) return "";
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+function filterTimes(query) {
+  const slots = availableTimes.slice();
+  const raw = String(query || "").trim();
+  if (!raw) return slots;
+  const digits = raw.replace(/\D/g, "");
+  return slots.filter((slot) => {
+    if (slot.includes(raw)) return true;
+    const slotDigits = slot.replace(/\D/g, "");
+    return Boolean(digits) && slotDigits.includes(digits);
+  });
+}
+
+function hideTimeSuggest() {
+  if (!bkTimeSuggest) return;
+  bkTimeSuggest.classList.add("hidden");
+  bkTimeSuggest.innerHTML = "";
+  timeSuggestActiveIndex = -1;
+}
+
+function showTimeSuggest(rows, query = "") {
+  if (!bkTimeSuggest) return;
+  const date = bkDate?.value;
+  const service = selectedServicePayload();
+
+  if (!date || !service.name) {
+    bkTimeSuggest.innerHTML = `<div class="suggest-empty">Επιλέξτε ημερομηνία και υπηρεσία…</div>`;
+    bkTimeSuggest.classList.remove("hidden");
+    timeSuggestActiveIndex = -1;
+    return;
+  }
+
+  if (!availableTimes.length) {
+    bkTimeSuggest.innerHTML = `<div class="suggest-empty">Καμία διαθέσιμη ώρα.</div>`;
+    bkTimeSuggest.classList.remove("hidden");
+    timeSuggestActiveIndex = -1;
+    return;
+  }
+
+  if (!rows.length) {
+    const typed = parseTimeInput(query);
+    bkTimeSuggest.innerHTML = `<div class="suggest-empty">${typed ? `Δεν υπάρχει ${escapeHtml(typed)} — μπορείτε να την γράψετε χειροκίνητα.` : "Δεν βρέθηκε αυτή η ώρα."}</div>`;
+    bkTimeSuggest.classList.remove("hidden");
+    timeSuggestActiveIndex = -1;
+    return;
+  }
+
+  bkTimeSuggest.innerHTML = rows.map((slot, index) => `
+    <button
+      type="button"
+      class="suggest-item${index === 0 ? " is-active" : ""}"
+      role="option"
+      data-time="${escapeHtml(slot)}"
+      data-index="${index}"
+    >
+      <strong>${escapeHtml(slot)}</strong>
+    </button>
+  `).join("");
+  bkTimeSuggest.classList.remove("hidden");
+  timeSuggestActiveIndex = 0;
+
+  bkTimeSuggest.querySelectorAll("[data-time]").forEach((btn) => {
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      pickTime(btn.dataset.time);
+    });
+  });
+}
+
+function pickTime(slot) {
+  const parsed = parseTimeInput(slot) || slot;
+  if (bkTime) bkTime.value = parsed;
+  hideTimeSuggest();
 }
 
 async function loadCatalogAndClients() {
@@ -1280,30 +1557,72 @@ async function loadCatalogAndClients() {
   } catch {
     clientsCache = [];
   }
-  renderClientOptions();
-}
-
-async function onClientPicked() {
-  const id = bkClient.value;
-  if (!id) return;
-  const cached = clientsCache.find((c) => c.id === id);
-  if (cached) {
-    bkName.value = cached.full_name || "";
-    bkPhone.value = cached.phone || "";
-    bkEmail.value = cached.email || "";
-    return;
-  }
-  const { data } = await getClient(id);
-  if (data) {
-    bkName.value = data.full_name || "";
-    bkPhone.value = data.phone || "";
-    bkEmail.value = data.email || "";
-  }
 }
 
 async function renderAppointments() {
+  const seq = ++renderSeq;
   rowsBody.innerHTML = `<tr><td colspan="7" class="empty">Φόρτωση…</td></tr>`;
-  const { data, error } = await listAppointments(filters());
+  const q = (searchInput?.value || "").trim();
+  const status = statusFilter?.value || "";
+
+  let hits = [];
+  if (q) {
+    const searchRes = await listAppointments({ status, query: q });
+    if (seq !== renderSeq) return;
+    if (searchRes.error) {
+      rowsBody.innerHTML = `<tr><td colspan="7" class="empty">Σφάλμα φόρτωσης.</td></tr>`;
+      showToast(searchRes.error.message || "Αποτυχία φόρτωσης ραντεβού", true);
+      hideSearchHits();
+      renderCalendar([]);
+      return;
+    }
+    hits = searchRes.data || [];
+    searchHitsCache = hits;
+    searchHitIds = new Set(hits.map((row) => row.id));
+    searchHitDates = new Set(hits.map((row) => appointmentDateKey(row)).filter(Boolean));
+    renderSearchHits(hits);
+
+    if (activeView === "calendar" && hits.length && calendarDay && !searchHitDates.has(calendarDay)) {
+      const best = pickBestSearchHit(hits);
+      const nextDay = appointmentDateKey(best);
+      if (nextDay) {
+        calendarDay = nextDay;
+        if (fromDate) fromDate.value = nextDay;
+        if (toDate) toDate.value = nextDay;
+        pendingHighlightId = best.id;
+      }
+    }
+    renderDayStrip();
+  } else {
+    searchHitsCache = [];
+    searchHitIds = new Set();
+    searchHitDates = new Set();
+    pendingHighlightId = "";
+    hideSearchHits();
+    renderDayStrip();
+  }
+
+  let data;
+  let error;
+  if (activeView === "calendar" && calendarDay) {
+    const dayRes = await listAppointments({
+      status,
+      fromDate: calendarDay,
+      toDate: calendarDay,
+      query: "",
+    });
+    data = dayRes.data;
+    error = dayRes.error;
+  } else if (q) {
+    data = hits;
+    error = null;
+  } else {
+    const listRes = await listAppointments(filters());
+    data = listRes.data;
+    error = listRes.error;
+  }
+
+  if (seq !== renderSeq) return;
   if (error) {
     rowsBody.innerHTML = `<tr><td colspan="7" class="empty">Σφάλμα φόρτωσης.</td></tr>`;
     showToast(error.message || "Αποτυχία φόρτωσης ραντεβού", true);
@@ -1311,8 +1630,10 @@ async function renderAppointments() {
     return;
   }
 
+  const listRows = q ? hits : (data || []);
   appointmentsCache = data || [];
   const healed = await healMismatchedCabins(appointmentsCache);
+  if (seq !== renderSeq) return;
   if (healed > 0) {
     showToast(`Διορθώθηκαν ${healed} ραντεβού σε σωστή καμπίνα.`);
   }
@@ -1321,12 +1642,12 @@ async function renderAppointments() {
     requestAnimationFrame(() => scrollCalToFocus(appointmentsCache));
   }
 
-  if (!data?.length) {
+  if (!listRows.length) {
     rowsBody.innerHTML = `<tr><td colspan="7" class="empty">Δεν βρέθηκαν ραντεβού.</td></tr>`;
     return;
   }
 
-  rowsBody.innerHTML = data.map((row) => `
+  rowsBody.innerHTML = listRows.map((row) => `
     <tr data-id="${escapeHtml(row.id)}">
       <td>
         <strong>${escapeHtml(formatDate(row.appointment_date))}</strong><br />
@@ -1362,7 +1683,7 @@ async function renderAppointments() {
   rowsBody.querySelectorAll("[data-status-for]").forEach((select) => {
     select.addEventListener("change", async () => {
       const id = select.dataset.statusFor;
-      const row = data.find((item) => item.id === id);
+      const row = listRows.find((item) => item.id === id);
       const nextStatus = select.value;
       const { error: updError } = await updateAppointment(id, { status: nextStatus });
       if (updError) {
@@ -1385,14 +1706,14 @@ async function renderAppointments() {
 
   rowsBody.querySelectorAll("[data-edit]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const row = data.find((item) => item.id === btn.dataset.edit);
+      const row = listRows.find((item) => item.id === btn.dataset.edit);
       if (row) openBookingPanel({ edit: row });
     });
   });
 
   rowsBody.querySelectorAll("[data-to-client]").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const appointment = data.find((row) => row.id === btn.dataset.toClient);
+      const appointment = listRows.find((row) => row.id === btn.dataset.toClient);
       if (!appointment) return;
       try {
         btn.disabled = true;
@@ -1542,11 +1863,65 @@ window.addEventListener("resize", () => {
   }, 180);
 });
 
-bkClient?.addEventListener("change", () => {
-  onClientPicked().catch(() => {});
+bkClientSearch?.addEventListener("focus", () => {
+  hideServiceSuggest();
+  hideTimeSuggest();
+  showClientSuggest(filterClients(bkClientSearch.value), bkClientSearch.value);
+});
+
+bkClientSearch?.addEventListener("input", () => {
+  clearPickedClient();
+  showClientSuggest(filterClients(bkClientSearch.value), bkClientSearch.value);
+});
+
+bkClientSearch?.addEventListener("keydown", (event) => {
+  const items = [...(bkClientSuggest?.querySelectorAll("[data-client-id]") || [])];
+  if (event.key === "Escape") {
+    hideClientSuggest();
+    return;
+  }
+  if (event.key === "ArrowDown" && items.length) {
+    event.preventDefault();
+    clientSuggestActiveIndex = Math.min(items.length - 1, clientSuggestActiveIndex + 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === clientSuggestActiveIndex));
+    items[clientSuggestActiveIndex]?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (event.key === "ArrowUp" && items.length) {
+    event.preventDefault();
+    clientSuggestActiveIndex = Math.max(0, clientSuggestActiveIndex - 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === clientSuggestActiveIndex));
+    items[clientSuggestActiveIndex]?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (event.key === "Enter" && bkClientSuggest && !bkClientSuggest.classList.contains("hidden") && items.length) {
+    const active = items[Math.max(0, clientSuggestActiveIndex)] || items[0];
+    if (active) {
+      event.preventDefault();
+      pickClient(active.dataset.clientId).catch(() => {});
+    }
+  }
+});
+
+bkClientSearch?.addEventListener("blur", () => {
+  window.setTimeout(() => hideClientSuggest(), 120);
+  const typed = bkClientSearch.value.trim();
+  if (!typed) {
+    clearPickedClient();
+    return;
+  }
+  if (selectedClientId) return;
+  const exact = clientsCache.find((row) => {
+    const nameHit = normalizeSearch(row.full_name) === normalizeSearch(typed);
+    const labelHit = normalizeSearch(clientSearchLabel(row)) === normalizeSearch(typed);
+    return nameHit || labelHit;
+  });
+  if (exact) pickClient(exact.id).catch(() => {});
 });
 
 bkServiceSearch?.addEventListener("focus", () => {
+  hideClientSuggest();
+  hideTimeSuggest();
   showServiceSuggest(filterCatalog(bkServiceSearch.value), bkServiceSearch.value);
 });
 
@@ -1606,9 +1981,62 @@ bkDuration?.addEventListener("change", () => {
   refreshTimeOptions().catch(() => {});
 });
 
+bkTime?.addEventListener("focus", () => {
+  hideServiceSuggest();
+  hideClientSuggest();
+  refreshTimeOptions()
+    .then(() => showTimeSuggest(filterTimes(bkTime.value), bkTime.value))
+    .catch(() => showTimeSuggest(filterTimes(bkTime.value), bkTime.value));
+});
+
+bkTime?.addEventListener("input", () => {
+  showTimeSuggest(filterTimes(bkTime.value), bkTime.value);
+});
+
+bkTime?.addEventListener("keydown", (event) => {
+  const items = [...(bkTimeSuggest?.querySelectorAll("[data-time]") || [])];
+  if (event.key === "Escape") {
+    hideTimeSuggest();
+    return;
+  }
+  if (event.key === "ArrowDown" && items.length) {
+    event.preventDefault();
+    timeSuggestActiveIndex = Math.min(items.length - 1, timeSuggestActiveIndex + 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === timeSuggestActiveIndex));
+    items[timeSuggestActiveIndex]?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (event.key === "ArrowUp" && items.length) {
+    event.preventDefault();
+    timeSuggestActiveIndex = Math.max(0, timeSuggestActiveIndex - 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === timeSuggestActiveIndex));
+    items[timeSuggestActiveIndex]?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (event.key === "Enter" && bkTimeSuggest && !bkTimeSuggest.classList.contains("hidden") && items.length) {
+    const active = items[Math.max(0, timeSuggestActiveIndex)] || items[0];
+    if (active) {
+      event.preventDefault();
+      pickTime(active.dataset.time);
+    }
+  }
+});
+
+bkTime?.addEventListener("blur", () => {
+  window.setTimeout(() => hideTimeSuggest(), 120);
+  const parsed = parseTimeInput(bkTime.value);
+  if (parsed) bkTime.value = parsed;
+});
+
 document.addEventListener("click", (event) => {
-  const wrap = document.getElementById("bkServiceSuggestWrap");
-  if (wrap && !wrap.contains(event.target)) hideServiceSuggest();
+  const serviceWrap = document.getElementById("bkServiceSuggestWrap");
+  const clientWrap = document.getElementById("bkClientSuggestWrap");
+  const timeWrap = document.getElementById("bkTimeSuggestWrap");
+  if (serviceWrap && !serviceWrap.contains(event.target)) hideServiceSuggest();
+  if (clientWrap && !clientWrap.contains(event.target)) hideClientSuggest();
+  if (timeWrap && !timeWrap.contains(event.target)) hideTimeSuggest();
+  const searchWrap = event.target.closest(".search-wrap");
+  if (!searchWrap) hideSearchHits();
 });
 
 bookingForm?.addEventListener("submit", async (event) => {
@@ -1621,13 +2049,20 @@ bookingForm?.addEventListener("submit", async (event) => {
     return;
   }
 
-  const time = bkTime.value;
+  const time = parseTimeInput(bkTime.value);
   const date = bkDate.value;
   const duration = Number(bkDuration.value);
   if (!date || !time) {
-    showToast("Συμπληρώστε ημερομηνία και ώρα.", true);
+    showToast("Συμπληρώστε ημερομηνία και ώρα (π.χ. 10:30).", true);
+    bkTime?.focus();
     return;
   }
+  if (timeLabelToMinutes(time) == null) {
+    showToast("Μη έγκυρη ώρα.", true);
+    bkTime?.focus();
+    return;
+  }
+  if (bkTime) bkTime.value = time;
   if (!duration || duration < 5 || duration > 240) {
     showToast("Η διάρκεια πρέπει να είναι 5–240 λεπτά.", true);
     return;
@@ -1691,7 +2126,7 @@ bookingForm?.addEventListener("submit", async (event) => {
     guest_email: bkEmail.value.trim() || null,
     status: bkStatus.value || "confirmed",
     notes: bkNotes.value.trim() || null,
-    client_id: bkClient.value || null,
+    client_id: selectedClientId || bkClientId?.value || null,
   };
 
   bkSubmitBtn.disabled = true;
@@ -1760,6 +2195,10 @@ bookingForm?.addEventListener("submit", async (event) => {
 });
 
 let searchTimer = 0;
+searchInput?.addEventListener("focus", () => {
+  const q = (searchInput.value || "").trim();
+  if (q && searchHitsCache.length) renderSearchHits(searchHitsCache);
+});
 [searchInput, statusFilter].forEach((el) => {
   el?.addEventListener("input", () => {
     window.clearTimeout(searchTimer);

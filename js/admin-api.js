@@ -227,9 +227,11 @@ export async function listAppointments({ status = "", fromDate = "", toDate = ""
   if (fromDate) request = request.gte("appointment_date", fromDate);
   if (toDate) request = request.lte("appointment_date", toDate);
 
-  const q = query.trim();
   if (q) {
-    request = request.or(`guest_name.ilike.%${q}%,guest_phone.ilike.%${q}%,service.ilike.%${q}%`);
+    const safe = q.replace(/[%_,()\\]/g, " ").replace(/\s+/g, " ").trim();
+    if (safe) {
+      request = request.or(`guest_name.ilike.%${safe}%,guest_phone.ilike.%${safe}%,guest_email.ilike.%${safe}%,service.ilike.%${safe}%`);
+    }
   }
 
   return request;

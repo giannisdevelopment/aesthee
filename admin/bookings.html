@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=cal-no-overlap-1" />
+  <link rel="stylesheet" href="/css/admin.css?v=search-all-1" />
 </head>
 <body data-admin-page="bookings">
   <div id="loginView" class="login-wrap hidden">
@@ -60,7 +60,10 @@
         <button class="btn btn-ghost btn-sm is-active" type="button" id="viewCalBtn" data-view="calendar">Ημερολόγιο</button>
         <button class="btn btn-ghost btn-sm" type="button" id="viewListBtn" data-view="list">Λίστα</button>
       </div>
-      <input class="search" id="searchInput" type="search" enterkeyhint="search" placeholder="Αναζήτηση…" />
+      <div class="search-wrap">
+        <input class="search" id="searchInput" type="search" enterkeyhint="search" placeholder="Αναζήτηση σε όλα τα ραντεβού…" autocomplete="off" />
+        <div id="calSearchHits" class="search-hits hidden" role="listbox"></div>
+      </div>
       <select id="statusFilter" aria-label="Κατάσταση">
         <option value="">Όλες οι καταστάσεις</option>
         <option value="pending">Σε αναμονή</option>
@@ -99,10 +102,19 @@
       <form id="bookingForm" class="booking-form">
         <div class="field-row">
           <div class="field">
-            <label for="bkClient">Υπάρχων πελάτης (προαιρετικά)</label>
-            <select id="bkClient">
-              <option value="">— Χωρίς σύνδεση / νέος —</option>
-            </select>
+            <label for="bkClientSearch">Υπάρχων πελάτης (προαιρετικά)</label>
+            <div class="suggest" id="bkClientSuggestWrap">
+              <input
+                id="bkClientSearch"
+                type="text"
+                autocomplete="off"
+                placeholder="Πληκτρολογήστε όνομα ή τηλέφωνο…"
+                aria-autocomplete="list"
+                aria-controls="bkClientSuggest"
+              />
+              <input type="hidden" id="bkClientId" value="" />
+              <div id="bkClientSuggest" class="suggest-list hidden" role="listbox"></div>
+            </div>
           </div>
           <div class="field">
             <label for="bkStatus">Κατάσταση</label>
@@ -152,9 +164,19 @@
           </div>
           <div class="field">
             <label for="bkTime">Ώρα</label>
-            <select id="bkTime" required>
-              <option value="">Επιλέξτε ημερομηνία &amp; υπηρεσία…</option>
-            </select>
+            <div class="suggest" id="bkTimeSuggestWrap">
+              <input
+                id="bkTime"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                required
+                placeholder="π.χ. 10:30"
+                aria-autocomplete="list"
+                aria-controls="bkTimeSuggest"
+              />
+              <div id="bkTimeSuggest" class="suggest-list hidden" role="listbox"></div>
+            </div>
           </div>
         </div>
         <div class="field-row field-row--3">
@@ -217,6 +239,6 @@
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
-  <script type="module" src="/js/admin-bookings.js?v=cal-no-overlap-1"></script>
+  <script type="module" src="/js/admin-bookings.js?v=cal-start-10"></script>
 </body>
 </html>
