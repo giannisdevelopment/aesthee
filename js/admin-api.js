@@ -119,6 +119,163 @@ export function readDayFirstDate(input) {
   return parsed;
 }
 
+const DMY_MONTHS = [
+  "Ιανουάριος", "Φεβρουάριος", "Μάρτιος", "Απρίλιος", "Μάιος", "Ιούνιος",
+  "Ιούλιος", "Αύγουστος", "Σεπτέμβριος", "Οκτώβριος", "Νοέμβριος", "Δεκέμβριος",
+];
+const DMY_DOWS = ["Δε", "Τρ", "Τε", "Πε", "Πα", "Σα", "Κυ"];
+
+/** @type {HTMLElement | null} */
+let dmyPicker = null;
+/** @type {HTMLInputElement | null} */
+let dmyPickerInput = null;
+let dmyViewYear = 0;
+let dmyViewMonth = 1;
+
+function isoParts(iso) {
+  const match = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+}
+
+function ensureDmyPicker() {
+  if (dmyPicker) return dmyPicker;
+  const el = document.createElement("div");
+  el.className = "dmy-picker";
+  el.hidden = true;
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-label", "Επιλογή ημερομηνίας");
+  el.innerHTML = `
+    <div class="dmy-picker-head">
+      <button type="button" class="dmy-picker-nav" data-nav="-1" aria-label="Προηγούμενος μήνας">‹</button>
+      <strong data-label></strong>
+      <button type="button" class="dmy-picker-nav" data-nav="1" aria-label="Επόμενος μήνας">›</button>
+    </div>
+    <div class="dmy-picker-dows">${DMY_DOWS.map((label) => `<span>${label}</span>`).join("")}</div>
+    <div class="dmy-picker-grid" data-grid></div>
+  `;
+  el.addEventListener("mousedown", (event) => event.preventDefault());
+  el.querySelectorAll("[data-nav]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const step = Number(btn.getAttribute("data-nav")) || 0;
+      const next = new Date(dmyViewYear, dmyViewMonth - 1 + step, 1);
+      dmyViewYear = next.getFullYear();
+      dmyViewMonth = next.getMonth() + 1;
+      renderDmyPicker();
+    });
+  });
+  document.body.appendChild(el);
+  dmyPicker = el;
+  return el;
+}
+
+function renderDmyPicker() {
+  const el = ensureDmyPicker();
+  const label = el.querySelector("[data-label]");
+  const grid = el.querySelector("[data-grid]");
+  if (!label || !grid) return;
+  label.textContent = `${DMY_MONTHS[dmyViewMonth - 1]} ${dmyViewYear}`;
+
+  const selected = isoParts(parseDayFirstDate(dmyPickerInput?.value || ""));
+  const today = new Date();
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const firstDow = new Date(dmyViewYear, dmyViewMonth - 1, 1).getDay();
+  const lead = (firstDow + 6) % 7;
+  const start = new Date(dmyViewYear, dmyViewMonth - 1, 1 - lead);
+
+  grid.innerHTML = "";
+  for (let i = 0; i < 42; i += 1) {
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dmy-picker-day";
+    btn.textContent = String(date.getDate());
+    btn.dataset.iso = iso;
+    if (date.getMonth() + 1 !== dmyViewMonth) btn.classList.add("is-out");
+    if (iso === todayIso) btn.classList.add("is-today");
+    if (selected && iso === `${selected.year}-${String(selected.month).padStart(2, "0")}-${String(selected.day).padStart(2, "0")}`) {
+      btn.classList.add("is-selected");
+    }
+    btn.addEventListener("click", () => {
+      if (!dmyPickerInput) return;
+      setDayFirstDate(dmyPickerInput, iso);
+      dmyPickerInput.dispatchEvent(new Event("input", { bubbles: true }));
+      dmyPickerInput.dispatchEvent(new Event("change", { bubbles: true }));
+      closeDmyPicker();
+    });
+    grid.appendChild(btn);
+  }
+}
+
+function placeDmyPicker() {
+  if (!dmyPicker || !dmyPickerInput) return;
+  const rect = dmyPickerInput.getBoundingClientRect();
+  const width = 300;
+  const height = dmyPicker.offsetHeight || 320;
+  let left = rect.left;
+  if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
+  if (left < 8) left = 8;
+  let top = rect.bottom + 6;
+  if (top + height > window.innerHeight - 8) top = Math.max(8, rect.top - height - 6);
+  dmyPicker.style.left = `${left}px`;
+  dmyPicker.style.top = `${top}px`;
+}
+
+function openDmyPicker(input) {
+  const el = ensureDmyPicker();
+  dmyPickerInput = input;
+  const parsed = isoParts(parseDayFirstDate(input.value));
+  const base = parsed || { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
+  dmyViewYear = base.year;
+  dmyViewMonth = base.month;
+  el.hidden = false;
+  renderDmyPicker();
+  placeDmyPicker();
+}
+
+function closeDmyPicker() {
+  if (dmyPicker) dmyPicker.hidden = true;
+  dmyPickerInput = null;
+}
+
+function bindDayFirstPicker(input) {
+  if (!(input instanceof HTMLInputElement) || input.dataset.dmyPicker) return;
+  input.dataset.dmyPicker = "1";
+  input.addEventListener("focus", () => openDmyPicker(input));
+  input.addEventListener("click", () => openDmyPicker(input));
+  input.addEventListener("input", () => {
+    if (dmyPickerInput === input && dmyPicker && !dmyPicker.hidden) renderDmyPicker();
+  });
+}
+
+function initDayFirstPickers() {
+  document.querySelectorAll('input[placeholder="ηη/μμ/εεεε"], input.date-dmy').forEach((input) => {
+    bindDayFirstPicker(input);
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (!dmyPicker || dmyPicker.hidden) return;
+    const target = event.target;
+    if (target instanceof Node && (dmyPicker.contains(target) || target === dmyPickerInput)) return;
+    closeDmyPicker();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeDmyPicker();
+  });
+  window.addEventListener("resize", () => {
+    if (dmyPicker && !dmyPicker.hidden) placeDmyPicker();
+  });
+  window.addEventListener("scroll", () => {
+    if (dmyPicker && !dmyPicker.hidden) placeDmyPicker();
+  }, true);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initDayFirstPickers);
+} else {
+  initDayFirstPickers();
+}
+
 export function showToast(message, isError = false) {
   const el = document.getElementById("adminToast");
   if (!el) return;

@@ -1989,3 +1989,87 @@ body.is-cal-dragging .cal-board {
     grid-template-columns: 1fr;
   }
 }
+
+.dmy-picker {
+  position: fixed;
+  z-index: 80;
+  width: 300px;
+  padding: 12px;
+  background: var(--white);
+  border: 1px solid rgba(196, 163, 106, 0.45);
+  border-radius: 16px;
+  box-shadow: var(--shadow-hover);
+}
+
+.dmy-picker[hidden] {
+  display: none;
+}
+
+.dmy-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dmy-picker-head strong {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.dmy-picker-nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(196, 163, 106, 0.4);
+  background: var(--ivory);
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.dmy-picker-dows,
+.dmy-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.dmy-picker-dows span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  padding: 4px 0 6px;
+}
+
+.dmy-picker-day {
+  height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.dmy-picker-day.is-out {
+  color: var(--ink-dim);
+}
+
+.dmy-picker-day.is-today {
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+
+.dmy-picker-day.is-selected,
+.dmy-picker-day.is-selected:hover {
+  background: var(--gold);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.dmy-picker-day:hover {
+  background: var(--gold-soft);
+}

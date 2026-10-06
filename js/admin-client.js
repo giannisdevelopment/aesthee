@@ -18,7 +18,7 @@ import {
   readDayFirstDate,
   formatMoney,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=dmy-1";
+} from "./admin-api.js?v=dmy-cal-1";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   filterServiceSuggestions,

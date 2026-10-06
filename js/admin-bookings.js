@@ -18,7 +18,7 @@ import {
   readDayFirstDate,
   APPOINTMENT_STATUS_LABELS,
   applyAuthShell,
-} from "./admin-api.js?v=dmy-1";
+} from "./admin-api.js?v=dmy-cal-1";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   applyCatalogFromRows,
