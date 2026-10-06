@@ -7,7 +7,8 @@ import {
   createCatalogService,
   deleteCatalogService,
   showToast,
-} from "./admin-api.js?v=login-fix-1";
+  applyAuthShell,
+} from "./admin-api.js?v=auth-hint-1";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -231,6 +232,7 @@ async function boot() {
   if (configMissing()) {
     loginView.classList.remove("hidden");
     appView.classList.add("hidden");
+    applyAuthShell(false);
     configBanner?.classList.remove("hidden");
     return;
   }
@@ -307,12 +309,14 @@ async function boot() {
   if (!session) {
     loginView.classList.remove("hidden");
     appView.classList.add("hidden");
+    applyAuthShell(false);
     return;
   }
   await showApp();
 }
 
 async function showApp() {
+  applyAuthShell(true);
   loginView.classList.add("hidden");
   appView.classList.remove("hidden");
   await load();

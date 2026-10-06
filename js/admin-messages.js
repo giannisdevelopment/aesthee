@@ -13,7 +13,8 @@ import {
   formatDate,
   formatTime,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=login-fix-1";
+  applyAuthShell,
+} from "./admin-api.js?v=auth-hint-1";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
 const loginView = document.getElementById("loginView");
@@ -293,11 +294,13 @@ async function loadInbox() {
 }
 
 function showApp() {
+  applyAuthShell(true);
   loginView.classList.add("hidden");
   appView.classList.remove("hidden");
 }
 
 function showLogin() {
+  applyAuthShell(false);
   appView.classList.add("hidden");
   loginView.classList.remove("hidden");
   if (configMissing()) configBanner.classList.remove("hidden");

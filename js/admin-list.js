@@ -6,7 +6,8 @@ import {
   showToast,
   mapAuthError,
   isSupabaseConfigured,
-} from "./admin-api.js?v=login-fix-1";
+  applyAuthShell,
+} from "./admin-api.js?v=auth-hint-1";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -74,11 +75,13 @@ async function renderClients(query = "") {
 }
 
 function showApp() {
+  applyAuthShell(true);
   loginView.classList.add("hidden");
   appView.classList.remove("hidden");
 }
 
 function showLogin() {
+  applyAuthShell(false);
   appView.classList.add("hidden");
   loginView.classList.remove("hidden");
   if (!isSupabaseConfigured()) configBanner?.classList.remove("hidden");
@@ -137,11 +140,16 @@ searchInput?.addEventListener("input", () => {
 });
 
 async function boot() {
-  showLogin();
-  if (!isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) {
+    showLogin();
+    return;
+  }
   try {
     const session = await requireSession();
-    if (!session) return;
+    if (!session) {
+      showLogin();
+      return;
+    }
     showApp();
     await renderClients();
   } catch (err) {

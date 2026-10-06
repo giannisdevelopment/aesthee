@@ -9,12 +9,14 @@ import {
   findOrCreateClientFromBooking,
   listCatalogServices,
   listClients,
+  listAllClientsLite,
   getClient,
   showToast,
   formatDate,
   formatTime,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=login-fix-1";
+  applyAuthShell,
+} from "./admin-api.js?v=auth-hint-1";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   applyCatalogFromRows,
@@ -1283,6 +1285,35 @@ function normalizeSearch(value) {
     .trim();
 }
 
+function foldClientGlyphs(value) {
+  return String(value || "")
+    .replace(/[aα]/g, "α")
+    .replace(/[bβ]/g, "β")
+    .replace(/[gγ]/g, "γ")
+    .replace(/[dδ]/g, "δ")
+    .replace(/[eε]/g, "ε")
+    .replace(/[zζ]/g, "ζ")
+    .replace(/[hη]/g, "η")
+    .replace(/[iι]/g, "ι")
+    .replace(/[kκc]/g, "κ")
+    .replace(/[lλ]/g, "λ")
+    .replace(/[mμ]/g, "μ")
+    .replace(/[nν]/g, "ν")
+    .replace(/[oο]/g, "ο")
+    .replace(/[pπ]/g, "π")
+    .replace(/[rρ]/g, "ρ")
+    .replace(/[sσς]/g, "σ")
+    .replace(/[tτ]/g, "τ")
+    .replace(/[yυu]/g, "υ")
+    .replace(/[fφ]/g, "φ")
+    .replace(/[xχ]/g, "χ")
+    .replace(/[wω]/g, "ω");
+}
+
+function normalizeClientSearch(value) {
+  return foldClientGlyphs(normalizeSearch(value));
+}
+
 function formatServiceMeta(row) {
   const euros = eurosFromCents(row.priceCents);
   const from = row.priceFrom ? "από " : "";
@@ -1440,13 +1471,29 @@ function clientSearchLabel(client) {
   return `${client.full_name || ""}${phone}`.trim();
 }
 
+function mergeClients(rows) {
+  const byId = new Map(clientsCache.map((row) => [row.id, row]));
+  for (const row of rows || []) {
+    if (!row?.id) continue;
+    byId.set(row.id, {
+      id: row.id,
+      full_name: row.full_name,
+      phone: row.phone,
+      email: row.email,
+    });
+  }
+  clientsCache = [...byId.values()].sort((a, b) =>
+    String(a.full_name || "").localeCompare(String(b.full_name || ""), "el", { sensitivity: "base" })
+  );
+}
+
 function filterClients(query) {
-  const q = normalizeSearch(query);
+  const q = normalizeClientSearch(query);
   const digits = String(query || "").replace(/\D/g, "");
   if (!q && digits.length < 3) return [];
   return clientsCache
     .filter((row) => {
-      const hay = normalizeSearch(`${row.full_name} ${row.phone || ""} ${row.email || ""}`);
+      const hay = normalizeClientSearch(`${row.full_name} ${row.phone || ""} ${row.email || ""}`);
       if (q && hay.includes(q)) return true;
       if (digits.length >= 3) {
         const phoneDigits = String(row.phone || "").replace(/\D/g, "");
@@ -1454,7 +1501,48 @@ function filterClients(query) {
       }
       return false;
     })
-    .slice(0, 25);
+    .slice(0, 40);
+}
+
+let clientSuggestSeq = 0;
+let clientSuggestTimer = 0;
+
+async function searchClientsLive(query) {
+  const q = String(query || "").trim();
+  const seq = ++clientSuggestSeq;
+  if (q.length < 2 && String(query || "").replace(/\D/g, "").length < 3) {
+    return;
+  }
+  const { data, error } = await listClients(q, { lite: true, limit: 50 });
+  if (error || seq !== clientSuggestSeq) return;
+  mergeClients(data);
+  if (String(bkClientSearch?.value || "").trim() !== q) return;
+  const local = filterClients(q);
+  const byId = new Map(local.map((row) => [row.id, row]));
+  for (const row of data || []) {
+    if (row?.id && !byId.has(row.id)) byId.set(row.id, row);
+  }
+  showClientSuggest([...byId.values()].slice(0, 40), q);
+}
+
+function queueClientSuggest(query) {
+  const q = String(query || "").trim();
+  if (!q) {
+    hideClientSuggest();
+    return;
+  }
+  const local = filterClients(q);
+  if (local.length) {
+    showClientSuggest(local, q);
+  } else if (bkClientSuggest) {
+    bkClientSuggest.innerHTML = `<div class="suggest-empty">Αναζήτηση…</div>`;
+    bkClientSuggest.classList.remove("hidden");
+    clientSuggestActiveIndex = -1;
+  }
+  window.clearTimeout(clientSuggestTimer);
+  clientSuggestTimer = window.setTimeout(() => {
+    searchClientsLive(q).catch(() => {});
+  }, 120);
 }
 
 function hideClientSuggest() {
@@ -1700,17 +1788,8 @@ async function loadCatalogAndClients() {
   }
 
   try {
-    const { data } = await listClients("");
-    clientsCache = (data || [])
-      .map((row) => ({
-        id: row.id,
-        full_name: row.full_name,
-        phone: row.phone,
-        email: row.email,
-      }))
-      .sort((a, b) =>
-        String(a.full_name || "").localeCompare(String(b.full_name || ""), "el", { sensitivity: "base" })
-      );
+    const { data } = await listAllClientsLite();
+    mergeClients(data);
   } catch {
     clientsCache = [];
   }
@@ -1903,11 +1982,13 @@ async function renderAppointments() {
 }
 
 function showApp() {
+  applyAuthShell(true);
   loginView.classList.add("hidden");
   appView.classList.remove("hidden");
 }
 
 function showLogin() {
+  applyAuthShell(false);
   appView.classList.add("hidden");
   loginView.classList.remove("hidden");
   if (configMissing()) configBanner.classList.remove("hidden");
@@ -2041,12 +2122,12 @@ window.addEventListener("resize", () => {
 bkClientSearch?.addEventListener("focus", () => {
   hideServiceSuggest();
   hideTimeSuggest();
-  showClientSuggest(filterClients(bkClientSearch.value), bkClientSearch.value);
+  queueClientSuggest(bkClientSearch.value);
 });
 
 bkClientSearch?.addEventListener("input", () => {
   clearPickedClient();
-  showClientSuggest(filterClients(bkClientSearch.value), bkClientSearch.value);
+  queueClientSuggest(bkClientSearch.value);
 });
 
 bkClientSearch?.addEventListener("keydown", (event) => {
@@ -2087,8 +2168,8 @@ bkClientSearch?.addEventListener("blur", () => {
   }
   if (selectedClientId) return;
   const exact = clientsCache.find((row) => {
-    const nameHit = normalizeSearch(row.full_name) === normalizeSearch(typed);
-    const labelHit = normalizeSearch(clientSearchLabel(row)) === normalizeSearch(typed);
+    const nameHit = normalizeClientSearch(row.full_name) === normalizeClientSearch(typed);
+    const labelHit = normalizeClientSearch(clientSearchLabel(row)) === normalizeClientSearch(typed);
     return nameHit || labelHit;
   });
   if (exact) pickClient(exact.id).catch(() => {});

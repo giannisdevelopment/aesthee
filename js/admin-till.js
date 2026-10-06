@@ -9,7 +9,8 @@ import {
   formatDate,
   mapAuthError,
   isSupabaseConfigured,
-} from "./admin-api.js?v=login-fix-1";
+  applyAuthShell,
+} from "./admin-api.js?v=auth-hint-1";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -52,11 +53,13 @@ function escapeHtml(value) {
 }
 
 function showApp() {
+  applyAuthShell(true);
   loginView.classList.add("hidden");
   appView.classList.remove("hidden");
 }
 
 function showLogin() {
+  applyAuthShell(false);
   appView.classList.add("hidden");
   loginView.classList.remove("hidden");
   if (!isSupabaseConfigured()) configBanner?.classList.remove("hidden");

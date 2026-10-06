@@ -104,8 +104,14 @@ export function mapAuthError(error) {
   return msg || "Αποτυχία σύνδεσης";
 }
 
+export function applyAuthShell(signedIn) {
+  document.documentElement.classList.toggle("auth-in", Boolean(signedIn));
+  document.documentElement.classList.toggle("auth-out", !signedIn);
+}
+
 export async function requireSession() {
   const { data: { session } } = await getSupabase().auth.getSession();
+  applyAuthShell(Boolean(session));
   return session;
 }
 
@@ -120,18 +126,41 @@ export async function signOut() {
   return getSupabase().auth.signOut();
 }
 
-export async function listClients(query = "") {
+export async function listClients(query = "", options = {}) {
+  const lite = Boolean(options.lite);
+  const limit = Number(options.limit) || 0;
+  const select = lite
+    ? "id, full_name, phone, email, updated_at"
+    : "id, full_name, phone, email, updated_at, visits(count)";
   let request = getSupabase()
     .from("clients")
-    .select("id, full_name, phone, email, updated_at, visits(count)")
+    .select(select)
     .order("full_name", { ascending: true });
 
-  const q = query.trim();
+  const q = String(query || "").trim().replace(/,/g, " ");
   if (q) {
     request = request.or(`full_name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`);
   }
+  if (limit > 0) request = request.limit(limit);
 
   return request;
+}
+
+/** All clients, paged — no nested visits count (used by booking typeahead). */
+export async function listAllClientsLite() {
+  const pageSize = 1000;
+  const all = [];
+  for (let from = 0; from < 30000; from += pageSize) {
+    const { data, error } = await getSupabase()
+      .from("clients")
+      .select("id, full_name, phone, email")
+      .order("id", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) return { data: all, error: all.length ? null : error };
+    all.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+  return { data: all, error: null };
 }
 
 export async function getClient(id) {

@@ -210,6 +210,31 @@ function fillClientForm(client) {
   clientForm.notes.value = client.notes || "";
 }
 
+function normalizeLabel(value) {
+  return normalizeSearch(value).replace(/[^a-z0-9α-ω]+/g, " ").trim();
+}
+
+function isImportFingerprint(notes) {
+  const t = String(notes || "").trim();
+  if (!t) return false;
+  return /^(treatwell|google|gcal|ics|csv)\b/i.test(t)
+    || /\b(twa:|twcsv:|gcal:|ics:)\b/i.test(t)
+    || /Treatwell import/i.test(t);
+}
+
+function displayNotes(notes) {
+  const t = String(notes || "").trim();
+  if (!t || isImportFingerprint(t)) return "";
+  return t;
+}
+
+function sameService(a, b) {
+  const na = normalizeLabel(a);
+  const nb = normalizeLabel(b);
+  if (!na || !nb) return false;
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
+
 function resetVisitForm() {
   visitForm.reset();
   document.getElementById("visitId").value = "";
@@ -263,12 +288,15 @@ async function renderVisits() {
   const todayKey = new Date().toISOString().slice(0, 10);
   /** @type {Array<{ kind: string, sort: string, html: string, visit?: object }>} */
   const items = [];
+  const appointmentKeys = [];
 
   for (const row of appts || []) {
     const day = String(row.appointment_date || "").slice(0, 10);
+    appointmentKeys.push({ day, service: row.service || "" });
     const upcoming = day >= todayKey && row.status !== "cancelled" && row.status !== "completed" && row.status !== "no_show";
     const status = APPOINTMENT_STATUS_LABELS[row.status] || row.status || "";
     const euros = row.price_cents != null ? Number(row.price_cents) / 100 : null;
+    const notes = displayNotes(row.notes);
     items.push({
       kind: "appointment",
       sort: `${day}T${formatTime(row.appointment_time)}`,
@@ -277,16 +305,22 @@ async function renderVisits() {
           <h3>${escapeHtml(row.service || "Ραντεβού")}</h3>
           <div class="visit-meta">
             <span>${escapeHtml(formatDate(row.appointment_date))} · ${escapeHtml(formatTime(row.appointment_time))}</span>
-            <span>${euros != null ? escapeHtml(formatMoney(euros)) : "—"}</span>
-            <span>${escapeHtml(status)}</span>
+            ${euros != null && euros > 0 ? `<span>${escapeHtml(formatMoney(euros))}</span>` : ""}
+            ${status ? `<span>${escapeHtml(status)}</span>` : ""}
           </div>
-          ${row.notes ? `<p class="muted">${escapeHtml(row.notes)}</p>` : ""}
+          ${notes ? `<p class="muted visit-note">${escapeHtml(notes)}</p>` : ""}
         </article>
       `,
     });
   }
 
   for (const visit of visits || []) {
+    const day = String(visit.payment_date || "").slice(0, 10);
+    const duplicate = appointmentKeys.some(
+      (key) => key.day === day && sameService(key.service, visit.treatment)
+    );
+    if (duplicate) continue;
+    const notes = displayNotes(visit.notes);
     items.push({
       kind: "visit",
       sort: `${visit.payment_date || "0000-00-00"}T00:00`,
@@ -295,10 +329,10 @@ async function renderVisits() {
         <article class="visit-card" data-visit-id="${escapeHtml(visit.id)}">
           <h3>${escapeHtml(visit.treatment)}</h3>
           <div class="visit-meta">
-            <span>${escapeHtml(formatMoney(visit.payment_amount))}</span>
             <span>${escapeHtml(formatDate(visit.payment_date))}</span>
+            <span>${escapeHtml(formatMoney(visit.payment_amount))}</span>
           </div>
-          ${visit.notes ? `<p class="muted">${escapeHtml(visit.notes)}</p>` : ""}
+          ${notes ? `<p class="muted visit-note">${escapeHtml(notes)}</p>` : ""}
           <div class="visit-actions">
             <button class="btn btn-ghost btn-sm" type="button" data-edit-visit="${escapeHtml(visit.id)}">Επεξεργασία</button>
             <button class="btn btn-danger btn-sm" type="button" data-delete-visit="${escapeHtml(visit.id)}">Διαγραφή</button>

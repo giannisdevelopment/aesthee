@@ -341,6 +341,25 @@ tr:last-child td {
   align-items: start;
 }
 
+body[data-admin-page="client"] .grid-2 {
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+}
+
+body[data-admin-page="client"] .grid-2 > .panel {
+  min-width: 0;
+}
+
+body[data-admin-page="client"] .field input,
+body[data-admin-page="client"] .field textarea {
+  overflow-wrap: anywhere;
+}
+
+.visit-note {
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .section-title {
   margin: 0 0 14px;
   font-size: 0.95rem;
@@ -402,6 +421,22 @@ tr:last-child td {
 
 .hidden {
   display: none !important;
+}
+
+html.auth-in #loginView {
+  display: none !important;
+}
+
+html.auth-in #appView {
+  display: block !important;
+}
+
+html.auth-out #appView {
+  display: none !important;
+}
+
+html.auth-out #loginView {
+  display: grid !important;
 }
 
 .toast {
