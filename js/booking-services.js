@@ -61,6 +61,13 @@ export const DEFAULT_BOOKING_CATEGORIES = [
     ],
   },
   {
+    id: "solarium",
+    label: "Σολάριο",
+    services: [
+      { id: "solarium", name: "Σολάριο", durationMin: 10, priceCents: 0 },
+    ],
+  },
+  {
     id: "brows",
     label: "Περιποίηση φρυδιών",
     services: [
@@ -309,7 +316,8 @@ const SERVICE_ALIASES = {
 };
 
 /** Cabins as parallel resources:
- * 1–2 laser (+ πρόσωπο), 3 φρύδια/βλεφαρίδες/κερί, 4 Vacutherm, 5 σώμα + μασάζ
+ * 1–2 laser (+ πρόσωπο), 3 φρύδια/βλεφαρίδες/κερί, 4 Vacutherm, 5 σώμα + μασάζ,
+ * 6 σολάριο (μόνο προσωπικό — δεν μπαίνει στο online booking)
  */
 export const CABIN_LABELS = {
   1: "Καμπίνα 1 — laser",
@@ -317,6 +325,7 @@ export const CABIN_LABELS = {
   3: "Καμπίνα 3 — φρύδια",
   4: "Καμπίνα 4 — Vacutherm",
   5: "Καμπίνα 5 — σώμα & μασάζ",
+  6: "Καμπίνα 6 — σολάριο",
 };
 
 /** Short labels for the admin day calendar columns */
@@ -326,9 +335,13 @@ export const CABIN_SHORT = {
   3: { code: "Κ3", role: "Φρύδια" },
   4: { code: "Κ4", role: "Vacutherm" },
   5: { code: "Κ5", role: "Σώμα" },
+  6: { code: "Κ6", role: "Σολάριο" },
 };
 
-export const CABIN_IDS = [1, 2, 3, 4, 5];
+export const CABIN_IDS = [1, 2, 3, 4, 5, 6];
+
+/** Cabins the public booking form may use. Cabin 6 is staff-only. */
+const PUBLIC_CABIN_IDS = [1, 2, 3, 4, 5];
 
 function foldSearch(value) {
   return String(value || "")
@@ -393,7 +406,9 @@ export function filterServiceSuggestions(rows, query, limit = 40) {
 export function getCabinPool(service) {
   if (!service) return [1, 2];
   const id = service.id;
-  if (id.startsWith("dur-") || service.categoryId === "duration") return CABIN_IDS.slice();
+  if (id === "solarium" || service.categoryId === "solarium") return [6];
+  if (id === "custom") return getCabinPoolForServiceName(service.name || "");
+  if (id.startsWith("dur-") || service.categoryId === "duration") return PUBLIC_CABIN_IDS.slice();
   if (id.startsWith("ep-") || service.categoryId === "ep-ko") return [1, 2];
   if (id === "vacutherm" || id === "vacutherm-pack") return [4];
   if (
@@ -473,6 +488,11 @@ export function getCabinPoolForServiceName(serviceName) {
     return [3];
   }
 
+  // Κ6 — solarium (staff calendar only)
+  if (key.includes("σολαρ") || key.includes("solarium")) {
+    return [6];
+  }
+
   // Κ5 — body / massage
   if (
     key.includes("μασαζ")
@@ -487,8 +507,6 @@ export function getCabinPoolForServiceName(serviceName) {
     || key.includes("morpheus")
     || key.includes("lemon")
     || (key.includes("rf") && key.includes("σωμα"))
-    || key.includes("σολ")
-    || /\bsol\b/.test(key)
   ) {
     return [5];
   }
@@ -498,12 +516,12 @@ export function getCabinPoolForServiceName(serviceName) {
 
 /**
  * Cabin for an appointment row.
- * Prefer stored cabin_id (1–5) so staff can drag to any cabin.
+ * Prefer stored cabin_id (1–6) so staff can drag to any cabin.
  * Infer from service name only when cabin_id is missing.
  */
 export function resolveCabinForAppointment(row) {
   const direct = Number(row?.cabin_id ?? row?.cabinId);
-  if (Number.isFinite(direct) && direct >= 1 && direct <= 5) return direct;
+  if (Number.isFinite(direct) && CABIN_IDS.includes(direct)) return direct;
   const blob = [row?.service, row?.notes].filter(Boolean).join(" ");
   const pool = getCabinPoolForServiceName(blob);
   return pool[0] || 1;

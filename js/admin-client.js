@@ -24,7 +24,7 @@ import {
   filterServiceSuggestions,
   splitAppointmentServices,
   joinAppointmentServices,
-} from "./booking-services.js?v=deep-90";
+} from "./booking-services.js?v=cabin-6";
 
 const params = new URLSearchParams(location.search);
 let clientId = params.get("id");

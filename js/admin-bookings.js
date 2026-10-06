@@ -45,7 +45,7 @@ import {
   joinAppointmentServices,
   BLOCKED_TIME_SERVICE,
   isBlockedTimeService,
-} from "./booking-services.js?v=deep-90";
+} from "./booking-services.js?v=cabin-6";
 import { fetchBookedSlots } from "./booking-api.js";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
@@ -550,7 +550,7 @@ async function healMismatchedCabins(rows) {
 
   for (const row of active) {
     const stored = Number(row.cabin_id);
-    if (Number.isFinite(stored) && stored >= 1 && stored <= 5) continue;
+    if (Number.isFinite(stored) && CABIN_IDS.includes(stored)) continue;
 
     const blob = [row.service, row.notes].filter(Boolean).join(" ");
     const pool = getCabinPoolForServiceName(blob);
@@ -2603,7 +2603,7 @@ bookingForm?.addEventListener("submit", async (event) => {
     showToast("Ελέγξτε όνομα και τηλέφωνο.", true);
     return;
   }
-  if (blockMode && !blockAll && !(Number(bkCabin.value) >= 1 && Number(bkCabin.value) <= 5)) {
+  if (blockMode && !blockAll && !CABIN_IDS.includes(Number(bkCabin.value))) {
     showToast("Επίλεξε καμπίνα για το μπλοκάρισμα.", true);
     bkCabin?.focus();
     return;
@@ -2612,7 +2612,7 @@ bookingForm?.addEventListener("submit", async (event) => {
   let cabinId = bkCabin.value && bkCabin.value !== "all" ? Number(bkCabin.value) : null;
   const pool = getCabinPool(service);
   const poolLabel = pool.map((id) => CABIN_SHORT[id]?.code || `Κ${id}`).join(" / ");
-  const manualCabin = Number.isFinite(cabinId) && cabinId >= 1 && cabinId <= 5;
+  const manualCabin = CABIN_IDS.includes(cabinId);
 
   try {
     let booked = await fetchBookedSlots(date);
@@ -2722,7 +2722,7 @@ bookingForm?.addEventListener("submit", async (event) => {
       let linkId = payload.client_id;
 
       for (const day of dates) {
-        let dayCabins = blockAll ? [1, 2, 3, 4, 5] : [cabinId];
+        let dayCabins = blockAll ? CABIN_IDS.slice() : [cabinId];
         if (!blockMode) {
           let dayCabin = cabinId;
           try {

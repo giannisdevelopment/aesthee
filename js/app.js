@@ -292,7 +292,7 @@ let bookingCatalogPromise = null;
 function loadBookingCatalog() {
   if (!bookingCatalogPromise) {
     bookingCatalogPromise = (async () => {
-      const catalog = await import("./booking-services.js?v=deep-90");
+      const catalog = await import("./booking-services.js?v=cabin-6");
       try {
         const { isSupabaseConfigured, fetchServiceCatalog } = await import("./booking-api.js");
         if (isSupabaseConfigured()) {
@@ -398,7 +398,7 @@ function initBooking() {
   if (!form || !categorySelect || !serviceSelect) return;
 
   loadBookingCatalog().then(async (catalog) => {
-    catalog.BOOKING_CATEGORIES.filter((category) => category.id !== "ep-ko").forEach((category) => {
+    catalog.BOOKING_CATEGORIES.filter((category) => category.id !== "ep-ko" && category.id !== "solarium").forEach((category) => {
       const option = document.createElement("option");
       option.value = category.id;
       option.textContent = `${category.label} (${category.services.length})`;

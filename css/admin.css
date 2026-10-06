@@ -1242,9 +1242,9 @@ tr.is-inactive {
   --cal-head-h: 52px;
   --cal-now: #ff3b30;
   display: grid;
-  grid-template-columns: var(--cal-time-w) repeat(5, minmax(var(--cal-col-min), 1fr));
+  grid-template-columns: var(--cal-time-w) repeat(6, minmax(var(--cal-col-min), 1fr));
   grid-template-rows: var(--cal-head-h) auto;
-  min-width: calc(var(--cal-time-w) + 5 * var(--cal-col-min));
+  min-width: calc(var(--cal-time-w) + 6 * var(--cal-col-min));
 }
 
 .cal-head-spacer {

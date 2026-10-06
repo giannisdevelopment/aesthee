@@ -82,7 +82,7 @@ alter table public.appointments
   drop constraint if exists appointments_cabin_range;
 alter table public.appointments
   add constraint appointments_cabin_range
-  check (cabin_id is null or (cabin_id >= 1 and cabin_id <= 5));
+  check (cabin_id is null or (cabin_id >= 1 and cabin_id <= 6));
 
 create index if not exists appointments_date_idx
   on public.appointments (appointment_date, appointment_time);
@@ -257,6 +257,12 @@ declare
   cabin_free boolean;
 begin
   if p_service is null or char_length(trim(p_service)) < 2 then
+    raise exception 'INVALID_SERVICE';
+  end if;
+  -- Solarium is staff-only. Walk-ins are written on the admin calendar.
+  if lower(p_service) like '%σολάρι%'
+     or lower(p_service) like '%σολαρι%'
+     or lower(p_service) like '%solarium%' then
     raise exception 'INVALID_SERVICE';
   end if;
   if p_name is null or char_length(trim(p_name)) < 2 then
