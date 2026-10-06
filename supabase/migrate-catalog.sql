@@ -91,7 +91,7 @@ insert into public.catalog_services (
   ('tattoo-body', 'face', 'Θεραπείες προσώπου', 'Αφαίρεση tattoo σώματος', 60, 8000, true, false, 340, true),
   ('micro-dose', 'face', 'Θεραπείες προσώπου', 'Micro Dose', 60, 6500, false, false, 350, true),
   ('rf-face', 'face', 'Θεραπείες προσώπου', 'RF Microneedling προσώπου', 60, 9000, false, false, 360, true),
-  ('deep-cleanse', 'face', 'Θεραπείες προσώπου', 'Βαθύς καθαρισμός προσώπου', 60, 5000, false, false, 370, true),
+  ('deep-cleanse', 'face', 'Θεραπείες προσώπου', 'Βαθύς καθαρισμός προσώπου', 90, 5000, false, false, 370, true),
   ('hydroderm', 'face', 'Θεραπείες προσώπου', 'Υδροδερμοαπόξεση', 60, 5500, false, false, 380, true),
   ('photo', 'face', 'Θεραπείες προσώπου', 'Φωτοθεραπεία', 30, 4000, false, false, 390, true),
   ('meso', 'face', 'Θεραπείες προσώπου', 'Μεσοθεραπεία', 45, 5500, false, false, 400, true),

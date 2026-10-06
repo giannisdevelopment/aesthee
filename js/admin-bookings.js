@@ -45,7 +45,7 @@ import {
   joinAppointmentServices,
   BLOCKED_TIME_SERVICE,
   isBlockedTimeService,
-} from "./booking-services.js?v=block-1";
+} from "./booking-services.js?v=deep-90";
 import { fetchBookedSlots } from "./booking-api.js";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
@@ -1397,7 +1397,7 @@ function catalogFromRows(rows) {
       name: String(row.name || ""),
       categoryLabel: String(row.category_label || row.category_id || "Άλλο"),
       categoryId: String(row.category_id || ""),
-      durationMin: Number(row.duration_minutes) || 60,
+      durationMin: row.id === "deep-cleanse" ? 90 : (Number(row.duration_minutes) || 60),
       priceCents: Number(row.price_cents) || 0,
       priceFrom: Boolean(row.price_from),
     }))

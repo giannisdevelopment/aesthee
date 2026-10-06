@@ -118,7 +118,7 @@ export const DEFAULT_BOOKING_CATEGORIES = [
       { id: "tattoo-body", name: "Αφαίρεση tattoo σώματος", durationMin: 60, priceCents: 8000, priceFrom: true },
       { id: "micro-dose", name: "Micro Dose", durationMin: 60, priceCents: 6500 },
       { id: "rf-face", name: "RF Microneedling προσώπου", durationMin: 60, priceCents: 9000 },
-      { id: "deep-cleanse", name: "Βαθύς καθαρισμός προσώπου", durationMin: 60, priceCents: 5000 },
+      { id: "deep-cleanse", name: "Βαθύς καθαρισμός προσώπου", durationMin: 90, priceCents: 5000 },
       { id: "hydroderm", name: "Υδροδερμοαπόξεση", durationMin: 60, priceCents: 5500 },
       { id: "photo", name: "Φωτοθεραπεία", durationMin: 30, priceCents: 4000 },
       { id: "meso", name: "Μεσοθεραπεία", durationMin: 45, priceCents: 5500 },
@@ -579,7 +579,7 @@ export function applyCatalogFromRows(rows) {
     byCat.get(categoryId).services.push({
       id: row.id,
       name: row.name,
-      durationMin: Number(row.duration_minutes) || 60,
+      durationMin: row.id === "deep-cleanse" ? 90 : (Number(row.duration_minutes) || 60),
       priceCents: Number(row.price_cents) || 0,
       priceFrom: Boolean(row.price_from),
       isOffer: Boolean(row.is_offer),
