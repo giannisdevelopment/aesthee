@@ -66,17 +66,57 @@ export function formatMoney(value) {
   }).format(num);
 }
 
+function isRealDate(year, month, day) {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+/** Day / month / year. Never follows the browser’s month-first locale. */
 export function formatDate(value) {
   if (!value) return "—";
-  const date = typeof value === "string" && value.length === 10
-    ? new Date(`${value}T12:00:00`)
-    : new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat("el-GR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+  const raw = String(value).trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${date.getFullYear()}`;
+}
+
+/** @returns {string} YYYY-MM-DD, or "" when the text is not a real day/month/year. */
+export function parseDayFirstDate(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return "";
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const year = Number(iso[1]);
+    const month = Number(iso[2]);
+    const day = Number(iso[3]);
+    if (!isRealDate(year, month, day)) return "";
+    return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  }
+  const greek = text.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if (!greek) return "";
+  const day = Number(greek[1]);
+  const month = Number(greek[2]);
+  const year = Number(greek[3]);
+  if (!isRealDate(year, month, day)) return "";
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+export function setDayFirstDate(input, iso) {
+  if (!input) return;
+  const parsed = parseDayFirstDate(String(iso || "").slice(0, 10));
+  input.value = parsed ? formatDate(parsed) : "";
+}
+
+export function readDayFirstDate(input) {
+  if (!input) return "";
+  const parsed = parseDayFirstDate(input.value);
+  if (parsed) input.value = formatDate(parsed);
+  return parsed;
 }
 
 export function showToast(message, isError = false) {

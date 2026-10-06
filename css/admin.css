@@ -576,7 +576,8 @@ html.auth-out #loginView {
 }
 
 .toolbar-wrap select,
-.toolbar-wrap input[type="date"] {
+.toolbar-wrap input[type="date"],
+.toolbar-wrap input.date-dmy {
   border: 1px solid rgba(196, 163, 106, 0.35);
   background: var(--white);
   border-radius: 12px;

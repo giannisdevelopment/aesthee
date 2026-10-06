@@ -14,7 +14,7 @@ import {
   formatTime,
   APPOINTMENT_STATUS_LABELS,
   applyAuthShell,
-} from "./admin-api.js?v=auth-hint-1";
+} from "./admin-api.js?v=dmy-1";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
 const loginView = document.getElementById("loginView");

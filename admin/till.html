@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=auth-hint-1" />
+  <link rel="stylesheet" href="/css/admin.css?v=dmy-1" />
   <script src="/js/admin-auth-hint.js"></script>
 </head>
 <body data-admin-page="till">
@@ -60,7 +60,7 @@
         <button class="btn btn-ghost btn-sm" type="button" data-period="month">Μήνας</button>
         <button class="btn btn-ghost btn-sm" type="button" data-period="year">Έτος</button>
       </div>
-      <input id="tillDate" type="date" aria-label="Ημερομηνία" />
+      <input id="tillDate" class="date-dmy" type="text" inputmode="numeric" placeholder="ηη/μμ/εεεε" autocomplete="off" aria-label="Ημερομηνία" />
       <input id="tillMonth" type="month" aria-label="Μήνας" class="hidden" />
       <input id="tillYear" type="number" min="2020" max="2100" step="1" aria-label="Έτος" class="hidden" />
       <button class="btn btn-ghost btn-sm" type="button" id="tillToday">Σήμερα</button>
@@ -96,6 +96,6 @@
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
-  <script type="module" src="/js/admin-till.js?v=auth-hint-1"></script>
+  <script type="module" src="/js/admin-till.js?v=dmy-1"></script>
 </body>
 </html>

@@ -14,9 +14,11 @@ import {
   showToast,
   formatDate,
   formatTime,
+  setDayFirstDate,
+  readDayFirstDate,
   APPOINTMENT_STATUS_LABELS,
   applyAuthShell,
-} from "./admin-api.js?v=auth-hint-1";
+} from "./admin-api.js?v=dmy-1";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   applyCatalogFromRows,
@@ -248,8 +250,8 @@ function filters() {
   }
   return {
     status,
-    fromDate: fromDate?.value || "",
-    toDate: toDate?.value || "",
+    fromDate: readDayFirstDate(fromDate),
+    toDate: readDayFirstDate(toDate),
     query,
   };
 }
@@ -364,14 +366,15 @@ function syncRepeatUi() {
   const weekly = bkRepeat?.value === "weekly";
   bkRepeatExtra?.classList.toggle("hidden", !weekly);
   if (!weekly) return;
-  if (!selectedRepeatWeekdays().size && bkDate?.value) {
-    const js = parseDateKey(bkDate.value).getDay();
+  const startIso = readDayFirstDate(bkDate);
+  if (!selectedRepeatWeekdays().size && startIso) {
+    const js = parseDateKey(startIso).getDay();
     bkRepeatDows?.querySelectorAll(".repeat-dow").forEach((btn) => {
       btn.classList.toggle("is-on", Number(btn.dataset.js) === js);
     });
   }
-  if (bkRepeatUntil && !bkRepeatUntil.value && bkDate?.value) {
-    bkRepeatUntil.value = addDaysKey(bkDate.value, 56);
+  if (bkRepeatUntil && !readDayFirstDate(bkRepeatUntil) && startIso) {
+    setDayFirstDate(bkRepeatUntil, addDaysKey(startIso, 56));
   }
 }
 
@@ -394,8 +397,8 @@ function parseDateKey(key) {
 
 function setCalendarDay(key) {
   calendarDay = key;
-  if (fromDate) fromDate.value = key;
-  if (toDate) toDate.value = key;
+  setDayFirstDate(fromDate, key);
+  setDayFirstDate(toDate, key);
   renderDayStrip();
   renderAppointments();
 }
@@ -1109,7 +1112,7 @@ function resetBookingForm(prefs = {}) {
   hideServiceSuggest();
   hideClientSuggest();
   hideTimeSuggest();
-  bkDate.value = prefs.date || calendarDay || toDateKey(new Date());
+  setDayFirstDate(bkDate, prefs.date || calendarDay || toDateKey(new Date()));
   bkDuration.value = "60";
   syncCabinSelectForService(null, prefs.cabinId || null);
   if (bkTime) bkTime.value = prefs.time || "";
@@ -1137,7 +1140,7 @@ function fillFormFromAppointment(row) {
   bkName.value = row.guest_name || "";
   bkPhone.value = row.guest_phone || "";
   bkEmail.value = row.guest_email || "";
-  bkDate.value = row.appointment_date || calendarDay;
+  setDayFirstDate(bkDate, row.appointment_date || calendarDay);
   bkDuration.value = String(row.duration_minutes || 60);
   bkPrice.value = row.price_cents != null ? eurosFromCents(row.price_cents) : "";
   bkCabin.value = row.cabin_id ? String(row.cabin_id) : "";
@@ -1629,7 +1632,7 @@ async function pickClient(id) {
 }
 
 async function refreshTimeOptions() {
-  const date = bkDate.value;
+  const date = readDayFirstDate(bkDate);
   const service = selectedServicePayload();
   const duration = Number(bkDuration.value) || service.durationMin || 60;
   const prev = parseTimeInput(bkTime?.value) || String(bkTime?.value || "").trim();
@@ -1716,7 +1719,7 @@ function hideTimeSuggest() {
 
 function showTimeSuggest(rows, query = "") {
   if (!bkTimeSuggest) return;
-  const date = bkDate?.value;
+  const date = readDayFirstDate(bkDate);
   const service = selectedServicePayload();
 
   if (!date || !service.name) {
@@ -1827,8 +1830,8 @@ async function renderAppointments() {
       const nextDay = appointmentDateKey(best);
       if (nextDay) {
         calendarDay = nextDay;
-        if (fromDate) fromDate.value = nextDay;
-        if (toDate) toDate.value = nextDay;
+        setDayFirstDate(fromDate, nextDay);
+        setDayFirstDate(toDate, nextDay);
         pendingHighlightId = best.id;
       }
     }
@@ -2312,7 +2315,12 @@ bookingForm?.addEventListener("submit", async (event) => {
   }
 
   const time = parseTimeInput(bkTime.value);
-  const date = bkDate.value;
+  const date = readDayFirstDate(bkDate);
+  if (bkDate.value.trim() && !date) {
+    showToast("Η ημερομηνία γράφεται ημέρα/μήνας/έτος, π.χ. 06/10/2026.", true);
+    bkDate.focus();
+    return;
+  }
   const duration = Number(bkDuration.value);
   if (!date || !time) {
     showToast("Συμπληρώστε ημερομηνία και ώρα (π.χ. 10:30).", true);
@@ -2391,6 +2399,13 @@ bookingForm?.addEventListener("submit", async (event) => {
     client_id: selectedClientId || bkClientId?.value || null,
   };
 
+  const untilIso = readDayFirstDate(bkRepeatUntil);
+  if (!editingAppointmentId && bkRepeat?.value === "weekly" && bkRepeatUntil?.value.trim() && !untilIso) {
+    showToast("Το «Μέχρι» γράφεται ημέρα/μήνας/έτος, π.χ. 06/10/2026.", true);
+    bkRepeatUntil.focus();
+    return;
+  }
+
   const weekly = !editingAppointmentId && bkRepeat?.value === "weekly";
   const repeatDays = weekly ? selectedRepeatWeekdays() : new Set();
   if (weekly && !repeatDays.size) {
@@ -2398,7 +2413,7 @@ bookingForm?.addEventListener("submit", async (event) => {
     return;
   }
   const dates = weekly
-    ? expandRepeatDates(date, bkRepeatUntil?.value, repeatDays)
+    ? expandRepeatDates(date, untilIso, repeatDays)
     : [date];
 
   bkSubmitBtn.disabled = true;
@@ -2520,8 +2535,8 @@ bkRepeat?.addEventListener("change", () => syncRepeatUi());
 async function boot() {
   const today = toDateKey(new Date());
   calendarDay = today;
-  if (fromDate) fromDate.value = today;
-  if (toDate) toDate.value = today;
+  setDayFirstDate(fromDate, today);
+  setDayFirstDate(toDate, today);
 
   if (configMissing()) {
     showLogin();

@@ -7,10 +7,12 @@ import {
   showToast,
   formatMoney,
   formatDate,
+  setDayFirstDate,
+  readDayFirstDate,
   mapAuthError,
   isSupabaseConfigured,
   applyAuthShell,
-} from "./admin-api.js?v=auth-hint-1";
+} from "./admin-api.js?v=dmy-1";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -87,7 +89,7 @@ function moneyKey(amount) {
 
 function rangeForPeriod() {
   if (period === "day") {
-    const day = tillDate.value || todayIso();
+    const day = readDayFirstDate(tillDate) || todayIso();
     return { fromDate: day, toDate: day, label: formatDate(day) };
   }
   if (period === "month") {
@@ -118,7 +120,7 @@ function syncPeriodInputs() {
 
 function setToday() {
   const now = new Date();
-  tillDate.value = isoDate(now);
+  setDayFirstDate(tillDate, isoDate(now));
   tillMonth.value = monthValue(now);
   tillYear.value = String(now.getFullYear());
 }

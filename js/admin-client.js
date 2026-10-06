@@ -12,9 +12,11 @@ import {
   showToast,
   formatDate,
   formatTime,
+  setDayFirstDate,
+  readDayFirstDate,
   formatMoney,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=login-fix-1";
+} from "./admin-api.js?v=dmy-1";
 import { DEFAULT_BOOKING_CATEGORIES } from "./booking-services.js?v=month-appts-1";
 
 const params = new URLSearchParams(location.search);
@@ -249,14 +251,14 @@ function openVisitForm(visit = null) {
     document.getElementById("visitId").value = visit.id;
     setTreatmentFromName(visit.treatment || "");
     visitForm.payment_amount.value = visit.payment_amount ?? "";
-    visitForm.payment_date.value = visit.payment_date || "";
+    setDayFirstDate(visitForm.payment_date, visit.payment_date || "");
     visitForm.notes.value = visit.notes || "";
   } else {
     document.getElementById("visitId").value = "";
     visitForm.reset();
     setTreatmentFromName("");
     const today = new Date();
-    visitForm.payment_date.value = today.toISOString().slice(0, 10);
+    setDayFirstDate(visitForm.payment_date, today.toISOString().slice(0, 10));
   }
 }
 
@@ -512,11 +514,17 @@ visitForm?.addEventListener("submit", async (event) => {
 
   const visitId = document.getElementById("visitId").value || null;
   const amountRaw = visitForm.payment_amount.value;
+  const paymentDate = readDayFirstDate(visitForm.payment_date);
+  if (visitForm.payment_date.value.trim() && !paymentDate) {
+    showToast("Η ημερομηνία γράφεται ημέρα/μήνας/έτος, π.χ. 06/10/2026.", true);
+    visitForm.payment_date.focus();
+    return;
+  }
   const payload = {
     client_id: clientId,
     treatment,
     payment_amount: amountRaw === "" ? null : Number(amountRaw),
-    payment_date: visitForm.payment_date.value || null,
+    payment_date: paymentDate || null,
     notes: visitForm.notes.value.trim() || null,
   };
 
