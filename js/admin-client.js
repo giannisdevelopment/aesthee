@@ -9,6 +9,8 @@ import {
   deleteVisit,
   listCatalogServices,
   listAppointmentsForClient,
+  updateAppointment,
+  deleteAppointment,
   showToast,
   formatDate,
   formatTime,
@@ -17,7 +19,7 @@ import {
   formatMoney,
   APPOINTMENT_STATUS_LABELS,
 } from "./admin-api.js?v=dmy-1";
-import { DEFAULT_BOOKING_CATEGORIES } from "./booking-services.js?v=month-appts-1";
+import { DEFAULT_BOOKING_CATEGORIES, filterServiceSuggestions } from "./booking-services.js?v=appt-edit-1";
 
 const params = new URLSearchParams(location.search);
 let clientId = params.get("id");
@@ -34,9 +36,20 @@ const cancelVisitBtn = document.getElementById("cancelVisitBtn");
 const treatmentSearch = document.getElementById("treatmentSearch");
 const treatmentId = document.getElementById("treatmentId");
 const treatmentSuggest = document.getElementById("treatmentSuggest");
+const apptForm = document.getElementById("apptForm");
+const apptService = document.getElementById("apptService");
+const apptSuggest = document.getElementById("apptSuggest");
+const cancelApptBtn = document.getElementById("cancelApptBtn");
+const deleteApptBtn = document.getElementById("deleteApptBtn");
 
-/** @type {Array<{ id: string, name: string, categoryLabel: string, priceCents: number, priceFrom: boolean }>} */
+/** @type {Array<{ id: string, name: string, categoryLabel: string, categoryId: string, durationMin: number, priceCents: number, priceFrom: boolean }>} */
 let catalogCache = [];
+
+/** @type {object[]} */
+let appointmentsCache = [];
+
+/** Raw notes of the appointment being edited, including import fingerprints. */
+let editingApptNotesRaw = "";
 
 /** @type {string} */
 let selectedTreatmentId = "";
@@ -76,6 +89,8 @@ function catalogFromDefaults() {
       id: s.id,
       name: s.name,
       categoryLabel: cat.label,
+      categoryId: cat.id,
+      durationMin: s.durationMin,
       priceCents: s.priceCents,
       priceFrom: Boolean(s.priceFrom),
     }))
@@ -89,6 +104,8 @@ function catalogFromRows(rows) {
       id: String(row.id),
       name: String(row.name || ""),
       categoryLabel: String(row.category_label || row.category_id || "Άλλο"),
+      categoryId: String(row.category_id || ""),
+      durationMin: Number(row.duration_minutes) || 60,
       priceCents: Number(row.price_cents) || 0,
       priceFrom: Boolean(row.price_from),
     }))
@@ -103,14 +120,7 @@ function formatTreatmentMeta(row) {
 }
 
 function filterCatalog(query) {
-  const q = normalizeSearch(query);
-  if (!q) return [];
-  return catalogCache
-    .filter((row) => {
-      const hay = normalizeSearch(`${row.name} ${row.categoryLabel}`);
-      return hay.includes(q);
-    })
-    .slice(0, 25);
+  return filterServiceSuggestions(catalogCache, query, 25);
 }
 
 function hideTreatmentSuggest() {
@@ -198,7 +208,15 @@ async function loadTreatmentCatalog() {
   try {
     const { data, error } = await listCatalogServices({ includeInactive: false });
     if (error) throw error;
-    catalogCache = data?.length ? catalogFromRows(data) : catalogFromDefaults();
+    if (data?.length) {
+      const fromDb = catalogFromRows(data);
+      const extra = catalogFromDefaults().filter((row) =>
+        !fromDb.some((item) => item.id === row.id || normalizeSearch(item.name) === normalizeSearch(row.name))
+      );
+      catalogCache = [...fromDb, ...extra];
+    } else {
+      catalogCache = catalogFromDefaults();
+    }
   } catch {
     catalogCache = catalogFromDefaults();
   }
@@ -246,6 +264,7 @@ function resetVisitForm() {
 }
 
 function openVisitForm(visit = null) {
+  closeApptForm();
   visitForm.classList.remove("hidden");
   if (visit) {
     document.getElementById("visitId").value = visit.id;
@@ -260,6 +279,88 @@ function openVisitForm(visit = null) {
     const today = new Date();
     setDayFirstDate(visitForm.payment_date, today.toISOString().slice(0, 10));
   }
+}
+
+function centsFromEuros(raw) {
+  if (raw === "" || raw == null) return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(n * 100);
+}
+
+function parseTimeInput(raw) {
+  const text = String(raw || "").trim();
+  const match = text.match(/^(\d{1,2})[:.](\d{2})$/);
+  if (!match) return "";
+  const hours = Number(match[1]);
+  const mins = Number(match[2]);
+  if (hours > 23 || mins > 59) return "";
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+function hideApptSuggest() {
+  apptSuggest?.classList.add("hidden");
+  if (apptSuggest) apptSuggest.innerHTML = "";
+}
+
+function showApptSuggest(rows, query = "") {
+  if (!apptSuggest) return;
+  const q = String(query || "").trim();
+  if (!q) {
+    hideApptSuggest();
+    return;
+  }
+  if (!rows.length) {
+    apptSuggest.innerHTML = `<div class="suggest-empty">Δεν βρέθηκε στον κατάλογο — θα αποθηκευτεί ως χειροκίνητη υπηρεσία.</div>`;
+    apptSuggest.classList.remove("hidden");
+    return;
+  }
+  apptSuggest.innerHTML = rows.map((row, index) => `
+    <button type="button" class="suggest-item${index === 0 ? " is-active" : ""}" data-appt-service="${escapeHtml(row.id)}">
+      <strong>${escapeHtml(row.name)}</strong>
+      <span>${escapeHtml(formatTreatmentMeta(row))}</span>
+    </button>
+  `).join("");
+  apptSuggest.classList.remove("hidden");
+  apptSuggest.querySelectorAll("[data-appt-service]").forEach((btn) => {
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      pickApptService(btn.dataset.apptService);
+    });
+  });
+}
+
+function pickApptService(id) {
+  const row = catalogCache.find((item) => item.id === id);
+  if (!row || !apptForm) return;
+  apptService.value = row.name;
+  if (row.durationMin) apptForm.duration_minutes.value = String(row.durationMin);
+  if (row.priceCents > 0) apptForm.price_euros.value = eurosFromCents(row.priceCents);
+  hideApptSuggest();
+}
+
+function closeApptForm() {
+  apptForm?.classList.add("hidden");
+  apptForm?.reset();
+  editingApptNotesRaw = "";
+  hideApptSuggest();
+}
+
+function openApptForm(row) {
+  if (!apptForm) return;
+  resetVisitForm();
+  editingApptNotesRaw = row.notes || "";
+  apptForm.classList.remove("hidden");
+  document.getElementById("apptId").value = row.id;
+  apptService.value = row.service || "";
+  setDayFirstDate(apptForm.appointment_date, row.appointment_date || "");
+  apptForm.appointment_time.value = row.appointment_time ? String(row.appointment_time).slice(0, 5) : "";
+  apptForm.duration_minutes.value = String(row.duration_minutes || 60);
+  apptForm.price_euros.value = row.price_cents != null ? eurosFromCents(row.price_cents) : "";
+  apptForm.cabin_id.value = row.cabin_id ? String(row.cabin_id) : "";
+  apptForm.status.value = row.status || "confirmed";
+  apptForm.notes.value = displayNotes(row.notes);
+  apptForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function renderVisits() {
@@ -287,6 +388,7 @@ async function renderVisits() {
     showToast(apptErr.message || "Αποτυχία φόρτωσης ραντεβού", true);
   }
 
+  appointmentsCache = appts || [];
   const todayKey = new Date().toISOString().slice(0, 10);
   /** @type {Array<{ kind: string, sort: string, html: string, visit?: object }>} */
   const items = [];
@@ -311,6 +413,9 @@ async function renderVisits() {
             ${status ? `<span>${escapeHtml(status)}</span>` : ""}
           </div>
           ${notes ? `<p class="muted visit-note">${escapeHtml(notes)}</p>` : ""}
+          <div class="visit-actions">
+            <button class="btn btn-ghost btn-sm" type="button" data-edit-appt="${escapeHtml(row.id)}">Επεξεργασία</button>
+          </div>
         </article>
       `,
     });
@@ -352,6 +457,13 @@ async function renderVisits() {
   }
 
   visitsList.innerHTML = items.map((item) => item.html).join("");
+
+  visitsList.querySelectorAll("[data-edit-appt]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const row = appointmentsCache.find((item) => item.id === btn.dataset.editAppt);
+      if (row) openApptForm(row);
+    });
+  });
 
   visitsList.querySelectorAll("[data-edit-visit]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -499,6 +611,81 @@ treatmentSearch?.addEventListener("blur", () => {
 document.addEventListener("click", (event) => {
   const wrap = document.getElementById("treatmentSuggestWrap");
   if (wrap && !wrap.contains(event.target)) hideTreatmentSuggest();
+  const apptWrap = document.getElementById("apptSuggestWrap");
+  if (apptWrap && !apptWrap.contains(event.target)) hideApptSuggest();
+});
+
+apptService?.addEventListener("focus", () => {
+  showApptSuggest(filterCatalog(apptService.value), apptService.value);
+});
+
+apptService?.addEventListener("input", () => {
+  showApptSuggest(filterCatalog(apptService.value), apptService.value);
+});
+
+cancelApptBtn?.addEventListener("click", closeApptForm);
+
+deleteApptBtn?.addEventListener("click", async () => {
+  const id = document.getElementById("apptId")?.value;
+  if (!id) return;
+  if (!confirm("Οριστική διαγραφή αυτού του ραντεβού;")) return;
+  const { error } = await deleteAppointment(id);
+  if (error) {
+    showToast(error.message || "Αποτυχία διαγραφής", true);
+    return;
+  }
+  showToast("Το ραντεβού διαγράφηκε.");
+  closeApptForm();
+  await renderVisits();
+});
+
+apptForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const id = document.getElementById("apptId")?.value;
+  const service = apptService.value.trim();
+  const date = readDayFirstDate(apptForm.appointment_date);
+  const time = parseTimeInput(apptForm.appointment_time.value);
+  const duration = Number(apptForm.duration_minutes.value);
+  if (!id || !service) {
+    showToast("Συμπληρώστε την υπηρεσία.", true);
+    apptService.focus();
+    return;
+  }
+  if (apptForm.appointment_date.value.trim() && !date) {
+    showToast("Η ημερομηνία γράφεται ημέρα/μήνας/έτος, π.χ. 06/10/2026.", true);
+    apptForm.appointment_date.focus();
+    return;
+  }
+  if (!date || !time) {
+    showToast("Συμπληρώστε ημερομηνία και ώρα (π.χ. 14:00).", true);
+    return;
+  }
+  if (!duration || duration < 5 || duration > 240) {
+    showToast("Η διάρκεια πρέπει να είναι 5–240 λεπτά.", true);
+    return;
+  }
+  const typedNotes = apptForm.notes.value.trim();
+  const notes = !typedNotes && isImportFingerprint(editingApptNotesRaw)
+    ? editingApptNotesRaw
+    : (typedNotes || null);
+  const cabin = Number(apptForm.cabin_id.value);
+  const { error } = await updateAppointment(id, {
+    service,
+    appointment_date: date,
+    appointment_time: `${time}:00`,
+    duration_minutes: duration,
+    price_cents: centsFromEuros(apptForm.price_euros.value),
+    cabin_id: Number.isFinite(cabin) && cabin >= 1 ? cabin : null,
+    status: apptForm.status.value || "confirmed",
+    notes,
+  });
+  if (error) {
+    showToast(error.message || "Αποτυχία αποθήκευσης ραντεβού", true);
+    return;
+  }
+  showToast("Το ραντεβού ενημερώθηκε.");
+  closeApptForm();
+  await renderVisits();
 });
 
 visitForm?.addEventListener("submit", async (event) => {

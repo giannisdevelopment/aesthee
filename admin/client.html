@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=dmy-1" />
+  <link rel="stylesheet" href="/css/admin.css?v=appt-edit-1" />
 </head>
 <body data-admin-page="client">
   <div class="admin-shell">
@@ -116,6 +116,75 @@
           </div>
         </form>
 
+        <form id="apptForm" class="hidden" style="margin-bottom:18px">
+          <input type="hidden" id="apptId" value="" />
+          <div class="field">
+            <label for="apptService">Υπηρεσία</label>
+            <div class="suggest" id="apptSuggestWrap">
+              <input
+                id="apptService"
+                type="text"
+                autocomplete="off"
+                required
+                placeholder="Πληκτρολογήστε για αναζήτηση…"
+                aria-autocomplete="list"
+                aria-controls="apptSuggest"
+              />
+              <div id="apptSuggest" class="suggest-list hidden" role="listbox"></div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="apptDate">Ημερομηνία</label>
+              <input id="apptDate" name="appointment_date" type="text" inputmode="numeric" placeholder="ηη/μμ/εεεε" autocomplete="off" required />
+            </div>
+            <div class="field">
+              <label for="apptTime">Ώρα</label>
+              <input id="apptTime" name="appointment_time" type="text" inputmode="numeric" placeholder="π.χ. 14:00" autocomplete="off" required />
+            </div>
+          </div>
+          <div class="field-row field-row--3">
+            <div class="field">
+              <label for="apptDuration">Διάρκεια (λεπτά)</label>
+              <input id="apptDuration" name="duration_minutes" type="number" min="5" max="240" step="5" required />
+            </div>
+            <div class="field">
+              <label for="apptPrice">Τιμή (€)</label>
+              <input id="apptPrice" name="price_euros" type="number" min="0" step="0.01" placeholder="π.χ. 80" />
+            </div>
+            <div class="field">
+              <label for="apptCabin">Καμπίνα</label>
+              <select id="apptCabin" name="cabin_id">
+                <option value="">—</option>
+                <option value="1">Κ1 — Laser</option>
+                <option value="2">Κ2 — Laser</option>
+                <option value="3">Κ3 — Φρύδια</option>
+                <option value="4">Κ4 — Vacutherm</option>
+                <option value="5">Κ5 — Σώμα</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="apptStatus">Κατάσταση</label>
+            <select id="apptStatus" name="status">
+              <option value="pending">Σε αναμονή</option>
+              <option value="confirmed">Επιβεβαιωμένο</option>
+              <option value="completed">Ολοκληρωμένο</option>
+              <option value="cancelled">Ακυρωμένο</option>
+              <option value="no_show">Δεν εμφανίστηκε</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="apptNotes">Σημειώσεις</label>
+            <textarea id="apptNotes" name="notes" rows="2" placeholder="π.χ. κάνει και έξτρα περιοχή"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-gold btn-sm" type="submit">Αποθήκευση ραντεβού</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="cancelApptBtn">Ακύρωση</button>
+            <button class="btn btn-danger btn-sm" type="button" id="deleteApptBtn">Διαγραφή</button>
+          </div>
+        </form>
+
         <div id="visitsList">
           <p class="empty">Αποθηκεύστε τον πελάτη για να προσθέσετε επισκέψεις.</p>
         </div>
@@ -125,6 +194,6 @@
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
-  <script type="module" src="/js/admin-client.js?v=dmy-1"></script>
+  <script type="module" src="/js/admin-client.js?v=appt-edit-1"></script>
 </body>
 </html>
