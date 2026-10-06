@@ -296,8 +296,38 @@ textarea {
   transition: transform 220ms var(--ease), background 150ms ease, box-shadow 220ms var(--ease);
 }
 
-.header-cta:hover {
-  transform: translateY(-1px);
+.header-cta,
+.page-home .hero-actions .btn-gold {
+  position: relative;
+  overflow: hidden;
+  animation: btnGlow var(--hero-btn-glow, 6s) ease-in-out infinite;
+}
+
+.header-cta::after,
+.page-home .hero-actions .btn-gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 32%,
+    rgba(245, 227, 184, 0.55) 50%,
+    transparent 68%
+  );
+  transform: translateX(-130%);
+  pointer-events: none;
+}
+
+.header-cta:hover,
+.page-home .hero-actions .btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(184, 149, 90, 0.38);
+  animation: none;
+}
+
+.header-cta:hover::after,
+.page-home .hero-actions .btn-gold:hover::after {
+  animation: btnShimmer 0.7s ease;
 }
 
 .btn {
@@ -386,9 +416,42 @@ textarea {
   transform: translateY(-6.6px) rotate(-45deg);
 }
 
+.page-home {
+  --hero-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --hero-glow-in: 0.7s;
+  --hero-core-draw: 1.2s;
+  --hero-core-delay: 0.2s;
+  --hero-core-fill-delay: 1.28s;
+  --hero-ray-start: 1.05s;
+  --hero-ray-stagger: 40ms;
+  --hero-ray-spin: 60s;
+  --hero-word-delay: 1.7s;
+  --hero-sub-delay: 1.95s;
+  --hero-line-1: 2.05s;
+  --hero-line-2: 2.17s;
+  --hero-line-3: 2.29s;
+  --hero-line-4: 2.41s;
+  --hero-line-5: 2.53s;
+  --hero-shine: 5s;
+  --hero-breath: 6s;
+  --hero-btn-glow: 6s;
+  --hero-gold: #b8955a;
+  --hero-gold-light: #f5e3b8;
+}
+
 .page-home .hero {
   min-height: 100svh;
   color: var(--ink);
+  overflow: visible;
+}
+
+.page-home .hero-media {
+  overflow: hidden;
+}
+
+.page-home .header .brand {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .page-home .hero-content {
@@ -403,10 +466,13 @@ textarea {
 .page-home .hero .btn-ghost {
   color: var(--ink);
   border-color: rgba(44, 36, 28, 0.35);
+  transition: background 280ms ease, border-color 280ms ease, color 280ms ease;
 }
 
 .page-home .hero .btn-ghost:hover {
-  background: rgba(44, 36, 28, 0.06);
+  border-color: var(--gold);
+  background: rgba(196, 163, 106, 0.16);
+  color: var(--ink);
 }
 
 .page-home .scroll-hint {
@@ -457,23 +523,191 @@ textarea {
 
 .hero-content {
   position: relative;
-  z-index: 1;
   text-align: center;
   padding: 72px 24px 96px;
+}
+
+.hero-glow {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: min(560px, 86vw);
+  height: min(560px, 86vw);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-glow span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 248, 236, 0.9) 0%, rgba(232, 213, 176, 0.28) 42%, transparent 70%);
+  opacity: 0;
+  transform-origin: center;
+  animation: glowIn var(--hero-glow-in, 0.7s) ease forwards, glowBreath var(--hero-breath, 6s) ease-in-out 0.7s infinite;
+}
+
+.hero-dust {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .hero-logo {
   margin: 0 auto;
   width: min(268px, 70vw);
   aspect-ratio: 708 / 798;
+  position: relative;
+  z-index: 115;
+  background: transparent;
 }
 
-.hero-logo img {
+.hero-mark {
   width: 100%;
   height: 100%;
-  object-fit: contain;
   display: block;
-  filter: drop-shadow(0 10px 28px rgba(44, 36, 28, 0.3));
+  overflow: visible;
+  background: transparent;
+}
+
+.sun-rays path,
+.logo-name path,
+.logo-sub path {
+  fill: #C5A059;
+}
+
+.sun-rays {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: raySpin var(--hero-ray-spin, 60s) linear infinite;
+}
+
+.sun-rays path {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.6);
+  animation-name: rayIn;
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+}
+
+.sun-rays path {
+  animation-delay: calc(var(--hero-ray-start) + (var(--i) * var(--hero-ray-stagger)));
+}
+
+.sun-core path {
+  fill: transparent;
+  stroke: #C5A059;
+  stroke-width: 1.6px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation:
+    coreDraw var(--hero-core-draw, 1.2s) cubic-bezier(0.22, 1, 0.36, 1) var(--hero-core-delay, 0.2s) forwards,
+    coreFill 0.4s ease var(--hero-core-fill-delay, 1.28s) forwards;
+}
+
+.logo-name,
+.logo-sub {
+  opacity: 0;
+}
+
+.logo-name {
+  animation: heroFade 0.55s var(--hero-ease, ease) var(--hero-word-delay, 1.7s) forwards;
+}
+
+.logo-sub {
+  animation: heroFade 0.55s var(--hero-ease, ease) var(--hero-sub-delay, 1.95s) forwards;
+}
+
+.word-shine {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  pointer-events: none;
+  animation: wordSweep var(--hero-shine, 5s) ease-in-out 2.5s infinite;
+}
+
+.hero-english .hero-in {
+  display: block;
+}
+
+.hero-english .hero-in:nth-child(1) { animation-delay: var(--hero-line-1, 2.05s); }
+.hero-english .hero-in:nth-child(2) { animation-delay: var(--hero-line-2, 2.17s); }
+
+.hero-proof.hero-in { animation-delay: var(--hero-line-3, 2.29s); }
+.hero-actions.hero-in { animation-delay: var(--hero-line-4, 2.41s); }
+.scroll-hint.hero-in { animation-delay: var(--hero-line-5, 2.53s); }
+
+.hero-in {
+  opacity: 0;
+  animation: heroRise 0.6s var(--hero-ease, ease) forwards;
+}
+
+.hero-in.is-shown {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+.page-home .hero-score {
+  color: var(--gold-deep);
+}
+
+.hero-star {
+  color: rgba(154, 123, 74, 0.28);
+  transition: color 0.4s ease;
+}
+
+.hero-star.is-on {
+  color: var(--gold-deep);
+}
+
+@keyframes glowIn { to { opacity: 1; } }
+
+@keyframes glowBreath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes coreDraw { to { stroke-dashoffset: 0; } }
+
+@keyframes coreFill { to { fill: #C5A059; stroke: transparent; } }
+
+@keyframes rayIn { to { opacity: 1; transform: scale(1); } }
+
+@keyframes raySpin { to { transform: rotate(360deg); } }
+
+@keyframes heroFade { to { opacity: 1; } }
+
+@keyframes heroRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes wordSweep {
+  0%, 62% { transform: translateX(-70%); opacity: 0; }
+  72% { opacity: 0.95; }
+  88% { transform: translateX(70%); opacity: 0.95; }
+  100% { transform: translateX(70%); opacity: 0; }
+}
+
+@keyframes btnGlow {
+  0%, 100% { box-shadow: 0 2px 8px rgba(196, 163, 106, 0.28); }
+  50% { box-shadow: 0 6px 18px rgba(184, 149, 90, 0.42); }
+}
+
+@keyframes btnShimmer {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
 }
 
 .hero-english {
@@ -518,14 +752,95 @@ textarea {
 
 .scroll-hint {
   position: absolute;
-  bottom: 24px;
+  bottom: 72px;
   left: 50%;
-  transform: translateX(-50%);
+  translate: -50% 0;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(251, 247, 240, 0.7);
+  cursor: pointer;
+}
+
+.scroll-hint-line {
+  position: relative;
+  width: 1px;
+  height: 40px;
+  background: rgba(196, 163, 106, 0.45);
+  overflow: hidden;
+}
+
+.scroll-hint-dot {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: #c4a36a;
+  animation: hintDot 1.8s ease-in-out infinite;
+}
+
+@keyframes hintDot {
+  0% { transform: translateY(-6px); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translateY(36px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-home .header .brand {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sun-rays,
+  .sun-rays path,
+  .sun-core path,
+  .logo-name,
+  .logo-sub,
+  .word-shine,
+  .hero-glow span,
+  .hero-in,
+  .scroll-hint-dot,
+  .header-cta,
+  .page-home .hero-actions .btn-gold {
+    animation: none;
+  }
+
+  .sun-rays path,
+  .logo-name,
+  .logo-sub,
+  .hero-glow span,
+  .hero-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  .sun-core path {
+    stroke: transparent;
+    stroke-dashoffset: 0;
+    fill: #C5A059;
+  }
+
+  .word-shine,
+  .hero-dust {
+    display: none;
+  }
+
+  .hero-star {
+    color: var(--gold-deep);
+  }
 }
 
 .highlights {
@@ -2717,6 +3032,10 @@ textarea {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+}
+
+.nav-open .hero-logo {
+  z-index: 1;
 }
 
 .nav-open .mobile-cta {

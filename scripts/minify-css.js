@@ -15,8 +15,9 @@ let css = fs.readFileSync(src, "utf8");
 css = css.replace(/\/\*[\s\S]*?\*\//g, "");
 // Collapse runs of whitespace to a single space
 css = css.replace(/\s+/g, " ");
-// Drop spaces around common punctuation
-css = css.replace(/\s*([{}:;,>~+])\s*/g, "$1");
+// Drop spaces around punctuation. Keep spaces around "+" so calc()
+// addition stays valid (calc(a + b) breaks if the spaces are removed).
+css = css.replace(/\s*([{}:;,>~])\s*/g, "$1");
 // Keep space after "and"/"or" in @media — already collapsed fine
 // Tidy empty rules / double semis
 css = css.replace(/;}/g, "}");
