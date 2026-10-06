@@ -1477,6 +1477,27 @@ body.is-cal-dragging .cal-board {
   background: #2a9d8f;
 }
 
+#bookingPanel [hidden] {
+  display: none !important;
+}
+
+.btn-ghost.is-active {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+}
+
+.cal-block.is-blocked {
+  background: repeating-linear-gradient(
+    -45deg,
+    #f4efe6,
+    #f4efe6 7px,
+    #e6dfd2 7px,
+    #e6dfd2 14px
+  );
+}
+
+.cal-block.is-blocked .cal-block-accent { background: #6b5e50; }
+
 .cal-block.is-pending .cal-block-accent { background: #c4a36a; }
 .cal-block.is-confirmed .cal-block-accent { background: #2a9d8f; }
 .cal-block.is-completed .cal-block-accent { background: #6a8f6a; }

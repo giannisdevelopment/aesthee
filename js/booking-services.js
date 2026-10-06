@@ -6,6 +6,13 @@ export const SLOT_STEP_MINUTES = 10;
 /** Two services on one appointment are stored in the service text, joined by this. */
 export const APPOINTMENT_SERVICE_BREAK = "\n+ ";
 
+/** Staff-only hold. Not a client visit. Occupies a cabin so that slot cannot be booked. */
+export const BLOCKED_TIME_SERVICE = "Μπλοκαρισμένος χρόνος";
+
+export function isBlockedTimeService(value) {
+  return String(value || "").trim().toLocaleLowerCase("el") === BLOCKED_TIME_SERVICE.toLocaleLowerCase("el");
+}
+
 /** @param {string} value */
 export function splitAppointmentServices(value) {
   const text = String(value || "").trim();
