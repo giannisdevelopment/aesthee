@@ -1550,8 +1550,24 @@ body.is-cal-dragging .cal-board {
   font-weight: 500;
 }
 
+.cal-block-note {
+  font-size: 0.68rem;
+  line-height: 1.25;
+  font-weight: 600;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cal-block.has-note {
+  box-shadow: inset 0 0 0 1px rgba(154, 123, 74, 0.45);
+}
+
 .cal-block.is-xs .cal-block-service,
-.cal-block.is-xs .cal-block-meta {
+.cal-block.is-xs .cal-block-meta,
+.cal-block.is-xs .cal-block-note {
   display: none;
 }
 
@@ -1565,7 +1581,8 @@ body.is-cal-dragging .cal-board {
   display: none;
 }
 
-.cal-block.is-sm .cal-block-service {
+.cal-block.is-sm .cal-block-service,
+.cal-block.is-sm .cal-block-note {
   -webkit-line-clamp: 1;
 }
 
@@ -1642,6 +1659,32 @@ body.is-cal-dragging .cal-board {
   margin: 0 0 6px;
   font-size: 0.9rem;
   color: var(--ink-muted);
+}
+
+.cal-detail-note {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff8ee;
+  border: 1px solid rgba(196, 163, 106, 0.45);
+}
+
+.cal-detail-note span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.cal-detail-note p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
 }
 
 .cal-detail-actions {

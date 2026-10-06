@@ -38,7 +38,8 @@ import {
   SLOT_STEP_MINUTES,
   timeLabelToMinutes,
   minutesToTimeLabel,
-} from "./booking-services.js?v=lw-solos-1";
+  filterServiceSuggestions,
+} from "./booking-services.js?v=ep-notes-1";
 import { fetchBookedSlots } from "./booking-api.js";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
@@ -945,13 +946,16 @@ function renderCalendar(data) {
         btn.style.width = `calc(${widthPct}% - 4px)`;
       }
       btn.dataset.id = row.id;
-      btn.title = `${row.guest_name} · ${row.service} · ${startLabel}–${endLabel}`;
+      const note = staffNotes(row.notes);
+      btn.title = `${row.guest_name} · ${row.service} · ${startLabel}–${endLabel}${note ? ` · ${note}` : ""}`;
+      if (note) btn.classList.add("has-note");
       btn.innerHTML = `
         <span class="cal-block-accent" aria-hidden="true"></span>
         <span class="cal-block-body">
           <span class="cal-block-time">${escapeHtml(startLabel)} – ${escapeHtml(endLabel)}</span>
           <span class="cal-block-name">${escapeHtml(row.guest_name)}</span>
           <span class="cal-block-service">${escapeHtml(row.service)}</span>
+          ${note ? `<span class="cal-block-note">${escapeHtml(note)}</span>` : ""}
           <span class="cal-block-meta">
             <span class="cal-block-dur">${escapeHtml(formatDurationMin(duration))}</span>
             ${row.price_cents != null ? `<span class="cal-block-price">${escapeHtml(formatPriceCents(row.price_cents))}</span>` : ""}
@@ -998,6 +1002,7 @@ function openCalDetail(row) {
   backdrop.addEventListener("click", closeCalDetail);
   document.body.appendChild(backdrop);
 
+  const apptNote = staffNotes(row.notes);
   const el = document.createElement("div");
   el.id = "calDetail";
   el.className = "cal-detail";
@@ -1009,6 +1014,8 @@ function openCalDetail(row) {
     <p>${escapeHtml(row.service)}</p>
     <p>${escapeHtml(formatPriceCents(row.price_cents))} · Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}</p>
     <p>${statusBadge(row.status)} · <a href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a></p>
+    ${apptNote ? `<div class="cal-detail-note"><span>Σημειώσεις</span><p>${escapeHtml(apptNote)}</p></div>` : ""}
+    <div class="cal-detail-note hidden" id="calDetailClientNote"></div>
     <div class="cal-detail-actions">
       <button class="btn btn-gold btn-sm" type="button" id="calDetailEdit">Επεξεργασία</button>
       <select class="status-select" id="calDetailStatus" aria-label="Κατάσταση">
@@ -1026,6 +1033,18 @@ function openCalDetail(row) {
   document.body.appendChild(el);
   if (window.matchMedia("(max-width: 860px)").matches) {
     document.body.style.overflow = "hidden";
+  }
+
+  if (row.client_id) {
+    getClient(row.client_id).then(({ data }) => {
+      if (!document.body.contains(el)) return;
+      const clientNote = staffNotes(data?.notes);
+      if (!clientNote || clientNote === apptNote) return;
+      const box = el.querySelector("#calDetailClientNote");
+      if (!box) return;
+      box.classList.remove("hidden");
+      box.innerHTML = `<span>Σημειώσεις πελάτη</span><p>${escapeHtml(clientNote)}</p>`;
+    }).catch(() => {});
   }
 
   el.querySelector("#calDetailClose")?.addEventListener("click", closeCalDetail);
@@ -1322,32 +1341,17 @@ function formatServiceMeta(row) {
   return [row.categoryLabel, price, duration].filter(Boolean).join(" · ");
 }
 
+function staffNotes(notes) {
+  const t = String(notes || "").trim();
+  if (!t) return "";
+  if (/^(treatwell|google|gcal|ics|csv)\b/i.test(t)) return "";
+  if (/\b(twa:|twcsv:|gcal:|ics:)\b/i.test(t)) return "";
+  if (/treatwell import/i.test(t)) return "";
+  return t;
+}
+
 function filterCatalog(query) {
-  const q = normalizeSearch(query);
-  if (!q) return [];
-  const digits = q.replace(/\D/g, "");
-  const scored = [];
-  for (const row of catalogCache) {
-    const name = normalizeSearch(row.name);
-    const hay = normalizeSearch(`${row.name} ${row.categoryLabel}`);
-    let score = -1;
-    if (name === q) score = 100;
-    else if (name.startsWith(q) || name.includes(` — ${q}`) || name.endsWith(` — ${q}`)) score = 80;
-    else if (hay.includes(q)) score = 50;
-    else if (
-      digits
-      && Number(row.durationMin) === Number(digits)
-      && (row.categoryId === "duration" || String(row.id || "").startsWith("dur-"))
-    ) {
-      score = 40;
-    }
-    if (score < 0) continue;
-    // Prefer solo areas over "&" / "+" combos when the query is a single area word
-    if (/[&+]/.test(row.name) && !/[&+]/.test(query)) score -= 15;
-    scored.push({ row, score, name });
-  }
-  scored.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "el"));
-  return scored.slice(0, 40).map((item) => item.row);
+  return filterServiceSuggestions(catalogCache, query);
 }
 
 function hideServiceSuggest() {
@@ -1892,6 +1896,7 @@ async function renderAppointments() {
       <td>
         ${escapeHtml(row.service)}<br />
         <span class="muted">${escapeHtml(formatPriceCents(row.price_cents))}${resolveCabinId(row) ? ` · Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}` : ""}</span>
+        ${staffNotes(row.notes) ? `<br /><span class="visit-note">${escapeHtml(staffNotes(row.notes))}</span>` : ""}
       </td>
       <td>
         ${escapeHtml(row.guest_name)}<br />

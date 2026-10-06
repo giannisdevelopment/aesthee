@@ -398,7 +398,7 @@ function initBooking() {
   if (!form || !categorySelect || !serviceSelect) return;
 
   loadBookingCatalog().then(async (catalog) => {
-    catalog.BOOKING_CATEGORIES.forEach((category) => {
+    catalog.BOOKING_CATEGORIES.filter((category) => category.id !== "ep-ko").forEach((category) => {
       const option = document.createElement("option");
       option.value = category.id;
       option.textContent = `${category.label} (${category.services.length})`;

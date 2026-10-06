@@ -23,6 +23,18 @@ export const DEFAULT_BOOKING_CATEGORIES = [
     ],
   },
   {
+    id: "ep-ko",
+    label: "Επαναληπτικό",
+    services: [
+      { id: "ep-10", name: "ΕΠ/ΚΟ 10 λεπτά", durationMin: 10, priceCents: 0 },
+      { id: "ep-20", name: "ΕΠ/ΚΟ 20 λεπτά", durationMin: 20, priceCents: 0 },
+      { id: "ep-30", name: "ΕΠ/ΚΟ 30 λεπτά", durationMin: 30, priceCents: 0 },
+      { id: "ep-40", name: "ΕΠ/ΚΟ 40 λεπτά", durationMin: 40, priceCents: 0 },
+      { id: "ep-60", name: "ΕΠ/ΚΟ 60 λεπτά", durationMin: 60, priceCents: 0 },
+      { id: "ep-120", name: "ΕΠ/ΚΟ 120 λεπτά", durationMin: 120, priceCents: 0 },
+    ],
+  },
+  {
     id: "brows",
     label: "Περιποίηση φρυδιών",
     services: [
@@ -97,6 +109,7 @@ export const DEFAULT_BOOKING_CATEGORIES = [
     label: "Αποτρίχωση Laser — Γυναίκες",
     services: [
       { id: "lw-full-body", name: "Laser Γυναίκες — Full Body", durationMin: 60, priceCents: 14000 },
+      { id: "lw-full-body-maint", name: "Laser Γυναίκες — Full Body γυναικείο συντήρηση", durationMin: 60, priceCents: 14000 },
       { id: "lw-full-legs", name: "Laser Γυναίκες — Full πόδια", durationMin: 30, priceCents: 10000 },
       { id: "lw-full-bikini", name: "Laser Γυναίκες — Full bikini", durationMin: 15, priceCents: 5000 },
       { id: "lw-bikini-line", name: "Laser Γυναίκες — Γραμμή bikini", durationMin: 10, priceCents: 2500 },
@@ -291,11 +304,71 @@ export const CABIN_SHORT = {
 
 export const CABIN_IDS = [1, 2, 3, 4, 5];
 
+function foldSearch(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function searchTokens(value) {
+  return foldSearch(value).split(/[^a-z0-9α-ω]+/).filter(Boolean);
+}
+
+/**
+ * Staff service typeahead. Matches whole words, so «επ» finds ΕΠ/ΚΟ
+ * and does not match the «επ» inside «λεπτά».
+ * @param {Array<{ id?: string, name: string, categoryLabel?: string, categoryId?: string, durationMin?: number }>} rows
+ * @param {string} query
+ * @param {number} [limit]
+ */
+export function filterServiceSuggestions(rows, query, limit = 40) {
+  const q = foldSearch(query);
+  if (!q) return [];
+  const digits = q.replace(/\D/g, "");
+  const qTokens = searchTokens(q);
+  const digitsOnly = qTokens.length > 0 && qTokens.every((token) => /^\d+$/.test(token));
+  /** @type {Array<{ row: object, score: number, name: string }>} */
+  const scored = [];
+
+  for (const row of rows || []) {
+    const name = foldSearch(row.name);
+    const hay = foldSearch(`${row.name} ${row.categoryLabel || ""}`);
+    const hayTokens = searchTokens(hay);
+    let score = -1;
+    if (name === q) score = 100;
+    else if (name.startsWith(q) || name.includes(` — ${q}`) || name.endsWith(` — ${q}`)) score = 80;
+    else if (qTokens.length && qTokens.every((qt) => hayTokens.some((ht) => ht === qt || ht.startsWith(qt)))) score = 50;
+    else if (
+      digitsOnly
+      && digits
+      && Number(row.durationMin) === Number(digits)
+      && (row.categoryId === "duration" || String(row.id || "").startsWith("dur-"))
+    ) {
+      score = 40;
+    }
+    if (score < 0) continue;
+    if (/[&+]/.test(row.name) && !/[&+]/.test(query)) score -= 15;
+    scored.push({ row, score, name });
+  }
+
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (a.row.categoryId === "ep-ko" && b.row.categoryId === "ep-ko") {
+      return (Number(a.row.durationMin) || 0) - (Number(b.row.durationMin) || 0);
+    }
+    return a.name.localeCompare(b.name, "el");
+  });
+  return scored.slice(0, limit).map((item) => item.row);
+}
+
 /** @param {{ id: string, categoryId?: string } | null | undefined} service */
 export function getCabinPool(service) {
   if (!service) return [1, 2];
   const id = service.id;
   if (id.startsWith("dur-") || service.categoryId === "duration") return CABIN_IDS.slice();
+  if (id.startsWith("ep-") || service.categoryId === "ep-ko") return [1, 2];
   if (id === "vacutherm" || id === "vacutherm-pack") return [4];
   if (
     id === "wax"
