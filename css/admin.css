@@ -381,6 +381,7 @@ body[data-admin-page="client"] .field textarea {
   margin: 0 0 6px;
   font-size: 1rem;
   font-weight: 600;
+  white-space: pre-line;
 }
 
 .visit-meta {
@@ -1529,8 +1530,9 @@ body.is-cal-dragging .cal-board {
   color: #7a6e60;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  white-space: pre-line;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1660,6 +1662,10 @@ body.is-cal-dragging .cal-board {
   margin: 0 0 6px;
   font-size: 0.9rem;
   color: var(--ink-muted);
+}
+
+.cal-detail-service {
+  white-space: pre-line;
 }
 
 .cal-detail-note {

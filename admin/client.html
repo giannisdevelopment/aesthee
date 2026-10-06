@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=appt-edit-1" />
+  <link rel="stylesheet" href="/css/admin.css?v=two-svc-1" />
 </head>
 <body data-admin-page="client">
   <div class="admin-shell">
@@ -133,6 +133,20 @@
               <div id="apptSuggest" class="suggest-list hidden" role="listbox"></div>
             </div>
           </div>
+          <div class="field">
+            <label for="apptService2">Δεύτερη υπηρεσία</label>
+            <div class="suggest" id="apptSuggest2Wrap">
+              <input
+                id="apptService2"
+                type="text"
+                autocomplete="off"
+                placeholder="Προαιρετικά — άλλη περιοχή ή υπηρεσία"
+                aria-autocomplete="list"
+                aria-controls="apptSuggest2"
+              />
+              <div id="apptSuggest2" class="suggest-list hidden" role="listbox"></div>
+            </div>
+          </div>
           <div class="field-row">
             <div class="field">
               <label for="apptDate">Ημερομηνία</label>
@@ -194,6 +208,6 @@
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
-  <script type="module" src="/js/admin-client.js?v=appt-edit-1"></script>
+  <script type="module" src="/js/admin-client.js?v=two-svc-1"></script>
 </body>
 </html>

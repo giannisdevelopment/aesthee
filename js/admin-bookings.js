@@ -41,7 +41,9 @@ import {
   timeLabelToMinutes,
   minutesToTimeLabel,
   filterServiceSuggestions,
-} from "./booking-services.js?v=ep-notes-1";
+  splitAppointmentServices,
+  joinAppointmentServices,
+} from "./booking-services.js?v=two-svc-1";
 import { fetchBookedSlots } from "./booking-api.js";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
@@ -89,6 +91,8 @@ const bkEmail = document.getElementById("bkEmail");
 const bkServiceSearch = document.getElementById("bkServiceSearch");
 const bkServiceId = document.getElementById("bkServiceId");
 const bkServiceSuggest = document.getElementById("bkServiceSuggest");
+const bkService2Search = document.getElementById("bkService2Search");
+const bkService2Suggest = document.getElementById("bkService2Suggest");
 const bkDate = document.getElementById("bkDate");
 const bkTime = document.getElementById("bkTime");
 const bkTimeSuggest = document.getElementById("bkTimeSuggest");
@@ -112,6 +116,11 @@ let clientsCache = [];
 
 /** @type {string} */
 let selectedServiceId = "";
+
+/** Duration and price already added by the second service, so a new pick replaces them. */
+let extraApplied = { duration: 0, cents: 0 };
+
+let suggest2ActiveIndex = -1;
 
 /** @type {string} */
 let selectedClientId = "";
@@ -226,6 +235,10 @@ function configMissing() {
   return !cfg?.url || !cfg?.anonKey || String(cfg.url).includes("YOUR_PROJECT_REF");
 }
 
+function formatServiceLines(service) {
+  return splitAppointmentServices(service).filter(Boolean).map((part) => escapeHtml(part)).join("<br>");
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -292,7 +305,7 @@ function renderSearchHits(hits) {
     ${shown.map((row) => `
       <button type="button" class="search-hit" data-id="${escapeHtml(row.id)}" data-day="${escapeHtml(appointmentDateKey(row))}">
         <strong>${escapeHtml(row.guest_name || "—")}</strong>
-        <span>${escapeHtml(formatDate(row.appointment_date))} · ${escapeHtml(formatTime(row.appointment_time))} · ${escapeHtml(row.service || "")}</span>
+        <span>${escapeHtml(formatDate(row.appointment_date))} · ${escapeHtml(formatTime(row.appointment_time))} · ${formatServiceLines(row.service)}</span>
       </button>
     `).join("")}
     ${extra > 0 ? `<div class="search-hits-empty">και άλλα ${extra}…</div>` : ""}
@@ -957,7 +970,7 @@ function renderCalendar(data) {
         <span class="cal-block-body">
           <span class="cal-block-time">${escapeHtml(startLabel)} – ${escapeHtml(endLabel)}</span>
           <span class="cal-block-name">${escapeHtml(row.guest_name)}</span>
-          <span class="cal-block-service">${escapeHtml(row.service)}</span>
+          <span class="cal-block-service">${formatServiceLines(row.service)}</span>
           ${note ? `<span class="cal-block-note">${escapeHtml(note)}</span>` : ""}
           <span class="cal-block-meta">
             <span class="cal-block-dur">${escapeHtml(formatDurationMin(duration))}</span>
@@ -1014,7 +1027,7 @@ function openCalDetail(row) {
   el.innerHTML = `
     <h3>${escapeHtml(row.guest_name)}</h3>
     <p>${escapeHtml(formatTime(row.appointment_time))} – ${escapeHtml(endTimeLabel(row.appointment_time, row.duration_minutes || 60))} · ${escapeHtml(formatDurationMin(row.duration_minutes || 60))}</p>
-    <p>${escapeHtml(row.service)}</p>
+    <p class="cal-detail-service">${formatServiceLines(row.service)}</p>
     <p>${escapeHtml(formatPriceCents(row.price_cents))} · Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}</p>
     <p>${statusBadge(row.status)} · <a href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a></p>
     ${apptNote ? `<div class="cal-detail-note"><span>Σημειώσεις</span><p>${escapeHtml(apptNote)}</p></div>` : ""}
@@ -1102,8 +1115,11 @@ function resetBookingForm(prefs = {}) {
   editingAppointmentId = null;
   editingSnapshot = null;
   selectedServiceId = "";
+  extraApplied = { duration: 0, cents: 0 };
   bkServiceId.value = "";
   bkServiceSearch.value = "";
+  if (bkService2Search) bkService2Search.value = "";
+  hideService2Suggest();
   selectedClientId = "";
   if (bkClientId) bkClientId.value = "";
   if (bkClientSearch) bkClientSearch.value = "";
@@ -1129,9 +1145,11 @@ function fillFormFromAppointment(row) {
   editingSnapshot = { ...row };
   selectedServiceId = "";
   bkServiceId.value = "";
-  bkServiceSearch.value = row.service || "";
+  const [firstService, secondService] = splitAppointmentServices(row.service || "");
+  bkServiceSearch.value = firstService;
+  if (bkService2Search) bkService2Search.value = secondService;
   const match = catalogCache.find(
-    (item) => normalizeSearch(item.name) === normalizeSearch(row.service || "")
+    (item) => normalizeSearch(item.name) === normalizeSearch(firstService)
   );
   if (match) {
     selectedServiceId = match.id;
@@ -1143,6 +1161,12 @@ function fillFormFromAppointment(row) {
   setDayFirstDate(bkDate, row.appointment_date || calendarDay);
   bkDuration.value = String(row.duration_minutes || 60);
   bkPrice.value = row.price_cents != null ? eurosFromCents(row.price_cents) : "";
+  const secondMatch = secondService
+    ? catalogCache.find((item) => normalizeSearch(item.name) === normalizeSearch(secondService))
+    : null;
+  extraApplied = secondMatch
+    ? { duration: Number(secondMatch.durationMin) || 0, cents: Number(secondMatch.priceCents) || 0 }
+    : { duration: 0, cents: 0 };
   bkCabin.value = row.cabin_id ? String(row.cabin_id) : "";
   bkStatus.value = row.status || "confirmed";
   bkNotes.value = row.notes || "";
@@ -1406,8 +1430,8 @@ function pickService(id) {
   selectedServiceId = row.id;
   bkServiceId.value = row.id;
   bkServiceSearch.value = row.name;
-  bkDuration.value = String(row.durationMin || 60);
-  bkPrice.value = eurosFromCents(row.priceCents);
+  bkDuration.value = String((row.durationMin || 60) + extraApplied.duration);
+  bkPrice.value = eurosFromCents((row.priceCents || 0) + extraApplied.cents);
   hideServiceSuggest();
   syncCabinSelectForService({
     id: row.id,
@@ -1416,6 +1440,78 @@ function pickService(id) {
     name: row.name,
   });
   refreshTimeOptions().catch(() => {});
+}
+
+function hideService2Suggest() {
+  bkService2Suggest?.classList.add("hidden");
+  if (bkService2Suggest) bkService2Suggest.innerHTML = "";
+  suggest2ActiveIndex = -1;
+}
+
+function showService2Suggest(rows, query = "") {
+  if (!bkService2Suggest) return;
+  const q = String(query || "").trim();
+  if (!q) {
+    hideService2Suggest();
+    return;
+  }
+  if (!rows.length) {
+    bkService2Suggest.innerHTML = `<div class="suggest-empty">Δεν βρέθηκε στον κατάλογο — θα αποθηκευτεί ως χειροκίνητη υπηρεσία.</div>`;
+    bkService2Suggest.classList.remove("hidden");
+    suggest2ActiveIndex = -1;
+    return;
+  }
+  bkService2Suggest.innerHTML = rows.map((row, index) => `
+    <button
+      type="button"
+      class="suggest-item${index === 0 ? " is-active" : ""}"
+      role="option"
+      data-service2-id="${escapeHtml(row.id)}"
+    >
+      <strong>${escapeHtml(row.name)}</strong>
+      <span>${escapeHtml(formatServiceMeta(row))}</span>
+    </button>
+  `).join("");
+  bkService2Suggest.classList.remove("hidden");
+  suggest2ActiveIndex = 0;
+  bkService2Suggest.querySelectorAll("[data-service2-id]").forEach((btn) => {
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      pickService2(btn.dataset.service2Id);
+    });
+  });
+}
+
+function clearExtraService() {
+  if (!extraApplied.duration && !extraApplied.cents) return;
+  const dur = Math.max(5, (Number(bkDuration.value) || 0) - extraApplied.duration);
+  const cents = Math.max(0, (centsFromEuros(bkPrice.value) || 0) - extraApplied.cents);
+  extraApplied = { duration: 0, cents: 0 };
+  bkDuration.value = String(dur);
+  bkPrice.value = eurosFromCents(cents);
+  refreshTimeOptions().catch(() => {});
+}
+
+function applyExtraService(row) {
+  const nextDur = Number(row.durationMin) || 0;
+  const nextCents = Number(row.priceCents) || 0;
+  const dur = Math.max(5, (Number(bkDuration.value) || 0) - extraApplied.duration + nextDur);
+  const cents = Math.max(0, (centsFromEuros(bkPrice.value) || 0) - extraApplied.cents + nextCents);
+  extraApplied = { duration: nextDur, cents: nextCents };
+  bkDuration.value = String(dur);
+  bkPrice.value = eurosFromCents(cents);
+  if (dur > 240) {
+    showToast("Η συνολική διάρκεια ξεπερνά τα 240 λεπτά. Μείωσέ την πριν την αποθήκευση.", true);
+  }
+  refreshTimeOptions().catch(() => {});
+}
+
+function pickService2(id) {
+  const row = catalogCache.find((item) => item.id === id);
+  if (!row || !bkService2Search) return;
+  bkService2Search.value = row.name;
+  applyExtraService(row);
+  hideService2Suggest();
 }
 
 /** Cabin dropdown — all cabins; staff may place any service in any cabin. */
@@ -1897,7 +1993,7 @@ async function renderAppointments() {
         <span class="muted">${escapeHtml(formatTime(row.appointment_time))}${row.duration_minutes ? ` · ${escapeHtml(formatDurationMin(row.duration_minutes))}` : ""}</span>
       </td>
       <td>
-        ${escapeHtml(row.service)}<br />
+        ${formatServiceLines(row.service)}<br />
         <span class="muted">${escapeHtml(formatPriceCents(row.price_cents))}${resolveCabinId(row) ? ` · Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}` : ""}</span>
         ${staffNotes(row.notes) ? `<br /><span class="visit-note">${escapeHtml(staffNotes(row.notes))}</span>` : ""}
       </td>
@@ -2223,6 +2319,56 @@ bkServiceSearch?.addEventListener("keydown", (event) => {
   }
 });
 
+bkService2Search?.addEventListener("focus", () => {
+  hideServiceSuggest();
+  hideClientSuggest();
+  hideTimeSuggest();
+  showService2Suggest(filterCatalog(bkService2Search.value), bkService2Search.value);
+});
+
+bkService2Search?.addEventListener("input", () => {
+  if (!bkService2Search.value.trim()) clearExtraService();
+  showService2Suggest(filterCatalog(bkService2Search.value), bkService2Search.value);
+});
+
+bkService2Search?.addEventListener("keydown", (event) => {
+  const items = [...(bkService2Suggest?.querySelectorAll("[data-service2-id]") || [])];
+  if (event.key === "Escape") {
+    hideService2Suggest();
+    return;
+  }
+  if (event.key === "ArrowDown" && items.length) {
+    event.preventDefault();
+    suggest2ActiveIndex = Math.min(items.length - 1, suggest2ActiveIndex + 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === suggest2ActiveIndex));
+    return;
+  }
+  if (event.key === "ArrowUp" && items.length) {
+    event.preventDefault();
+    suggest2ActiveIndex = Math.max(0, suggest2ActiveIndex - 1);
+    items.forEach((el, i) => el.classList.toggle("is-active", i === suggest2ActiveIndex));
+    return;
+  }
+  if (event.key === "Enter" && bkService2Suggest && !bkService2Suggest.classList.contains("hidden") && items.length) {
+    const active = items[Math.max(0, suggest2ActiveIndex)] || items[0];
+    if (active) {
+      event.preventDefault();
+      pickService2(active.dataset.service2Id);
+    }
+  }
+});
+
+bkService2Search?.addEventListener("blur", () => {
+  window.setTimeout(() => hideService2Suggest(), 120);
+  const typed = bkService2Search.value.trim();
+  if (!typed) {
+    clearExtraService();
+    return;
+  }
+  const exact = catalogCache.find((row) => normalizeSearch(row.name) === normalizeSearch(typed));
+  if (exact) pickService2(exact.id);
+});
+
 bkServiceSearch?.addEventListener("blur", () => {
   window.setTimeout(() => hideServiceSuggest(), 120);
   const typed = bkServiceSearch.value.trim();
@@ -2298,6 +2444,8 @@ document.addEventListener("click", (event) => {
   const clientWrap = document.getElementById("bkClientSuggestWrap");
   const timeWrap = document.getElementById("bkTimeSuggestWrap");
   if (serviceWrap && !serviceWrap.contains(event.target)) hideServiceSuggest();
+  const service2Wrap = document.getElementById("bkService2SuggestWrap");
+  if (service2Wrap && !service2Wrap.contains(event.target)) hideService2Suggest();
   if (clientWrap && !clientWrap.contains(event.target)) hideClientSuggest();
   if (timeWrap && !timeWrap.contains(event.target)) hideTimeSuggest();
   const searchWrap = event.target.closest(".search-wrap");
@@ -2385,7 +2533,7 @@ bookingForm?.addEventListener("submit", async (event) => {
   }
 
   const payload = {
-    service: service.name,
+    service: joinAppointmentServices(service.name, bkService2Search?.value),
     appointment_date: date,
     appointment_time: time.length === 5 ? `${time}:00` : time,
     duration_minutes: duration,

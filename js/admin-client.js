@@ -19,7 +19,12 @@ import {
   formatMoney,
   APPOINTMENT_STATUS_LABELS,
 } from "./admin-api.js?v=dmy-1";
-import { DEFAULT_BOOKING_CATEGORIES, filterServiceSuggestions } from "./booking-services.js?v=appt-edit-1";
+import {
+  DEFAULT_BOOKING_CATEGORIES,
+  filterServiceSuggestions,
+  splitAppointmentServices,
+  joinAppointmentServices,
+} from "./booking-services.js?v=two-svc-1";
 
 const params = new URLSearchParams(location.search);
 let clientId = params.get("id");
@@ -39,6 +44,8 @@ const treatmentSuggest = document.getElementById("treatmentSuggest");
 const apptForm = document.getElementById("apptForm");
 const apptService = document.getElementById("apptService");
 const apptSuggest = document.getElementById("apptSuggest");
+const apptService2 = document.getElementById("apptService2");
+const apptSuggest2 = document.getElementById("apptSuggest2");
 const cancelApptBtn = document.getElementById("cancelApptBtn");
 const deleteApptBtn = document.getElementById("deleteApptBtn");
 
@@ -50,6 +57,9 @@ let appointmentsCache = [];
 
 /** Raw notes of the appointment being edited, including import fingerprints. */
 let editingApptNotesRaw = "";
+
+/** Duration and price already added by the second service. */
+let clientExtra = { duration: 0, cents: 0 };
 
 /** @type {string} */
 let selectedTreatmentId = "";
@@ -334,25 +344,94 @@ function pickApptService(id) {
   const row = catalogCache.find((item) => item.id === id);
   if (!row || !apptForm) return;
   apptService.value = row.name;
-  if (row.durationMin) apptForm.duration_minutes.value = String(row.durationMin);
-  if (row.priceCents > 0) apptForm.price_euros.value = eurosFromCents(row.priceCents);
+  const duration = (Number(row.durationMin) || 60) + clientExtra.duration;
+  apptForm.duration_minutes.value = String(duration);
+  apptForm.price_euros.value = eurosFromCents((Number(row.priceCents) || 0) + clientExtra.cents);
   hideApptSuggest();
+}
+
+function hideApptSuggest2() {
+  apptSuggest2?.classList.add("hidden");
+  if (apptSuggest2) apptSuggest2.innerHTML = "";
+}
+
+function clearClientExtra() {
+  if (!apptForm || (!clientExtra.duration && !clientExtra.cents)) return;
+  const dur = Math.max(5, (Number(apptForm.duration_minutes.value) || 0) - clientExtra.duration);
+  const cents = Math.max(0, (centsFromEuros(apptForm.price_euros.value) || 0) - clientExtra.cents);
+  clientExtra = { duration: 0, cents: 0 };
+  apptForm.duration_minutes.value = String(dur);
+  apptForm.price_euros.value = eurosFromCents(cents);
+}
+
+function applyClientExtra(row) {
+  if (!apptForm) return;
+  const nextDur = Number(row.durationMin) || 0;
+  const nextCents = Number(row.priceCents) || 0;
+  const dur = Math.max(5, (Number(apptForm.duration_minutes.value) || 0) - clientExtra.duration + nextDur);
+  const cents = Math.max(0, (centsFromEuros(apptForm.price_euros.value) || 0) - clientExtra.cents + nextCents);
+  clientExtra = { duration: nextDur, cents: nextCents };
+  apptForm.duration_minutes.value = String(dur);
+  apptForm.price_euros.value = eurosFromCents(cents);
+  if (dur > 240) {
+    showToast("Η συνολική διάρκεια ξεπερνά τα 240 λεπτά. Μείωσέ την πριν την αποθήκευση.", true);
+  }
+}
+
+function pickApptService2(id) {
+  const row = catalogCache.find((item) => item.id === id);
+  if (!row || !apptService2) return;
+  apptService2.value = row.name;
+  applyClientExtra(row);
+  hideApptSuggest2();
+}
+
+function showApptSuggest2(rows, query = "") {
+  if (!apptSuggest2) return;
+  const q = String(query || "").trim();
+  if (!q) {
+    hideApptSuggest2();
+    return;
+  }
+  if (!rows.length) {
+    apptSuggest2.innerHTML = `<div class="suggest-empty">Δεν βρέθηκε στον κατάλογο — θα αποθηκευτεί ως χειροκίνητη υπηρεσία.</div>`;
+    apptSuggest2.classList.remove("hidden");
+    return;
+  }
+  apptSuggest2.innerHTML = rows.map((row, index) => `
+    <button type="button" class="suggest-item${index === 0 ? " is-active" : ""}" data-appt-service2="${escapeHtml(row.id)}">
+      <strong>${escapeHtml(row.name)}</strong>
+      <span>${escapeHtml(formatTreatmentMeta(row))}</span>
+    </button>
+  `).join("");
+  apptSuggest2.classList.remove("hidden");
+  apptSuggest2.querySelectorAll("[data-appt-service2]").forEach((btn) => {
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      pickApptService2(btn.dataset.apptService2);
+    });
+  });
 }
 
 function closeApptForm() {
   apptForm?.classList.add("hidden");
   apptForm?.reset();
   editingApptNotesRaw = "";
+  clientExtra = { duration: 0, cents: 0 };
   hideApptSuggest();
+  hideApptSuggest2();
 }
 
 function openApptForm(row) {
   if (!apptForm) return;
   resetVisitForm();
   editingApptNotesRaw = row.notes || "";
+  clientExtra = { duration: 0, cents: 0 };
   apptForm.classList.remove("hidden");
   document.getElementById("apptId").value = row.id;
-  apptService.value = row.service || "";
+  const [firstService, secondService] = splitAppointmentServices(row.service || "");
+  apptService.value = firstService;
+  if (apptService2) apptService2.value = secondService;
   setDayFirstDate(apptForm.appointment_date, row.appointment_date || "");
   apptForm.appointment_time.value = row.appointment_time ? String(row.appointment_time).slice(0, 5) : "";
   apptForm.duration_minutes.value = String(row.duration_minutes || 60);
@@ -360,6 +439,12 @@ function openApptForm(row) {
   apptForm.cabin_id.value = row.cabin_id ? String(row.cabin_id) : "";
   apptForm.status.value = row.status || "confirmed";
   apptForm.notes.value = displayNotes(row.notes);
+  const secondMatch = secondService
+    ? catalogCache.find((item) => normalizeSearch(item.name) === normalizeSearch(secondService))
+    : null;
+  clientExtra = secondMatch
+    ? { duration: Number(secondMatch.durationMin) || 0, cents: Number(secondMatch.priceCents) || 0 }
+    : { duration: 0, cents: 0 };
   apptForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -406,7 +491,7 @@ async function renderVisits() {
       sort: `${day}T${formatTime(row.appointment_time)}`,
       html: `
         <article class="visit-card${upcoming ? " is-upcoming" : ""}${row.status === "cancelled" ? " is-cancelled" : ""}">
-          <h3>${escapeHtml(row.service || "Ραντεβού")}</h3>
+          <h3>${splitAppointmentServices(row.service || "Ραντεβού").filter(Boolean).map((part) => escapeHtml(part)).join("<br>")}</h3>
           <div class="visit-meta">
             <span>${escapeHtml(formatDate(row.appointment_date))} · ${escapeHtml(formatTime(row.appointment_time))}</span>
             ${euros != null && euros > 0 ? `<span>${escapeHtml(formatMoney(euros))}</span>` : ""}
@@ -613,6 +698,29 @@ document.addEventListener("click", (event) => {
   if (wrap && !wrap.contains(event.target)) hideTreatmentSuggest();
   const apptWrap = document.getElementById("apptSuggestWrap");
   if (apptWrap && !apptWrap.contains(event.target)) hideApptSuggest();
+  const apptWrap2 = document.getElementById("apptSuggest2Wrap");
+  if (apptWrap2 && !apptWrap2.contains(event.target)) hideApptSuggest2();
+});
+
+apptService2?.addEventListener("focus", () => {
+  hideApptSuggest();
+  showApptSuggest2(filterCatalog(apptService2.value), apptService2.value);
+});
+
+apptService2?.addEventListener("input", () => {
+  if (!apptService2.value.trim()) clearClientExtra();
+  showApptSuggest2(filterCatalog(apptService2.value), apptService2.value);
+});
+
+apptService2?.addEventListener("blur", () => {
+  window.setTimeout(() => hideApptSuggest2(), 120);
+  const typed = apptService2.value.trim();
+  if (!typed) {
+    clearClientExtra();
+    return;
+  }
+  const exact = catalogCache.find((row) => normalizeSearch(row.name) === normalizeSearch(typed));
+  if (exact) pickApptService2(exact.id);
 });
 
 apptService?.addEventListener("focus", () => {
@@ -642,7 +750,7 @@ deleteApptBtn?.addEventListener("click", async () => {
 apptForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const id = document.getElementById("apptId")?.value;
-  const service = apptService.value.trim();
+  const service = joinAppointmentServices(apptService.value, apptService2?.value);
   const date = readDayFirstDate(apptForm.appointment_date);
   const time = parseTimeInput(apptForm.appointment_time.value);
   const duration = Number(apptForm.duration_minutes.value);

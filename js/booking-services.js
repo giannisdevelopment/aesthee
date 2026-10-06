@@ -3,6 +3,25 @@ export const BOOKING_DAY_START = 10 * 60; // 10:00 — salon open
 export const BOOKING_DAY_END = 21 * 60; // 21:00
 export const SLOT_STEP_MINUTES = 10;
 
+/** Two services on one appointment are stored in the service text, joined by this. */
+export const APPOINTMENT_SERVICE_BREAK = "\n+ ";
+
+/** @param {string} value */
+export function splitAppointmentServices(value) {
+  const text = String(value || "").trim();
+  const at = text.indexOf(APPOINTMENT_SERVICE_BREAK);
+  if (at === -1) return [text, ""];
+  return [text.slice(0, at).trim(), text.slice(at + APPOINTMENT_SERVICE_BREAK.length).trim()];
+}
+
+/** @param {string} first @param {string} second */
+export function joinAppointmentServices(first, second) {
+  const a = String(first || "").trim();
+  const b = String(second || "").trim();
+  if (!b) return a;
+  return `${a}${APPOINTMENT_SERVICE_BREAK}${b}`;
+}
+
 /** @typedef {{ id: string, name: string, durationMin: number, priceCents: number, priceFrom?: boolean, isOffer?: boolean }} BookingService */
 /** @typedef {{ id: string, label: string, services: BookingService[] }} BookingCategory */
 
