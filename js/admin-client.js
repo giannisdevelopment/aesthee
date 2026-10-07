@@ -341,6 +341,13 @@ function showApptSuggest(rows, query = "") {
   });
 }
 
+function syncApptDurationStep() {
+  const input = apptForm?.duration_minutes;
+  if (!input) return;
+  const solarium = displayServiceName(apptService?.value || "") === "Solarium";
+  input.step = solarium ? "1" : "5";
+}
+
 function pickApptService(id) {
   const row = catalogCache.find((item) => item.id === id);
   if (!row || !apptForm) return;
@@ -349,6 +356,7 @@ function pickApptService(id) {
   apptForm.duration_minutes.value = String(duration);
   apptForm.price_euros.value = eurosFromCents((Number(row.priceCents) || 0) + clientExtra.cents);
   hideApptSuggest();
+  syncApptDurationStep();
 }
 
 function hideApptSuggest2() {
@@ -436,6 +444,7 @@ function openApptForm(row) {
   setDayFirstDate(apptForm.appointment_date, row.appointment_date || "");
   apptForm.appointment_time.value = row.appointment_time ? String(row.appointment_time).slice(0, 5) : "";
   apptForm.duration_minutes.value = String(row.duration_minutes || 60);
+  syncApptDurationStep();
   apptForm.price_euros.value = row.price_cents != null ? eurosFromCents(row.price_cents) : "";
   apptForm.cabin_id.value = row.cabin_id ? String(row.cabin_id) : "";
   apptForm.status.value = row.status || "confirmed";
@@ -737,12 +746,14 @@ apptService?.addEventListener("focus", () => {
 apptService?.addEventListener("input", () => {
   const shown = displayServiceName(apptService.value.trim());
   if (shown === "Solarium" && apptService.value.trim() !== "Solarium") apptService.value = "Solarium";
+  syncApptDurationStep();
   showApptSuggest(filterCatalog(apptService.value), apptService.value);
 });
 
 apptService?.addEventListener("blur", () => {
   const typed = displayServiceName(apptService.value.trim());
   if (typed !== apptService.value.trim()) apptService.value = typed;
+  syncApptDurationStep();
 });
 
 cancelApptBtn?.addEventListener("click", closeApptForm);

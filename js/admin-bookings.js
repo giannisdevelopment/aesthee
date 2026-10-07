@@ -1150,6 +1150,7 @@ function resetBookingForm(prefs = {}) {
   hideTimeSuggest();
   setDayFirstDate(bkDate, prefs.date || calendarDay || toDateKey(new Date()));
   bkDuration.value = "60";
+  syncDurationStep();
   syncCabinSelectForService(null, prefs.cabinId || null);
   if (bkTime) bkTime.value = prefs.time || "";
   if (bkRepeat) bkRepeat.value = "";
@@ -1268,6 +1269,7 @@ function fillFormFromAppointment(row) {
     durationMin: row.duration_minutes || 60,
   };
   syncCabinSelectForService(serviceObj, row.cabin_id);
+  syncDurationStep();
   if (bkTime) bkTime.value = formatTime(row.appointment_time);
   if (isBlockedTimeService(firstService)) {
     setBlockMode(true);
@@ -1503,6 +1505,16 @@ function queryWantsBlock(query) {
   return ["μπλοκ", "block", "κλειστ"].some((token) => token.startsWith(q) || q.includes(token));
 }
 
+function isSolariumAppointment() {
+  if (selectedServiceId === "solarium") return true;
+  return displayServiceName(bkServiceSearch?.value || "") === "Solarium";
+}
+
+function syncDurationStep() {
+  if (!bkDuration) return;
+  bkDuration.step = isSolariumAppointment() ? "1" : "5";
+}
+
 function pickService(id) {
   if (id === "blocked-time") {
     setBlockMode(true);
@@ -1524,6 +1536,7 @@ function pickService(id) {
     durationMin: row.durationMin,
     name: row.name,
   });
+  syncDurationStep();
   refreshTimeOptions().catch(() => {});
 }
 
@@ -2390,6 +2403,7 @@ bkServiceSearch?.addEventListener("input", () => {
   clearPickedServiceKeepText();
   const shown = displayServiceName(bkServiceSearch.value.trim());
   if (shown === "Solarium" && bkServiceSearch.value.trim() !== "Solarium") bkServiceSearch.value = "Solarium";
+  syncDurationStep();
   showServiceSuggest(filterCatalog(bkServiceSearch.value), bkServiceSearch.value);
 });
 
@@ -2481,13 +2495,18 @@ bkServiceSearch?.addEventListener("blur", () => {
   if (typed !== bkServiceSearch.value.trim()) bkServiceSearch.value = typed;
   if (!typed) {
     clearPickedServiceKeepText();
+    syncDurationStep();
     return;
   }
-  if (selectedServiceId) return;
+  if (selectedServiceId) {
+    syncDurationStep();
+    return;
+  }
   const exact = catalogCache.find(
     (row) => normalizeSearch(row.name) === normalizeSearch(typed)
   );
   if (exact) pickService(exact.id);
+  syncDurationStep();
 });
 
 bkDate?.addEventListener("change", () => {
@@ -2578,6 +2597,7 @@ bookingForm?.addEventListener("submit", async (event) => {
     return;
   }
   const duration = Number(bkDuration.value);
+  syncDurationStep();
   if (!date || !time) {
     showToast("Συμπληρώστε ημερομηνία και ώρα (π.χ. 10:30).", true);
     bkTime?.focus();
