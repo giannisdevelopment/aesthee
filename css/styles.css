@@ -296,6 +296,41 @@ textarea {
   transition: transform 220ms var(--ease), background 150ms ease, box-shadow 220ms var(--ease);
 }
 
+.lang-toggle {
+  margin-left: auto;
+  flex: none;
+  border: 1px solid rgba(196, 163, 106, 0.55);
+  background: transparent;
+  color: var(--gold-deep);
+  border-radius: 999px;
+  min-width: 44px;
+  padding: 7px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lang-toggle:hover,
+.lang-toggle:focus-visible {
+  background: rgba(196, 163, 106, 0.14);
+  color: var(--ink);
+}
+
+iframe.skiptranslate,
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-te-spinner-pos,
+.VIpgJd-ZVi9od-ORHb-OEVmcd {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
 .header-cta,
 .page-home .hero-actions .btn-gold {
   position: relative;
@@ -598,6 +633,8 @@ textarea {
 }
 
 .sun-rays {
+  /* Center comes from the invisible anchor in the group, so the
+     rays orbit the sun instead of swinging off the top of it. */
   transform-box: fill-box;
   transform-origin: center;
   animation: raySpin var(--hero-ray-spin, 60s) linear infinite;
