@@ -1128,9 +1128,27 @@ tr.is-inactive {
   opacity: 0.55;
 }
 
+.cal-span-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-left: 2px;
+}
+
 .cal-today-btn {
   flex: 0 0 auto;
   min-height: 36px;
+}
+
+.cal-span-actions .cal-today-btn.is-active {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+.cal-panel.is-week .cal-days {
+  display: none;
 }
 
 .cal-days {
@@ -1236,6 +1254,7 @@ tr.is-inactive {
 .cal-grid {
   --cal-time-w: 56px;
   --cal-col-min: 172px;
+  --cal-week-col: 132px;
   --cal-px-min: 2;
   --cal-day-start: 600;
   --cal-day-span: 660;
@@ -1245,6 +1264,11 @@ tr.is-inactive {
   grid-template-columns: var(--cal-time-w) repeat(6, minmax(var(--cal-col-min), 1fr));
   grid-template-rows: var(--cal-head-h) auto;
   min-width: calc(var(--cal-time-w) + 6 * var(--cal-col-min));
+}
+
+.cal-grid.is-week {
+  grid-template-columns: var(--cal-time-w) repeat(7, minmax(var(--cal-week-col), 1fr));
+  min-width: calc(var(--cal-time-w) + 7 * var(--cal-week-col));
 }
 
 .cal-head-spacer {
@@ -1299,6 +1323,68 @@ tr.is-inactive {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+button.cal-week-head {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cal-week-head .dow {
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.cal-week-head .dom {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-week-head.is-weekend .dom {
+  color: var(--ink-dim);
+}
+
+.cal-week-head.is-today .dow {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
+.cal-week-head.is-today .dom {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.cal-col.is-today {
+  box-shadow: inset 0 0 0 999px rgba(196, 163, 106, 0.07);
+}
+
+.cal-grid.is-week .cal-block {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.cal-block-cabin {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(196, 163, 106, 0.28);
+  color: var(--gold-deep);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: 1px;
 }
 
 .cal-times {
@@ -1855,6 +1941,7 @@ body.is-cal-dragging .cal-board {
 
   .cal-grid {
     --cal-col-min: 118px;
+    --cal-week-col: 108px;
     --cal-time-w: 44px;
     --cal-head-h: 46px;
     --cal-px-min: 1.75;
@@ -1930,6 +2017,7 @@ body.is-cal-dragging .cal-board {
 @media (max-width: 420px) {
   .cal-grid {
     --cal-col-min: 108px;
+    --cal-week-col: 96px;
     --cal-time-w: 40px;
   }
 

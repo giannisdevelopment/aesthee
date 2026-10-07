@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
+  <script>
+    try {
+      if (localStorage.getItem("aesthee-lang") === "en") {
+        document.documentElement.classList.add("i18n-pending");
+        setTimeout(function () {
+          document.documentElement.classList.remove("i18n-pending");
+        }, 1500);
+      }
+    } catch (e) {}
+  </script>
+  <style>html.i18n-pending body{visibility:hidden}</style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Πολιτική Απορρήτου — Aesthée</title>
@@ -24,8 +35,8 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" /></noscript>
-  <link rel="preload" href="css/styles.min.css?v=18" as="style" />
-  <link rel="stylesheet" href="css/styles.min.css?v=18" />
+  <link rel="preload" href="css/styles.min.css?v=19" as="style" />
+  <link rel="stylesheet" href="css/styles.min.css?v=19" />
   <link rel="preload" href="js/app.js" as="script" />
 </head>
 <body class="page-legal" data-page="privacy">
@@ -200,7 +211,11 @@
     <a class="btn btn-gold" href="booking.html">Κλείστε Ραντεβού</a>
   </div>
   <div class="toast" id="toast" role="status"></div>
-  <script src="js/lang.js?v=1" defer></script>
+  <script src="js/i18n-en.js?v=1"></script>
+  <script src="js/i18n-en-2.js?v=1"></script>
+  <script src="js/i18n-en-3.js?v=1"></script>
+  <script src="js/i18n-en-4.js?v=1"></script>
+  <script src="js/lang.js?v=2"></script>
   <script src="js/app.js" defer></script>
 </body>
 </html>

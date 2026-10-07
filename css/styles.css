@@ -318,17 +318,8 @@ textarea {
   color: var(--ink);
 }
 
-iframe.skiptranslate,
-.goog-te-banner-frame,
-#goog-gt-tt,
-.goog-te-balloon-frame,
-.goog-te-spinner-pos,
-.VIpgJd-ZVi9od-ORHb-OEVmcd {
-  display: none !important;
-}
-
-body {
-  top: 0 !important;
+html.i18n-pending body {
+  visibility: hidden;
 }
 
 .header-cta,

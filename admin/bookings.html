@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=cabin-6" />
+  <link rel="stylesheet" href="/css/admin.css?v=week" />
   <script src="/js/admin-auth-hint.js"></script>
 </head>
 <body data-admin-page="bookings">
@@ -94,7 +94,10 @@
             </div>
           </div>
           <button class="cal-nav-btn" type="button" id="calNext" aria-label="Επόμενη εβδομάδα">›</button>
-          <button class="btn btn-ghost btn-sm cal-today-btn" type="button" id="calToday">Σήμερα</button>
+          <div class="cal-span-actions">
+            <button class="btn btn-ghost btn-sm cal-today-btn" type="button" id="calToday">Σήμερα</button>
+            <button class="btn btn-ghost btn-sm cal-today-btn" type="button" id="calWeek" aria-pressed="false">Εβδομάδα</button>
+          </div>
         </div>
         <div class="cal-days" id="calDayStrip" role="tablist" aria-label="Ημέρες"></div>
       </div>
@@ -284,6 +287,6 @@
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
-  <script type="module" src="/js/admin-bookings.js?v=solarium-min"></script>
+  <script type="module" src="/js/admin-bookings.js?v=week-2"></script>
 </body>
 </html>

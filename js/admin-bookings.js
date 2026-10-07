@@ -76,9 +76,11 @@ const calYearNext = document.getElementById("calYearNext");
 const calCabinHeads = document.getElementById("calCabinHeads");
 const calTimes = document.getElementById("calTimes");
 const calCols = document.getElementById("calCols");
+const calGrid = document.getElementById("calGrid");
 const calPrev = document.getElementById("calPrev");
 const calNext = document.getElementById("calNext");
 const calToday = document.getElementById("calToday");
+const calWeekBtn = document.getElementById("calWeek");
 const calFab = document.getElementById("calFab");
 
 const openBookingBtn = document.getElementById("openBookingBtn");
@@ -150,8 +152,21 @@ let availableTimes = [];
 /** @type {"calendar" | "list"} */
 let activeView = "calendar";
 
-/** Calendar selected day as YYYY-MM-DD */
+/** Cabin columns for one day, or seven day columns for the week. */
+const CAL_SPAN_KEY = "aesthee-cal-span";
+/** @type {"day" | "week"} */
+let calendarSpan = "day";
+try {
+  calendarSpan = localStorage.getItem(CAL_SPAN_KEY) === "week" ? "week" : "day";
+} catch {
+  calendarSpan = "day";
+}
+
+/** Calendar selected day as YYYY-MM-DD. In week view this anchors the week. */
 let calendarDay = "";
+
+/** Rebuilds the grid when the mode or the visible week changes. */
+let chromeStamp = "";
 
 let monthPickerYear = new Date().getFullYear();
 
@@ -277,7 +292,8 @@ function filters() {
     return { status, fromDate: "", toDate: "", query };
   }
   if (activeView === "calendar" && calendarDay) {
-    return { status, fromDate: calendarDay, toDate: calendarDay, query };
+    const range = calendarRange();
+    return { status, fromDate: range.start, toDate: range.end, query };
   }
   return {
     status,
@@ -426,11 +442,61 @@ function parseDateKey(key) {
   return new Date(y, m - 1, d, 12, 0, 0);
 }
 
+const WEEK_HEADS = ["Κυ", "Δε", "Τρ", "Τε", "Πε", "Πα", "Σα"];
+
+function weekBounds(key) {
+  const selected = parseDateKey(key || toDateKey(new Date()));
+  const start = new Date(selected);
+  const dow = selected.getDay();
+  start.setDate(selected.getDate() + (dow === 0 ? -6 : 1 - dow));
+  const days = [];
+  for (let i = 0; i < 7; i += 1) {
+    const day = new Date(start);
+    day.setDate(start.getDate() + i);
+    days.push(toDateKey(day));
+  }
+  return { start: days[0], end: days[6], days };
+}
+
+function calendarRange() {
+  if (calendarSpan === "week" && calendarDay) return weekBounds(calendarDay);
+  return { start: calendarDay, end: calendarDay, days: calendarDay ? [calendarDay] : [] };
+}
+
+function paintSpanToggle() {
+  const week = calendarSpan === "week";
+  calWeekBtn?.classList.toggle("is-active", week);
+  calWeekBtn?.setAttribute("aria-pressed", week ? "true" : "false");
+  calendarPanel?.classList.toggle("is-week", week);
+  calGrid?.classList.toggle("is-week", week);
+}
+
+function setCalendarSpan(span, { refresh = true } = {}) {
+  const next = span === "week" ? "week" : "day";
+  if (calendarSpan === next && !refresh) {
+    paintSpanToggle();
+    return;
+  }
+  calendarSpan = next;
+  try {
+    localStorage.setItem(CAL_SPAN_KEY, calendarSpan);
+  } catch {
+    /* the toggle still works for this visit */
+  }
+  chromeStamp = "";
+  lastFocusScrollDay = "";
+  paintSpanToggle();
+  ensureCalendarChrome();
+  renderDayStrip();
+  if (refresh) renderAppointments();
+}
+
 function setCalendarDay(key) {
   calendarDay = key;
   setDayFirstDate(fromDate, key);
   setDayFirstDate(toDate, key);
   renderDayStrip();
+  if (calendarSpan === "week") ensureCalendarChrome();
   renderAppointments();
 }
 
@@ -499,7 +565,17 @@ function toggleMonthPicker() {
 function renderDayStrip() {
   if (!calDayStrip || !calendarDay) return;
   const selected = parseDateKey(calendarDay);
-  calMonthLabel.textContent = `${MONTH_LABELS[selected.getMonth()]} ${selected.getFullYear()}`;
+  if (calendarSpan === "week") {
+    const range = weekBounds(calendarDay);
+    const from = parseDateKey(range.start);
+    const to = parseDateKey(range.end);
+    const sameMonth = from.getMonth() === to.getMonth() && from.getFullYear() === to.getFullYear();
+    calMonthLabel.textContent = sameMonth
+      ? `${from.getDate()}–${to.getDate()} ${MONTH_LABELS[from.getMonth()]} ${from.getFullYear()}`
+      : `${from.getDate()} ${MONTH_LABELS[from.getMonth()].slice(0, 3)} – ${to.getDate()} ${MONTH_LABELS[to.getMonth()].slice(0, 3)} ${to.getFullYear()}`;
+  } else {
+    calMonthLabel.textContent = `${MONTH_LABELS[selected.getMonth()]} ${selected.getFullYear()}`;
+  }
   monthPickerYear = selected.getFullYear();
   if (calMonthPop && !calMonthPop.classList.contains("hidden")) renderMonthPicker();
 
@@ -766,9 +842,73 @@ if (typeof window !== "undefined") {
   window.addEventListener("pointercancel", onBlockPointerCancel);
 }
 
-function buildCalendarChrome() {
-  if (!calCabinHeads || !calTimes || !calCols) return;
+function paintTimeGutter(dayHeight) {
+  if (!calTimes) return;
+  const ppm = pxPerMin();
+  const labels = [];
+  for (let mins = BOOKING_DAY_START; mins < BOOKING_DAY_END; mins += 60) {
+    const top = (mins - BOOKING_DAY_START) * ppm;
+    labels.push(`<div class="cal-time-label" style="top:${top}px">${minutesToTimeLabel(mins)}</div>`);
+  }
+  calTimes.innerHTML = labels.join("");
+  calTimes.style.height = `${dayHeight}px`;
+}
 
+function bindEmptyColumn(col) {
+  col.addEventListener("pointerdown", (event) => {
+    if (event.target.closest(".cal-block")) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    emptySlotPointer = {
+      x: event.clientX,
+      y: event.clientY,
+      cabin: col.dataset.cabin || "",
+      day: col.dataset.day || "",
+      top: col.getBoundingClientRect().top,
+    };
+  });
+  col.addEventListener("pointermove", (event) => {
+    if (!emptySlotPointer) return;
+    if (
+      Math.abs(event.clientX - emptySlotPointer.x) > 10
+      || Math.abs(event.clientY - emptySlotPointer.y) > 10
+    ) {
+      emptySlotPointer = null;
+    }
+  });
+  col.addEventListener("pointerup", (event) => {
+    if (!emptySlotPointer) return;
+    if (event.target.closest(".cal-block")) {
+      emptySlotPointer = null;
+      return;
+    }
+    const dx = Math.abs(event.clientX - emptySlotPointer.x);
+    const dy = Math.abs(event.clientY - emptySlotPointer.y);
+    const cabin = emptySlotPointer.cabin;
+    const day = emptySlotPointer.day;
+    const top = emptySlotPointer.top;
+    emptySlotPointer = null;
+    if (dx > 10 || dy > 10) return;
+    if ((col.dataset.cabin || "") !== cabin) return;
+    if ((col.dataset.day || "") !== day) return;
+
+    const y = event.clientY - top;
+    let mins = BOOKING_DAY_START + Math.round(y / pxPerMin());
+    mins = Math.round(mins / 10) * 10;
+    mins = Math.max(BOOKING_DAY_START, Math.min(BOOKING_DAY_END - 10, mins));
+    const prefs = {
+      date: day || calendarDay,
+      time: minutesToTimeLabel(mins),
+    };
+    if (cabin) prefs.cabinId = Number(cabin);
+    openBookingPanel(prefs);
+  });
+  col.addEventListener("pointercancel", () => {
+    emptySlotPointer = null;
+  });
+}
+
+function buildDayChrome() {
+  if (!calCabinHeads || !calTimes || !calCols) return;
   const ppm = pxPerMin();
   const dayHeight = (BOOKING_DAY_END - BOOKING_DAY_START) * ppm;
 
@@ -782,70 +922,57 @@ function buildCalendarChrome() {
     `;
   }).join("");
 
-  const labels = [];
-  for (let mins = BOOKING_DAY_START; mins < BOOKING_DAY_END; mins += 60) {
-    const top = (mins - BOOKING_DAY_START) * ppm;
-    labels.push(`<div class="cal-time-label" style="top:${top}px">${minutesToTimeLabel(mins)}</div>`);
-  }
-  calTimes.innerHTML = labels.join("");
-  calTimes.style.height = `${dayHeight}px`;
-
+  paintTimeGutter(dayHeight);
   calCols.innerHTML = CABIN_IDS.map((id) => `
-    <div
-      class="cal-col"
-      data-cabin="${id}"
-      style="height:${dayHeight}px"
-    ></div>
+    <div class="cal-col" data-cabin="${id}" style="height:${dayHeight}px"></div>
   `).join("");
+  calCols.querySelectorAll(".cal-col").forEach(bindEmptyColumn);
+}
 
-  calCols.querySelectorAll(".cal-col").forEach((col) => {
-    col.addEventListener("pointerdown", (event) => {
-      if (event.target.closest(".cal-block")) return;
-      if (event.pointerType === "mouse" && event.button !== 0) return;
-      emptySlotPointer = {
-        x: event.clientX,
-        y: event.clientY,
-        cabin: col.dataset.cabin || "",
-        top: col.getBoundingClientRect().top,
-      };
-    });
-    col.addEventListener("pointermove", (event) => {
-      if (!emptySlotPointer) return;
-      if (
-        Math.abs(event.clientX - emptySlotPointer.x) > 10
-        || Math.abs(event.clientY - emptySlotPointer.y) > 10
-      ) {
-        emptySlotPointer = null;
-      }
-    });
-    col.addEventListener("pointerup", (event) => {
-      if (!emptySlotPointer) return;
-      if (event.target.closest(".cal-block")) {
-        emptySlotPointer = null;
-        return;
-      }
-      const dx = Math.abs(event.clientX - emptySlotPointer.x);
-      const dy = Math.abs(event.clientY - emptySlotPointer.y);
-      const cabin = emptySlotPointer.cabin;
-      const top = emptySlotPointer.top;
-      emptySlotPointer = null;
-      if (dx > 10 || dy > 10) return;
-      if (String(col.dataset.cabin) !== cabin) return;
+function buildWeekChrome() {
+  if (!calCabinHeads || !calTimes || !calCols) return;
+  const ppm = pxPerMin();
+  const dayHeight = (BOOKING_DAY_END - BOOKING_DAY_START) * ppm;
+  const todayKey = toDateKey(new Date());
+  const { days } = weekBounds(calendarDay || todayKey);
 
-      const y = event.clientY - top;
-      let mins = BOOKING_DAY_START + Math.round(y / pxPerMin());
-      mins = Math.round(mins / 10) * 10;
-      mins = Math.max(BOOKING_DAY_START, Math.min(BOOKING_DAY_END - 10, mins));
-      openBookingPanel({
-        date: calendarDay,
-        time: minutesToTimeLabel(mins),
-        cabinId: Number(col.dataset.cabin),
-      });
-    });
-    col.addEventListener("pointercancel", () => {
-      emptySlotPointer = null;
+  calCabinHeads.innerHTML = days.map((key) => {
+    const date = parseDateKey(key);
+    const weekend = date.getDay() === 0 || date.getDay() === 6;
+    return `
+      <button type="button" class="cal-cabin-head cal-week-head${key === todayKey ? " is-today" : ""}${weekend ? " is-weekend" : ""}" data-day="${key}">
+        <span class="dow">${WEEK_HEADS[date.getDay()]}</span>
+        <span class="dom">${date.getDate()}</span>
+      </button>
+    `;
+  }).join("");
+  calCabinHeads.querySelectorAll("[data-day]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setCalendarSpan("day", { refresh: false });
+      setCalendarDay(btn.dataset.day);
     });
   });
+
+  paintTimeGutter(dayHeight);
+  calCols.innerHTML = days.map((key) => `
+    <div class="cal-col${key === todayKey ? " is-today" : ""}" data-day="${key}" style="height:${dayHeight}px"></div>
+  `).join("");
+  calCols.querySelectorAll(".cal-col").forEach(bindEmptyColumn);
+}
+
+function ensureCalendarChrome() {
+  const stamp = calendarSpan === "week"
+    ? `week:${weekBounds(calendarDay || toDateKey(new Date())).start}`
+    : "day";
+  if (chromeStamp === stamp && calCols?.querySelector(".cal-col")) return;
+  chromeStamp = stamp;
+  if (calendarSpan === "week") buildWeekChrome();
+  else buildDayChrome();
+}
+
+function buildCalendarChrome() {
+  chromeStamp = "";
+  ensureCalendarChrome();
 }
 
 /** @type {string} */
@@ -875,12 +1002,23 @@ function scrollCalToFocus(rows = appointmentsCache, { force = false } = {}) {
 
   focusMins = Math.max(BOOKING_DAY_START, Math.min(BOOKING_DAY_END, focusMins));
   const y = Math.max(0, (focusMins - BOOKING_DAY_START) * ppm - board.clientHeight * 0.28);
-  board.scrollTo({ top: y, behavior: "smooth" });
+  let x = board.scrollLeft;
+  if (calendarSpan === "week") {
+    const todayCol = calCols?.querySelector(".cal-col.is-today");
+    if (todayCol) {
+      const colRect = todayCol.getBoundingClientRect();
+      const boardRect = board.getBoundingClientRect();
+      x = board.scrollLeft + (colRect.left - boardRect.left) - board.clientWidth / 2 + colRect.width / 2;
+      x = Math.max(0, x);
+    }
+  }
+  board.scrollTo({ top: y, left: x, behavior: "smooth" });
 }
 
 function renderCalendar(data) {
   if (!calCols) return;
-  if (!calCols.querySelector(".cal-col")) buildCalendarChrome();
+  ensureCalendarChrome();
+  const week = calendarSpan === "week";
 
   const ppm = pxPerMin();
   const dayHeight = (BOOKING_DAY_END - BOOKING_DAY_START) * ppm;
@@ -894,20 +1032,24 @@ function renderCalendar(data) {
 
   const visible = (data || []).filter((row) => row.status !== "cancelled");
   const GAP_PX = 3;
+  const visibleDays = week ? new Set(weekBounds(calendarDay).days) : null;
 
-  /** @type {Map<number, { row: object, start: number, end: number, top: number, height: number, col: number, cols: number }[]>} */
-  const byCabin = new Map();
+  /** @type {Map<string, { row: object, start: number, end: number, top: number, height: number, col: number, cols: number }[]>} */
+  const byColumn = new Map();
 
   for (const row of visible) {
     const cabinId = resolveCabinId(row);
+    const dayKey = appointmentDateKey(row);
+    if (week && !visibleDays.has(dayKey)) continue;
     const startLabel = formatTime(row.appointment_time);
     const start = timeLabelToMinutes(startLabel);
     if (start == null) continue;
     const duration = Math.max(5, Number(row.duration_minutes) || 60);
     const end = start + duration;
     const top = (start - BOOKING_DAY_START) * ppm;
-    if (!byCabin.has(cabinId)) byCabin.set(cabinId, []);
-    byCabin.get(cabinId).push({
+    const columnKey = week ? dayKey : String(cabinId);
+    if (!byColumn.has(columnKey)) byColumn.set(columnKey, []);
+    byColumn.get(columnKey).push({
       row,
       start,
       end,
@@ -918,8 +1060,10 @@ function renderCalendar(data) {
     });
   }
 
-  for (const [cabinId, items] of byCabin) {
-    const colEl = calCols.querySelector(`.cal-col[data-cabin="${cabinId}"]`);
+  for (const [columnKey, items] of byColumn) {
+    const colEl = week
+      ? calCols.querySelector(`.cal-col[data-day="${columnKey}"]`)
+      : calCols.querySelector(`.cal-col[data-cabin="${columnKey}"]`);
     if (!colEl) continue;
 
     items.sort((a, b) => a.start - b.start || a.end - b.end);
@@ -982,13 +1126,17 @@ function renderCalendar(data) {
       }
       btn.dataset.id = row.id;
       const note = staffNotes(row.notes);
-      btn.title = `${blocked ? BLOCKED_TIME_SERVICE : row.guest_name} · ${startLabel}–${endLabel}${note ? ` · ${note}` : ""}`;
+      const cabinCode = CABIN_SHORT[resolveCabinId(row)]?.code || `Κ${resolveCabinId(row)}`;
+      btn.title = `${week ? `${cabinCode} · ` : ""}${blocked ? BLOCKED_TIME_SERVICE : row.guest_name} · ${startLabel}–${endLabel}${note ? ` · ${note}` : ""}`;
       if (note) btn.classList.add("has-note");
+      const cabinHtml = week
+        ? `<span class="cal-block-cabin">${escapeHtml(cabinCode)}</span>`
+        : "";
       btn.innerHTML = `
         <span class="cal-block-accent" aria-hidden="true"></span>
         <span class="cal-block-body">
           <span class="cal-block-time">${escapeHtml(startLabel)} – ${escapeHtml(endLabel)}</span>
-          <span class="cal-block-name">${escapeHtml(blocked ? BLOCKED_TIME_SERVICE : row.guest_name)}</span>
+          <span class="cal-block-name">${cabinHtml}${escapeHtml(blocked ? BLOCKED_TIME_SERVICE : row.guest_name)}</span>
           ${blocked ? "" : `<span class="cal-block-service">${formatServiceLines(row.service)}</span>`}
           ${note ? `<span class="cal-block-note">${escapeHtml(note)}</span>` : ""}
           <span class="cal-block-meta">
@@ -1007,7 +1155,7 @@ function renderCalendar(data) {
         btn.classList.add("is-selected");
         openCalDetail(row);
       });
-      bindBlockDrag(btn, row);
+      if (!week) bindBlockDrag(btn, row);
       colEl.appendChild(btn);
     }
   }
@@ -1342,7 +1490,11 @@ function endTimeLabel(startLabel, durationMin) {
 
 function updateCalNowLine() {
   document.querySelectorAll(".cal-now").forEach((el) => el.remove());
-  if (!calendarDay || calendarDay !== toDateKey(new Date())) return;
+  const todayKey = toDateKey(new Date());
+  const showToday = calendarSpan === "week"
+    ? weekBounds(calendarDay || todayKey).days.includes(todayKey)
+    : calendarDay === todayKey;
+  if (!calendarDay || !showToday) return;
   const now = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
   if (mins < BOOKING_DAY_START || mins > BOOKING_DAY_END) return;
@@ -1358,6 +1510,7 @@ function updateCalNowLine() {
 
   calTimes?.appendChild(lineHtml());
   calCols?.querySelectorAll(".cal-col").forEach((col) => {
+    if (calendarSpan === "week" && col.dataset.day !== todayKey) return;
     col.appendChild(lineHtml());
   });
 }
@@ -2053,10 +2206,11 @@ async function renderAppointments() {
   let data;
   let error;
   if (activeView === "calendar" && calendarDay) {
+    const range = calendarRange();
     const dayRes = await listAppointments({
       status,
-      fromDate: calendarDay,
-      toDate: calendarDay,
+      fromDate: range.start,
+      toDate: range.end,
       query: "",
     });
     data = dayRes.data;
@@ -2261,6 +2415,10 @@ calNext?.addEventListener("click", () => {
 calToday?.addEventListener("click", () => {
   lastFocusScrollDay = "";
   setCalendarDay(toDateKey(new Date()));
+});
+
+calWeekBtn?.addEventListener("click", () => {
+  setCalendarSpan(calendarSpan === "week" ? "day" : "week");
 });
 
 calMonthLabel?.addEventListener("click", (event) => {
@@ -2828,6 +2986,7 @@ async function boot() {
   calendarDay = today;
   setDayFirstDate(fromDate, today);
   setDayFirstDate(toDate, today);
+  paintSpanToggle();
 
   if (configMissing()) {
     showLogin();
