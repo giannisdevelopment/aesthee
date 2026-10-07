@@ -323,6 +323,112 @@ export async function signOut() {
   return getSupabase().auth.signOut();
 }
 
+function stripNameMarks(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ς/g, "σ");
+}
+
+/** Greek spelling and the Latin card (Εύα / EVA) fold to the same letters. */
+export function greekNameToLatin(value) {
+  let text = stripNameMarks(value);
+  const pairs = [
+    ["ου", "ou"],
+    ["ευ", "ev"],
+    ["αυ", "av"],
+    ["ηυ", "iv"],
+    ["αι", "e"],
+    ["ει", "i"],
+    ["οι", "i"],
+    ["υι", "i"],
+    ["θ", "th"],
+    ["χ", "ch"],
+    ["ψ", "ps"],
+    ["ξ", "x"],
+    ["μπ", "b"],
+    ["ντ", "nt"],
+    ["α", "a"],
+    ["β", "v"],
+    ["γ", "g"],
+    ["δ", "d"],
+    ["ε", "e"],
+    ["ζ", "z"],
+    ["η", "i"],
+    ["ι", "i"],
+    ["κ", "k"],
+    ["λ", "l"],
+    ["μ", "m"],
+    ["ν", "n"],
+    ["ο", "o"],
+    ["π", "p"],
+    ["ρ", "r"],
+    ["σ", "s"],
+    ["τ", "t"],
+    ["υ", "i"],
+    ["φ", "f"],
+    ["ω", "o"],
+  ];
+  for (const [from, to] of pairs) text = text.replaceAll(from, to);
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/** Latin spelling folded back so a Greek card is found from EVA. */
+export function latinNameToGreek(value) {
+  let text = stripNameMarks(value);
+  const pairs = [
+    ["ou", "ου"],
+    ["ev", "ευ"],
+    ["ef", "ευ"],
+    ["av", "αυ"],
+    ["af", "αυ"],
+    ["th", "θ"],
+    ["ch", "χ"],
+    ["ps", "ψ"],
+    ["ts", "τσ"],
+    ["a", "α"],
+    ["b", "β"],
+    ["c", "κ"],
+    ["d", "δ"],
+    ["e", "ε"],
+    ["f", "φ"],
+    ["g", "γ"],
+    ["h", "χ"],
+    ["i", "ι"],
+    ["j", "ζ"],
+    ["k", "κ"],
+    ["l", "λ"],
+    ["m", "μ"],
+    ["n", "ν"],
+    ["o", "ο"],
+    ["p", "π"],
+    ["q", "κ"],
+    ["r", "ρ"],
+    ["s", "σ"],
+    ["t", "τ"],
+    ["u", "υ"],
+    ["v", "β"],
+    ["w", "ω"],
+    ["x", "ξ"],
+    ["y", "υ"],
+    ["z", "ζ"],
+  ];
+  for (const [from, to] of pairs) text = text.replaceAll(from, to);
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function clientQueryVariants(query) {
+  const typed = String(query || "").trim().replace(/,/g, " ");
+  if (!typed) return [];
+  const variants = new Set([typed]);
+  const latin = greekNameToLatin(typed);
+  const greek = latinNameToGreek(typed);
+  if (latin) variants.add(latin);
+  if (greek) variants.add(greek);
+  return [...variants];
+}
+
 export async function listClients(query = "", options = {}) {
   const lite = Boolean(options.lite);
   const limit = Number(options.limit) || 0;
@@ -334,9 +440,14 @@ export async function listClients(query = "", options = {}) {
     .select(select)
     .order("full_name", { ascending: true });
 
-  const q = String(query || "").trim().replace(/,/g, " ");
-  if (q) {
-    request = request.or(`full_name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`);
+  const variants = clientQueryVariants(query);
+  if (variants.length) {
+    const filters = variants.flatMap((term) => [
+      `full_name.ilike.%${term}%`,
+      `phone.ilike.%${term}%`,
+      `email.ilike.%${term}%`,
+    ]);
+    request = request.or(filters.join(","));
   }
   if (limit > 0) request = request.limit(limit);
 

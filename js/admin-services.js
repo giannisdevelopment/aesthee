@@ -8,7 +8,7 @@ import {
   deleteCatalogService,
   showToast,
   applyAuthShell,
-} from "./admin-api.js?v=dmy-1";
+} from "./admin-api.js?v=name-fold";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");

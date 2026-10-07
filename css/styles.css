@@ -567,6 +567,22 @@ textarea {
   background: transparent;
 }
 
+@media (min-width: 960px) {
+  .page-home .hero-logo {
+    width: min(560px, 38vw, 48vh);
+  }
+
+  .page-home .hero-glow {
+    width: min(980px, 74vw);
+    height: min(980px, 74vw);
+    top: 46%;
+  }
+
+  .page-home .scroll-hint {
+    bottom: 16px;
+  }
+}
+
 .hero-mark {
   width: 100%;
   height: 100%;

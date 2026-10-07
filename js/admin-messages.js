@@ -14,7 +14,8 @@ import {
   formatTime,
   APPOINTMENT_STATUS_LABELS,
   applyAuthShell,
-} from "./admin-api.js?v=dmy-1";
+} from "./admin-api.js?v=name-fold";
+import { displayServiceName, splitAppointmentServices } from "./booking-services.js?v=solarium-word";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
 const loginView = document.getElementById("loginView");
@@ -85,7 +86,7 @@ function renderBookingCard(row) {
         <span class="muted">${escapeHtml(formatDate(row.created_at))}</span>
       </div>
       <p class="booking-summary">
-        <strong>${escapeHtml(row.service)}</strong><br />
+        <strong>${escapeHtml(splitAppointmentServices(row.service).filter(Boolean).map(displayServiceName).join(" + "))}</strong><br />
         ${escapeHtml(formatGreekDate(row.appointment_date))} · ${escapeHtml(formatTime(row.appointment_time))}
         · ${escapeHtml(String(row.duration_minutes || 60))}′${price ? ` · ${escapeHtml(price)}` : ""}${cabin}
       </p>

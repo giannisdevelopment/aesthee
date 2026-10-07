@@ -23,8 +23,8 @@ export function splitAppointmentServices(value) {
 
 /** @param {string} first @param {string} second */
 export function joinAppointmentServices(first, second) {
-  const a = String(first || "").trim();
-  const b = String(second || "").trim();
+  const a = displayServiceName(first);
+  const b = displayServiceName(second);
   if (!b) return a;
   return `${a}${APPOINTMENT_SERVICE_BREAK}${b}`;
 }
@@ -62,9 +62,9 @@ export const DEFAULT_BOOKING_CATEGORIES = [
   },
   {
     id: "solarium",
-    label: "Σολάριο",
+    label: "Solarium",
     services: [
-      { id: "solarium", name: "Σολάριο", durationMin: 10, priceCents: 0 },
+      { id: "solarium", name: "Solarium", durationMin: 10, priceCents: 0 },
     ],
   },
   {
@@ -317,7 +317,7 @@ const SERVICE_ALIASES = {
 
 /** Cabins as parallel resources:
  * 1–2 laser (+ πρόσωπο), 3 φρύδια/βλεφαρίδες/κερί, 4 Vacutherm, 5 σώμα + μασάζ,
- * 6 σολάριο (μόνο προσωπικό — δεν μπαίνει στο online booking)
+ * 6 Solarium (μόνο προσωπικό — δεν μπαίνει στο online booking)
  */
 export const CABIN_LABELS = {
   1: "Καμπίνα 1 — laser",
@@ -325,7 +325,7 @@ export const CABIN_LABELS = {
   3: "Καμπίνα 3 — φρύδια",
   4: "Καμπίνα 4 — Vacutherm",
   5: "Καμπίνα 5 — σώμα & μασάζ",
-  6: "Καμπίνα 6 — σολάριο",
+  6: "Καμπίνα 6 — Solarium",
 };
 
 /** Short labels for the admin day calendar columns */
@@ -335,7 +335,7 @@ export const CABIN_SHORT = {
   3: { code: "Κ3", role: "Φρύδια" },
   4: { code: "Κ4", role: "Vacutherm" },
   5: { code: "Κ5", role: "Σώμα" },
-  6: { code: "Κ6", role: "Σολάριο" },
+  6: { code: "Κ6", role: "Solarium" },
 };
 
 export const CABIN_IDS = [1, 2, 3, 4, 5, 6];
@@ -353,6 +353,16 @@ function foldSearch(value) {
 
 function searchTokens(value) {
   return foldSearch(value).split(/[^a-z0-9α-ω]+/).filter(Boolean);
+}
+
+/** Any older spelling is shown and saved as Solarium. */
+export function displayServiceName(name) {
+  const text = String(name || "").trim();
+  const key = foldSearch(text).replace(/[^a-z0-9α-ω]+/g, "");
+  if (key === "σολαριο" || key === "σολαριου" || key === "solario" || key === "solarium") {
+    return "Solarium";
+  }
+  return text;
 }
 
 /**
@@ -373,7 +383,8 @@ export function filterServiceSuggestions(rows, query, limit = 40) {
 
   for (const row of rows || []) {
     const name = foldSearch(row.name);
-    const hay = foldSearch(`${row.name} ${row.categoryLabel || ""}`);
+    const alias = row.id === "solarium" || row.categoryId === "solarium" ? " σολαριο solario" : "";
+    const hay = foldSearch(`${row.name} ${row.categoryLabel || ""}${alias}`);
     const hayTokens = searchTokens(hay);
     let score = -1;
     if (name === q) score = 100;

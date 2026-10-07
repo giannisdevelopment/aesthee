@@ -12,7 +12,8 @@ import {
   mapAuthError,
   isSupabaseConfigured,
   applyAuthShell,
-} from "./admin-api.js?v=dmy-cal-1";
+} from "./admin-api.js?v=name-fold";
+import { displayServiceName, splitAppointmentServices } from "./booking-services.js?v=solarium-word";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -207,7 +208,7 @@ async function renderTill() {
       <tr>
         <td>${escapeHtml(formatDate(row.date))}</td>
         <td>${nameCell}</td>
-        <td>${escapeHtml(row.service || "—")}</td>
+        <td>${escapeHtml(splitAppointmentServices(row.service).filter(Boolean).map(displayServiceName).join(" + ") || "—")}</td>
         <td>${escapeHtml(row.source)}</td>
         <td class="till-amount">${escapeHtml(formatMoney(row.amount))}</td>
       </tr>

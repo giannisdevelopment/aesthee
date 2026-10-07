@@ -18,13 +18,14 @@ import {
   readDayFirstDate,
   formatMoney,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=dmy-cal-1";
+} from "./admin-api.js?v=name-fold";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   filterServiceSuggestions,
+  displayServiceName,
   splitAppointmentServices,
   joinAppointmentServices,
-} from "./booking-services.js?v=cabin-6";
+} from "./booking-services.js?v=solarium-word";
 
 const params = new URLSearchParams(location.search);
 let clientId = params.get("id");
@@ -97,8 +98,8 @@ function catalogFromDefaults() {
   return DEFAULT_BOOKING_CATEGORIES.flatMap((cat) =>
     cat.services.map((s) => ({
       id: s.id,
-      name: s.name,
-      categoryLabel: cat.label,
+      name: displayServiceName(s.name),
+      categoryLabel: cat.id === "solarium" ? "Solarium" : cat.label,
       categoryId: cat.id,
       durationMin: s.durationMin,
       priceCents: s.priceCents,
@@ -112,8 +113,8 @@ function catalogFromRows(rows) {
     .filter((row) => row.is_active !== false)
     .map((row) => ({
       id: String(row.id),
-      name: String(row.name || ""),
-      categoryLabel: String(row.category_label || row.category_id || "Άλλο"),
+      name: displayServiceName(String(row.name || "")),
+      categoryLabel: displayServiceName(String(row.category_label || row.category_id || "Άλλο")),
       categoryId: String(row.category_id || ""),
       durationMin: row.id === "deep-cleanse" ? 90 : (Number(row.duration_minutes) || 60),
       priceCents: Number(row.price_cents) || 0,
@@ -430,8 +431,8 @@ function openApptForm(row) {
   apptForm.classList.remove("hidden");
   document.getElementById("apptId").value = row.id;
   const [firstService, secondService] = splitAppointmentServices(row.service || "");
-  apptService.value = firstService;
-  if (apptService2) apptService2.value = secondService;
+  apptService.value = displayServiceName(firstService);
+  if (apptService2) apptService2.value = displayServiceName(secondService);
   setDayFirstDate(apptForm.appointment_date, row.appointment_date || "");
   apptForm.appointment_time.value = row.appointment_time ? String(row.appointment_time).slice(0, 5) : "";
   apptForm.duration_minutes.value = String(row.duration_minutes || 60);
@@ -440,7 +441,7 @@ function openApptForm(row) {
   apptForm.status.value = row.status || "confirmed";
   apptForm.notes.value = displayNotes(row.notes);
   const secondMatch = secondService
-    ? catalogCache.find((item) => normalizeSearch(item.name) === normalizeSearch(secondService))
+    ? catalogCache.find((item) => normalizeSearch(item.name) === normalizeSearch(displayServiceName(secondService)))
     : null;
   clientExtra = secondMatch
     ? { duration: Number(secondMatch.durationMin) || 0, cents: Number(secondMatch.priceCents) || 0 }
@@ -491,7 +492,7 @@ async function renderVisits() {
       sort: `${day}T${formatTime(row.appointment_time)}`,
       html: `
         <article class="visit-card${upcoming ? " is-upcoming" : ""}${row.status === "cancelled" ? " is-cancelled" : ""}">
-          <h3>${splitAppointmentServices(row.service || "Ραντεβού").filter(Boolean).map((part) => escapeHtml(part)).join("<br>")}</h3>
+          <h3>${splitAppointmentServices(row.service || "Ραντεβού").filter(Boolean).map((part) => escapeHtml(displayServiceName(part))).join("<br>")}</h3>
           <div class="visit-meta">
             <span>${escapeHtml(formatDate(row.appointment_date))} · ${escapeHtml(formatTime(row.appointment_time))}</span>
             ${euros != null && euros > 0 ? `<span>${escapeHtml(formatMoney(euros))}</span>` : ""}
@@ -647,6 +648,8 @@ treatmentSearch?.addEventListener("focus", () => {
 
 treatmentSearch?.addEventListener("input", () => {
   clearPickedTreatmentKeepText();
+  const shown = displayServiceName(treatmentSearch.value.trim());
+  if (shown === "Solarium" && treatmentSearch.value.trim() !== "Solarium") treatmentSearch.value = "Solarium";
   showTreatmentSuggest(filterCatalog(treatmentSearch.value), treatmentSearch.value);
 });
 
@@ -681,7 +684,8 @@ treatmentSearch?.addEventListener("keydown", (event) => {
 
 treatmentSearch?.addEventListener("blur", () => {
   window.setTimeout(() => hideTreatmentSuggest(), 120);
-  const typed = treatmentSearch.value.trim();
+  const typed = displayServiceName(treatmentSearch.value.trim());
+  if (typed !== treatmentSearch.value.trim()) treatmentSearch.value = typed;
   if (!typed) {
     clearPickedTreatmentKeepText();
     return;
@@ -709,12 +713,15 @@ apptService2?.addEventListener("focus", () => {
 
 apptService2?.addEventListener("input", () => {
   if (!apptService2.value.trim()) clearClientExtra();
+  const shown = displayServiceName(apptService2.value.trim());
+  if (shown === "Solarium" && apptService2.value.trim() !== "Solarium") apptService2.value = "Solarium";
   showApptSuggest2(filterCatalog(apptService2.value), apptService2.value);
 });
 
 apptService2?.addEventListener("blur", () => {
   window.setTimeout(() => hideApptSuggest2(), 120);
-  const typed = apptService2.value.trim();
+  const typed = displayServiceName(apptService2.value.trim());
+  if (typed !== apptService2.value.trim()) apptService2.value = typed;
   if (!typed) {
     clearClientExtra();
     return;
@@ -728,7 +735,14 @@ apptService?.addEventListener("focus", () => {
 });
 
 apptService?.addEventListener("input", () => {
+  const shown = displayServiceName(apptService.value.trim());
+  if (shown === "Solarium" && apptService.value.trim() !== "Solarium") apptService.value = "Solarium";
   showApptSuggest(filterCatalog(apptService.value), apptService.value);
+});
+
+apptService?.addEventListener("blur", () => {
+  const typed = displayServiceName(apptService.value.trim());
+  if (typed !== apptService.value.trim()) apptService.value = typed;
 });
 
 cancelApptBtn?.addEventListener("click", closeApptForm);

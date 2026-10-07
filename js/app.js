@@ -292,7 +292,7 @@ let bookingCatalogPromise = null;
 function loadBookingCatalog() {
   if (!bookingCatalogPromise) {
     bookingCatalogPromise = (async () => {
-      const catalog = await import("./booking-services.js?v=cabin-6");
+      const catalog = await import("./booking-services.js?v=solarium-word");
       try {
         const { isSupabaseConfigured, fetchServiceCatalog } = await import("./booking-api.js");
         if (isSupabaseConfigured()) {

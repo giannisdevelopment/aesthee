@@ -18,7 +18,8 @@ import {
   readDayFirstDate,
   APPOINTMENT_STATUS_LABELS,
   applyAuthShell,
-} from "./admin-api.js?v=dmy-cal-1";
+  greekNameToLatin,
+} from "./admin-api.js?v=name-fold";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   applyCatalogFromRows,
@@ -41,11 +42,12 @@ import {
   timeLabelToMinutes,
   minutesToTimeLabel,
   filterServiceSuggestions,
+  displayServiceName,
   splitAppointmentServices,
   joinAppointmentServices,
   BLOCKED_TIME_SERVICE,
   isBlockedTimeService,
-} from "./booking-services.js?v=cabin-6";
+} from "./booking-services.js?v=solarium-word";
 import { fetchBookedSlots } from "./booking-api.js";
 import { notifyAppointmentEmail } from "./appointment-email.js";
 
@@ -249,7 +251,10 @@ function configMissing() {
 }
 
 function formatServiceLines(service) {
-  return splitAppointmentServices(service).filter(Boolean).map((part) => escapeHtml(part)).join("<br>");
+  return splitAppointmentServices(service)
+    .filter(Boolean)
+    .map((part) => escapeHtml(displayServiceName(part)))
+    .join("<br>");
 }
 
 function escapeHtml(value) {
@@ -1223,10 +1228,10 @@ function fillFormFromAppointment(row) {
   selectedServiceId = "";
   bkServiceId.value = "";
   const [firstService, secondService] = splitAppointmentServices(row.service || "");
-  bkServiceSearch.value = firstService;
-  if (bkService2Search) bkService2Search.value = secondService;
+  bkServiceSearch.value = displayServiceName(firstService);
+  if (bkService2Search) bkService2Search.value = displayServiceName(secondService);
   const match = catalogCache.find(
-    (item) => normalizeSearch(item.name) === normalizeSearch(firstService)
+    (item) => normalizeSearch(item.name) === normalizeSearch(displayServiceName(firstService))
   );
   if (match) {
     selectedServiceId = match.id;
@@ -1239,7 +1244,7 @@ function fillFormFromAppointment(row) {
   bkDuration.value = String(row.duration_minutes || 60);
   bkPrice.value = row.price_cents != null ? eurosFromCents(row.price_cents) : "";
   const secondMatch = secondService
-    ? catalogCache.find((item) => normalizeSearch(item.name) === normalizeSearch(secondService))
+    ? catalogCache.find((item) => normalizeSearch(item.name) === normalizeSearch(displayServiceName(secondService)))
     : null;
   extraApplied = secondMatch
     ? { duration: Number(secondMatch.durationMin) || 0, cents: Number(secondMatch.priceCents) || 0 }
@@ -1258,7 +1263,7 @@ function fillFormFromAppointment(row) {
   bkLinkClient.checked = Boolean(row.client_id);
   const serviceObj = selectedCatalogService() || {
     id: selectedServiceId || "custom",
-    name: row.service,
+    name: displayServiceName(firstService),
     categoryId: "",
     durationMin: row.duration_minutes || 60,
   };
@@ -1379,8 +1384,8 @@ function catalogFromDefaults() {
   return DEFAULT_BOOKING_CATEGORIES.flatMap((cat) =>
     cat.services.map((s) => ({
       id: s.id,
-      name: s.name,
-      categoryLabel: cat.label,
+      name: displayServiceName(s.name),
+      categoryLabel: cat.id === "solarium" ? "Solarium" : cat.label,
       categoryId: cat.id,
       durationMin: s.durationMin,
       priceCents: s.priceCents,
@@ -1394,8 +1399,8 @@ function catalogFromRows(rows) {
     .filter((row) => row.is_active !== false)
     .map((row) => ({
       id: String(row.id),
-      name: String(row.name || ""),
-      categoryLabel: String(row.category_label || row.category_id || "Άλλο"),
+      name: displayServiceName(String(row.name || "")),
+      categoryLabel: displayServiceName(String(row.category_label || row.category_id || "Άλλο")),
       categoryId: String(row.category_id || ""),
       durationMin: row.id === "deep-cleanse" ? 90 : (Number(row.duration_minutes) || 60),
       priceCents: Number(row.price_cents) || 0,
@@ -1412,33 +1417,8 @@ function normalizeSearch(value) {
     .trim();
 }
 
-function foldClientGlyphs(value) {
-  return String(value || "")
-    .replace(/[aα]/g, "α")
-    .replace(/[bβ]/g, "β")
-    .replace(/[gγ]/g, "γ")
-    .replace(/[dδ]/g, "δ")
-    .replace(/[eε]/g, "ε")
-    .replace(/[zζ]/g, "ζ")
-    .replace(/[hη]/g, "η")
-    .replace(/[iι]/g, "ι")
-    .replace(/[kκc]/g, "κ")
-    .replace(/[lλ]/g, "λ")
-    .replace(/[mμ]/g, "μ")
-    .replace(/[nν]/g, "ν")
-    .replace(/[oο]/g, "ο")
-    .replace(/[pπ]/g, "π")
-    .replace(/[rρ]/g, "ρ")
-    .replace(/[sσς]/g, "σ")
-    .replace(/[tτ]/g, "τ")
-    .replace(/[yυu]/g, "υ")
-    .replace(/[fφ]/g, "φ")
-    .replace(/[xχ]/g, "χ")
-    .replace(/[wω]/g, "ω");
-}
-
 function normalizeClientSearch(value) {
-  return foldClientGlyphs(normalizeSearch(value));
+  return greekNameToLatin(value);
 }
 
 function formatServiceMeta(row) {
@@ -1665,7 +1645,18 @@ function selectedServicePayload() {
       categoryId: fromCatalog.categoryId,
     };
   }
-  const name = bkServiceSearch.value.trim();
+  const name = displayServiceName(bkServiceSearch.value.trim());
+  if (name === "Solarium") {
+    const solarium = catalogCache.find((row) => row.id === "solarium") || getServiceById("solarium");
+    if (solarium) {
+      return {
+        id: solarium.id,
+        name: solarium.name,
+        durationMin: Number(bkDuration.value) || solarium.durationMin || 10,
+        categoryId: solarium.categoryId,
+      };
+    }
+  }
   return {
     id: "custom",
     name,
@@ -2397,6 +2388,8 @@ bkServiceSearch?.addEventListener("focus", () => {
 
 bkServiceSearch?.addEventListener("input", () => {
   clearPickedServiceKeepText();
+  const shown = displayServiceName(bkServiceSearch.value.trim());
+  if (shown === "Solarium" && bkServiceSearch.value.trim() !== "Solarium") bkServiceSearch.value = "Solarium";
   showServiceSuggest(filterCatalog(bkServiceSearch.value), bkServiceSearch.value);
 });
 
@@ -2438,6 +2431,8 @@ bkService2Search?.addEventListener("focus", () => {
 
 bkService2Search?.addEventListener("input", () => {
   if (!bkService2Search.value.trim()) clearExtraService();
+  const shown = displayServiceName(bkService2Search.value.trim());
+  if (shown === "Solarium" && bkService2Search.value.trim() !== "Solarium") bkService2Search.value = "Solarium";
   showService2Suggest(filterCatalog(bkService2Search.value), bkService2Search.value);
 });
 
@@ -2470,7 +2465,8 @@ bkService2Search?.addEventListener("keydown", (event) => {
 
 bkService2Search?.addEventListener("blur", () => {
   window.setTimeout(() => hideService2Suggest(), 120);
-  const typed = bkService2Search.value.trim();
+  const typed = displayServiceName(bkService2Search.value.trim());
+  if (typed !== bkService2Search.value.trim()) bkService2Search.value = typed;
   if (!typed) {
     clearExtraService();
     return;
@@ -2481,7 +2477,8 @@ bkService2Search?.addEventListener("blur", () => {
 
 bkServiceSearch?.addEventListener("blur", () => {
   window.setTimeout(() => hideServiceSuggest(), 120);
-  const typed = bkServiceSearch.value.trim();
+  const typed = displayServiceName(bkServiceSearch.value.trim());
+  if (typed !== bkServiceSearch.value.trim()) bkServiceSearch.value = typed;
   if (!typed) {
     clearPickedServiceKeepText();
     return;
