@@ -1194,10 +1194,11 @@ function openCalDetail(row) {
   el.setAttribute("aria-modal", "true");
   el.innerHTML = `
     <h3>${escapeHtml(blocked ? BLOCKED_TIME_SERVICE : row.guest_name)}</h3>
+    ${blocked ? "" : `<a class="cal-detail-phone" href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a>`}
     <p>${escapeHtml(formatTime(row.appointment_time))} – ${escapeHtml(endTimeLabel(row.appointment_time, row.duration_minutes || 60))} · ${escapeHtml(formatDurationMin(row.duration_minutes || 60))}</p>
     ${blocked ? "" : `<p class="cal-detail-service">${formatServiceLines(row.service)}</p>`}
     <p>${blocked ? "" : `${escapeHtml(formatPriceCents(row.price_cents))} · `}Καμπίνα ${escapeHtml(String(resolveCabinId(row)))}</p>
-    <p>${statusBadge(row.status)}${blocked ? "" : ` · <a href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a>`}</p>
+    <p>${statusBadge(row.status)}</p>
     ${apptNote ? `<div class="cal-detail-note"><span>Σημειώσεις</span><p>${escapeHtml(apptNote)}</p></div>` : ""}
     <div class="cal-detail-note hidden" id="calDetailClientNote"></div>
     <div class="cal-detail-actions">
