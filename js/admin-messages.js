@@ -16,7 +16,6 @@ import {
   applyAuthShell,
 } from "./admin-api.js?v=name-fold";
 import { displayServiceName, splitAppointmentServices } from "./booking-services.js?v=solarium-word";
-import { notifyAppointmentEmail } from "./appointment-email.js";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -181,8 +180,6 @@ function bindInboxActions() {
         btn.disabled = false;
         return;
       }
-      const updated = { ...row, status: "confirmed" };
-      notifyAppointmentEmail({ type: "confirmed", appointment: updated }).catch(() => {});
       showToast("Η κράτηση εγκρίθηκε.");
       await loadInbox();
     });
@@ -201,8 +198,6 @@ function bindInboxActions() {
         btn.disabled = false;
         return;
       }
-      const updated = { ...row, status: "cancelled" };
-      notifyAppointmentEmail({ type: "cancelled", appointment: updated }).catch(() => {});
       showToast("Η κράτηση απορρίφθηκε.");
       await loadInbox();
     });
@@ -220,10 +215,6 @@ function bindInboxActions() {
           client_id: clientId,
           status: "confirmed",
         });
-        notifyAppointmentEmail({
-          type: "confirmed",
-          appointment: { ...row, status: "confirmed", client_id: clientId },
-        }).catch(() => {});
         location.href = `/admin/client?id=${clientId}`;
       } catch (err) {
         showToast(err.message || "Αποτυχία δημιουργίας πελάτη", true);

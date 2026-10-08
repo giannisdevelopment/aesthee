@@ -1240,12 +1240,6 @@ function openCalDetail(row) {
       return;
     }
     showToast("Η κατάσταση ενημερώθηκε.");
-    const updated = { ...row, status: nextStatus };
-    if (nextStatus === "confirmed" && row.status !== "confirmed") {
-      notifyAppointmentEmail({ type: "confirmed", appointment: updated }).catch(() => {});
-    } else if (nextStatus === "cancelled" && row.status !== "cancelled") {
-      notifyAppointmentEmail({ type: "cancelled", appointment: updated }).catch(() => {});
-    }
     closeCalDetail();
     await renderAppointments();
   });
@@ -2283,7 +2277,6 @@ async function renderAppointments() {
   rowsBody.querySelectorAll("[data-status-for]").forEach((select) => {
     select.addEventListener("change", async () => {
       const id = select.dataset.statusFor;
-      const row = listRows.find((item) => item.id === id);
       const nextStatus = select.value;
       const { error: updError } = await updateAppointment(id, { status: nextStatus });
       if (updError) {
@@ -2292,14 +2285,6 @@ async function renderAppointments() {
         return;
       }
       showToast("Η κατάσταση ενημερώθηκε.");
-      if (row) {
-        const updated = { ...row, status: nextStatus };
-        if (nextStatus === "confirmed" && row.status !== "confirmed") {
-          notifyAppointmentEmail({ type: "confirmed", appointment: updated }).catch(() => {});
-        } else if (nextStatus === "cancelled" && row.status !== "cancelled") {
-          notifyAppointmentEmail({ type: "cancelled", appointment: updated }).catch(() => {});
-        }
-      }
       await renderAppointments();
     });
   });
@@ -2867,8 +2852,6 @@ bookingForm?.addEventListener("submit", async (event) => {
       const nextDate = String(payload.appointment_date).slice(0, 10);
       const nextTime = formatTime(payload.appointment_time);
       const timeChanged = prevDate !== nextDate || prevTime !== nextTime;
-      const statusBecameConfirmed = payload.status === "confirmed" && prev.status !== "confirmed";
-      const statusBecameCancelled = payload.status === "cancelled" && prev.status !== "cancelled";
 
       if (!blockMode && timeChanged) {
         notifyAppointmentEmail({
@@ -2877,12 +2860,6 @@ bookingForm?.addEventListener("submit", async (event) => {
           previousDate: prevDate,
           previousTime: prevTime,
         }).catch(() => {});
-      } else if (!blockMode && statusBecameConfirmed) {
-        notifyAppointmentEmail({ type: "confirmed", appointment: data || payload }).catch(() => {});
-      } else if (!blockMode && statusBecameCancelled) {
-        notifyAppointmentEmail({ type: "cancelled", appointment: data || payload }).catch(() => {});
-      } else if (!blockMode) {
-        notifyAppointmentEmail({ type: "updated", appointment: data || payload }).catch(() => {});
       }
 
       showToast(blockMode ? "Το μπλοκάρισμα ενημερώθηκε." : "Το ραντεβού ενημερώθηκε.");
