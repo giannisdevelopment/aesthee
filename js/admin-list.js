@@ -3,11 +3,14 @@ import {
   signIn,
   signOut,
   listClients,
+  listAppointmentsForVisitCount,
+  listVisitDates,
   showToast,
   mapAuthError,
   isSupabaseConfigured,
   applyAuthShell,
-} from "./admin-api.js?v=name-fold";
+} from "./admin-api.js?v=visit-count";
+import { isBlockedTimeService } from "./booking-services.js?v=solarium-word";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -41,9 +44,117 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function todayKey() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function phoneKey(phone) {
+  let digits = String(phone || "").replace(/\D/g, "");
+  if (digits.startsWith("0030")) digits = digits.slice(4);
+  else if (digits.startsWith("30") && digits.length > 10) digits = digits.slice(2);
+  if (digits.length > 10) digits = digits.slice(-10);
+  return digits.length >= 8 ? digits : "";
+}
+
+function dayKey(value) {
+  return String(value || "").slice(0, 10);
+}
+
+function bumpDay(days, day, field) {
+  if (!day) return;
+  let cell = days.get(day);
+  if (!cell) {
+    cell = { appts: 0, visits: 0 };
+    days.set(day, cell);
+  }
+  cell[field] += 1;
+}
+
+/** Appointments and logged visits on the same day count as one visit. */
+function countFromDays(days) {
+  let total = 0;
+  for (const cell of days.values()) total += Math.max(cell.appts, cell.visits);
+  return total;
+}
+
+function countClientVisits(client, index) {
+  const days = new Map();
+  for (const [day, count] of index.visitsByClient.get(client.id) || []) {
+    for (let i = 0; i < count; i += 1) bumpDay(days, day, "visits");
+  }
+  for (const row of index.apptsByClient.get(client.id) || []) {
+    bumpDay(days, row.day, "appts");
+  }
+  const phone = phoneKey(client.phone);
+  if (phone) {
+    for (const row of index.apptsByPhone.get(phone) || []) {
+      if (row.clientId && row.clientId !== client.id) continue;
+      bumpDay(days, row.day, "appts");
+    }
+  }
+  if (!days.size) return client.visits?.[0]?.count ?? 0;
+  return countFromDays(days);
+}
+
+/** @type {Promise<object> | null} */
+let visitIndexPromise = null;
+
+function loadVisitIndex() {
+  if (!visitIndexPromise) {
+    visitIndexPromise = (async () => {
+      const today = todayKey();
+      const [apptsRes, visitsRes] = await Promise.all([
+        listAppointmentsForVisitCount(today),
+        listVisitDates(),
+      ]);
+      if (apptsRes.error || visitsRes.error) {
+        visitIndexPromise = null;
+        return null;
+      }
+      const apptsByClient = new Map();
+      const apptsByPhone = new Map();
+      for (const row of apptsRes.data || []) {
+        if (isBlockedTimeService(row.service)) continue;
+        const day = dayKey(row.appointment_date);
+        if (!day) continue;
+        if (row.client_id) {
+          const list = apptsByClient.get(row.client_id) || [];
+          list.push({ day, clientId: row.client_id });
+          apptsByClient.set(row.client_id, list);
+          continue;
+        }
+        const phone = phoneKey(row.guest_phone);
+        if (!phone) continue;
+        const list = apptsByPhone.get(phone) || [];
+        list.push({ day, clientId: "" });
+        apptsByPhone.set(phone, list);
+      }
+      const visitsByClient = new Map();
+      for (const row of visitsRes.data || []) {
+        const day = dayKey(row.payment_date);
+        if (!row.client_id || !day) continue;
+        let byDay = visitsByClient.get(row.client_id);
+        if (!byDay) {
+          byDay = new Map();
+          visitsByClient.set(row.client_id, byDay);
+        }
+        byDay.set(day, (byDay.get(day) || 0) + 1);
+      }
+      return { apptsByClient, apptsByPhone, visitsByClient };
+    })();
+  }
+  return visitIndexPromise;
+}
+
 async function renderClients(query = "") {
   clientsBody.innerHTML = `<tr><td colspan="5" class="empty">Φόρτωση…</td></tr>`;
-  const { data, error } = await listClients(query);
+  const [{ data, error }, index] = await Promise.all([
+    listClients(query),
+    loadVisitIndex(),
+  ]);
   if (error) {
     clientsBody.innerHTML = `<tr><td colspan="5" class="empty">Σφάλμα φόρτωσης.</td></tr>`;
     showToast(error.message || "Αποτυχία φόρτωσης πελατών", true);
@@ -61,7 +172,9 @@ async function renderClients(query = "") {
   }
 
   clientsBody.innerHTML = rows.map((client) => {
-    const visitCount = client.visits?.[0]?.count ?? 0;
+    const visitCount = index
+      ? countClientVisits(client, index)
+      : (client.visits?.[0]?.count ?? 0);
     return `
       <tr>
         <td><a class="client-link" href="/admin/client?id=${escapeHtml(client.id)}">${escapeHtml(client.full_name)}</a></td>

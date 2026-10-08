@@ -490,6 +490,31 @@ export async function deleteClient(id) {
   return getSupabase().from("clients").delete().eq("id", id);
 }
 
+/**
+ * Past appointments used to count client visits, including follow-ups.
+ * Cancelled and no-shows stay out. Callers skip blocked time.
+ */
+export async function listAppointmentsForVisitCount(today) {
+  return fetchAllRows(() =>
+    getSupabase()
+      .from("appointments")
+      .select("id, client_id, guest_phone, appointment_date, service, status")
+      .lte("appointment_date", today)
+      .not("status", "in", "(cancelled,no_show)")
+      .order("id", { ascending: true })
+  );
+}
+
+/** Visit dates, so a logged payment and the appointment on that day count once. */
+export async function listVisitDates() {
+  return fetchAllRows(() =>
+    getSupabase()
+      .from("visits")
+      .select("client_id, payment_date")
+      .order("id", { ascending: true })
+  );
+}
+
 export async function listVisits(clientId) {
   return getSupabase()
     .from("visits")

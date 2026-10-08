@@ -606,7 +606,7 @@ html.auth-out #loginView {
 
 .badge-pending { background: #fff1e0; color: #9a5b1a; }
 .badge-confirmed { background: #e8f5ea; color: #2f6b3a; }
-.badge-completed { background: #ebe8f5; color: #4d3f7a; }
+.badge-completed { background: #e5f6ea; color: #157a36; }
 .badge-cancelled { background: var(--danger-soft); color: var(--danger); }
 .badge-no_show { background: #eee; color: #666; }
 
@@ -1586,12 +1586,15 @@ body.is-cal-dragging .cal-board {
 
 .cal-block.is-pending .cal-block-accent { background: #c4a36a; }
 .cal-block.is-confirmed .cal-block-accent { background: #2a9d8f; }
-.cal-block.is-completed .cal-block-accent { background: #6a8f6a; }
+.cal-block.is-completed .cal-block-accent {
+  flex-basis: 7px;
+  background: #1a9b45;
+}
 .cal-block.is-no_show .cal-block-accent,
 .cal-block.is-cancelled .cal-block-accent { background: #9a9a9a; }
 
 .cal-block.is-pending { background: #fffaf0; }
-.cal-block.is-completed { background: #f7faf7; }
+.cal-block.is-completed { background: #eef8f0; }
 
 .cal-block.is-cancelled,
 .cal-block.is-no_show {
