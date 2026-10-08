@@ -1147,15 +1147,10 @@ function renderCalendar(data) {
       `;
       btn.addEventListener("click", (event) => {
         event.stopPropagation();
-        if (btn.dataset.didDrag === "1") {
-          delete btn.dataset.didDrag;
-          return;
-        }
         calCols.querySelectorAll(".cal-block.is-selected").forEach((el) => el.classList.remove("is-selected"));
         btn.classList.add("is-selected");
         openCalDetail(row);
       });
-      if (!week) bindBlockDrag(btn, row);
       colEl.appendChild(btn);
     }
   }
