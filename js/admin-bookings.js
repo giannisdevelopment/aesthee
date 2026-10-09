@@ -67,6 +67,7 @@ const listPanel = document.getElementById("listPanel");
 const viewCalBtn = document.getElementById("viewCalBtn");
 const viewListBtn = document.getElementById("viewListBtn");
 const calDayStrip = document.getElementById("calDayStrip");
+const calCabinPager = document.getElementById("calCabinPager");
 const calMonthLabel = document.getElementById("calMonthLabel");
 const calMonthPop = document.getElementById("calMonthPop");
 const calMonthGrid = document.getElementById("calMonthGrid");
@@ -214,25 +215,6 @@ let nowLineTimer = null;
 /** @type {{ x: number, y: number, cabin: string, top: number } | null} */
 let emptySlotPointer = null;
 
-/**
- * Active calendar block drag (cabin ± time).
- * @type {{
- *   row: object,
- *   el: HTMLElement,
- *   pointerId: number,
- *   startX: number,
- *   startY: number,
- *   origTop: number,
- *   origCabin: number,
- *   duration: number,
- *   moved: boolean,
- *   ghost: HTMLElement | null,
- *   targetCabin: number | null,
- *   targetMins: number | null,
- * } | null}
- */
-let blockDrag = null;
-
 function pxPerMin() {
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue("--cal-px-min")
@@ -247,6 +229,60 @@ function pxPerMin() {
 
 function calBoardEl() {
   return document.getElementById("calBoard");
+}
+
+function paintCabinPager() {
+  if (!calCabinPager) return;
+  calCabinPager.innerHTML = CABIN_IDS.map((id) => {
+    const meta = CABIN_SHORT[id] || { code: `Κ${id}`, role: "" };
+    return `
+      <button type="button" class="cal-cabin-chip" data-cabin="${id}" role="tab" aria-selected="false">
+        <span class="code">${escapeHtml(meta.code)}</span>
+        <span class="role">${escapeHtml(meta.role)}</span>
+      </button>
+    `;
+  }).join("");
+  calCabinPager.querySelectorAll("[data-cabin]").forEach((btn) => {
+    btn.addEventListener("click", () => scrollCabinIntoView(btn.dataset.cabin));
+  });
+  pagerCabin = "";
+  syncCabinPager();
+}
+
+function scrollCabinIntoView(cabinId) {
+  const board = calBoardEl();
+  const col = calCols?.querySelector(`.cal-col[data-cabin="${cabinId}"]`);
+  if (!board || !col) return;
+  const timeW = calTimes?.offsetWidth || 0;
+  const left = Math.max(0, col.offsetLeft - timeW);
+  board.scrollTo({ left, behavior: "smooth" });
+}
+
+let pagerCabin = "";
+
+function syncCabinPager() {
+  if (!calCabinPager) return;
+  const board = calBoardEl();
+  if (!board || calendarSpan === "week") return;
+  const timeW = calTimes?.offsetWidth || 0;
+  const probe = board.scrollLeft + timeW + 12;
+  let active = "";
+  calCols?.querySelectorAll(".cal-col[data-cabin]").forEach((col) => {
+    const left = col.offsetLeft;
+    const right = left + col.offsetWidth;
+    if (probe >= left && probe < right) active = col.dataset.cabin || "";
+  });
+  if (!active) {
+    const first = calCols?.querySelector(".cal-col[data-cabin]");
+    active = first?.dataset.cabin || String(CABIN_IDS[0]);
+  }
+  if (active === pagerCabin) return;
+  pagerCabin = active;
+  calCabinPager.querySelectorAll("[data-cabin]").forEach((btn) => {
+    const on = btn.dataset.cabin === active;
+    btn.classList.toggle("is-active", on);
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  });
 }
 
 function syncCalModeClass() {
@@ -622,8 +658,7 @@ function resolveCabinId(row) {
 }
 
 /**
- * Fill missing cabin_id only — never move a cabin staff already chose
- * (drag / edit must stick).
+ * Fill missing cabin_id only — never move a cabin staff already chose.
  */
 async function healMismatchedCabins(rows) {
   const active = (rows || []).filter((row) => row.status !== "cancelled");
@@ -644,202 +679,6 @@ async function healMismatchedCabins(rows) {
   }
 
   return fixed;
-}
-
-function snapMinutes(raw) {
-  const step = SLOT_STEP_MINUTES || 10;
-  const clamped = Math.max(
-    BOOKING_DAY_START,
-    Math.min(BOOKING_DAY_END - step, Number(raw) || BOOKING_DAY_START),
-  );
-  return Math.round(clamped / step) * step;
-}
-
-function cabinColFromPoint(clientX, clientY) {
-  const stack = document.elementsFromPoint(clientX, clientY);
-  for (const node of stack) {
-    const col = node?.closest?.(".cal-col");
-    if (col?.dataset?.cabin) return col;
-  }
-  return null;
-}
-
-function clearBlockDragChrome() {
-  document.querySelectorAll(".cal-col.is-drop-target").forEach((el) => {
-    el.classList.remove("is-drop-target");
-  });
-  document.body.classList.remove("is-cal-dragging");
-}
-
-function endBlockDrag(cancelled = false) {
-  const drag = blockDrag;
-  blockDrag = null;
-  clearBlockDragChrome();
-  if (!drag) return null;
-
-  if (drag.ghost) {
-    drag.ghost.remove();
-    drag.ghost = null;
-  }
-  drag.el.classList.remove("is-dragging");
-  drag.el.style.opacity = "";
-  drag.el.style.transform = "";
-  drag.el.style.zIndex = "";
-
-  try {
-    drag.el.releasePointerCapture(drag.pointerId);
-  } catch {
-    /* already released */
-  }
-
-  return cancelled ? null : drag;
-}
-
-async function commitBlockDrag(drag) {
-  if (!drag?.moved) return;
-
-  const cabin = drag.targetCabin ?? drag.origCabin;
-  const mins = drag.targetMins != null
-    ? snapMinutes(drag.targetMins)
-    : timeLabelToMinutes(formatTime(drag.row.appointment_time));
-  if (mins == null) return;
-
-  const timeLabel = minutesToTimeLabel(mins);
-  const prevTime = formatTime(drag.row.appointment_time);
-  const prevCabin = Number(drag.row.cabin_id) || drag.origCabin;
-  const prevTimeRaw = drag.row.appointment_time;
-  const cabinChanged = cabin !== prevCabin;
-  const timeChanged = timeLabel !== prevTime;
-  if (!cabinChanged && !timeChanged) {
-    renderCalendar(appointmentsCache);
-    return;
-  }
-
-  const payload = {
-    cabin_id: cabin,
-    appointment_time: `${timeLabel}:00`,
-  };
-
-  drag.row.cabin_id = cabin;
-  drag.row.appointment_time = payload.appointment_time;
-  renderCalendar(appointmentsCache);
-
-  const { error } = await updateAppointment(drag.row.id, payload);
-  if (error) {
-    drag.row.cabin_id = prevCabin;
-    drag.row.appointment_time = prevTimeRaw;
-    showToast(error.message || "Αποτυχία μετακίνησης", true);
-    renderCalendar(appointmentsCache);
-    return;
-  }
-
-  const bits = [];
-  if (cabinChanged) bits.push(`Κ${cabin}`);
-  if (timeChanged) bits.push(timeLabel);
-  showToast(`Μετακινήθηκε → ${bits.join(" · ")}`);
-}
-
-function onBlockPointerMove(event) {
-  const drag = blockDrag;
-  if (!drag || event.pointerId !== drag.pointerId) return;
-
-  const dx = event.clientX - drag.startX;
-  const dy = event.clientY - drag.startY;
-  if (!drag.moved) {
-    if (Math.hypot(dx, dy) < 10) return;
-    drag.moved = true;
-    drag.el.dataset.didDrag = "1";
-    document.body.classList.add("is-cal-dragging");
-    drag.el.classList.add("is-dragging");
-    drag.el.style.opacity = "0.35";
-    try {
-      drag.el.setPointerCapture(drag.pointerId);
-    } catch {
-      /* ignore */
-    }
-
-    const ghost = drag.el.cloneNode(true);
-    ghost.classList.add("cal-block-ghost");
-    ghost.removeAttribute("id");
-    ghost.style.position = "fixed";
-    ghost.style.margin = "0";
-    ghost.style.pointerEvents = "none";
-    ghost.style.zIndex = "80";
-    ghost.style.width = `${drag.el.getBoundingClientRect().width}px`;
-    ghost.style.height = `${drag.el.getBoundingClientRect().height}px`;
-    document.body.appendChild(ghost);
-    drag.ghost = ghost;
-    closeCalDetail();
-  }
-
-  event.preventDefault();
-
-  const rect = drag.el.getBoundingClientRect();
-  if (drag.ghost) {
-    drag.ghost.style.left = `${event.clientX - rect.width / 2}px`;
-    drag.ghost.style.top = `${event.clientY - 24}px`;
-  }
-
-  const col = cabinColFromPoint(event.clientX, event.clientY);
-  document.querySelectorAll(".cal-col.is-drop-target").forEach((el) => {
-    el.classList.remove("is-drop-target");
-  });
-  if (col) {
-    col.classList.add("is-drop-target");
-    drag.targetCabin = Number(col.dataset.cabin) || drag.origCabin;
-    const colRect = col.getBoundingClientRect();
-    const yInCol = event.clientY - colRect.top;
-    const rawMins = BOOKING_DAY_START + yInCol / pxPerMin() - drag.duration / 2;
-    drag.targetMins = snapMinutes(rawMins);
-    // Live preview position in original column while dragging
-    drag.el.style.top = `${Math.max(0, (drag.targetMins - BOOKING_DAY_START) * pxPerMin())}px`;
-  }
-}
-
-function onBlockPointerUp(event) {
-  const drag = blockDrag;
-  if (!drag || event.pointerId !== drag.pointerId) return;
-  const finished = endBlockDrag(false);
-  if (finished?.moved) {
-    event.preventDefault();
-    event.stopPropagation();
-    commitBlockDrag(finished);
-  }
-}
-
-function onBlockPointerCancel(event) {
-  const drag = blockDrag;
-  if (!drag || event.pointerId !== drag.pointerId) return;
-  endBlockDrag(true);
-  renderCalendar(appointmentsCache);
-}
-
-function bindBlockDrag(btn, row) {
-  btn.addEventListener("pointerdown", (event) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    if (blockDrag) return;
-    const start = timeLabelToMinutes(formatTime(row.appointment_time));
-    blockDrag = {
-      row,
-      el: btn,
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      origTop: parseFloat(btn.style.top) || 0,
-      origCabin: resolveCabinId(row),
-      duration: Number(row.duration_minutes) || 60,
-      moved: false,
-      ghost: null,
-      targetCabin: null,
-      targetMins: start,
-    };
-  });
-}
-
-if (typeof window !== "undefined") {
-  window.addEventListener("pointermove", onBlockPointerMove, { passive: false });
-  window.addEventListener("pointerup", onBlockPointerUp);
-  window.addEventListener("pointercancel", onBlockPointerCancel);
 }
 
 function paintTimeGutter(dayHeight) {
@@ -927,6 +766,7 @@ function buildDayChrome() {
     <div class="cal-col" data-cabin="${id}" style="height:${dayHeight}px"></div>
   `).join("");
   calCols.querySelectorAll(".cal-col").forEach(bindEmptyColumn);
+  paintCabinPager();
 }
 
 function buildWeekChrome() {
@@ -1083,9 +923,32 @@ function renderCalendar(data) {
       while (used.includes(col)) col += 1;
       cur.col = col;
     }
-    const maxCol = items.reduce((m, it) => Math.max(m, it.col), 0);
-    const cols = maxCol + 1;
-    for (const it of items) it.cols = cols;
+    // Column count belongs to the overlapping group, not the whole day.
+    // Otherwise one busy hour squeezes every other card into a sliver.
+    const parent = items.map((_, i) => i);
+    const find = (x) => {
+      while (parent[x] !== x) {
+        parent[x] = parent[parent[x]];
+        x = parent[x];
+      }
+      return x;
+    };
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        if (items[j].start >= items[i].end) break;
+        const ra = find(i);
+        const rb = find(j);
+        if (ra !== rb) parent[rb] = ra;
+      }
+    }
+    const clusterMax = new Map();
+    items.forEach((it, i) => {
+      const root = find(i);
+      clusterMax.set(root, Math.max(clusterMax.get(root) || 0, it.col));
+    });
+    items.forEach((it, i) => {
+      it.cols = (clusterMax.get(find(i)) || 0) + 1;
+    });
 
     // Cap height so non-overlapping neighbours never paint over each other
     for (let i = 0; i < items.length; i++) {
@@ -1118,11 +981,21 @@ function renderCalendar(data) {
       btn.className = `cal-block is-${status} ${sizeClass}${blocked ? " is-blocked" : ""}${isHit ? " is-search-hit" : searching ? " is-search-dim" : ""}`;
       btn.style.top = `${Math.max(0, it.top)}px`;
       btn.style.height = `${it.height}px`;
-      if (it.cols > 1) {
+      const colWidth = colEl.clientWidth || 0;
+      const slice = colWidth > 0 ? colWidth / it.cols : 0;
+      // A phone cabin is ~110px. Splitting it makes each letter its own line.
+      const sideBySide = it.cols > 1 && slice >= 100;
+      if (sideBySide) {
         const widthPct = 100 / it.cols;
         btn.style.left = `calc(${it.col * widthPct}% + 2px)`;
         btn.style.right = "auto";
         btn.style.width = `calc(${widthPct}% - 4px)`;
+        btn.style.zIndex = String(2 + it.col);
+      } else if (it.cols > 1) {
+        const inset = Math.min(it.col, 3) * 8;
+        btn.style.left = `${3 + inset}px`;
+        btn.style.right = "3px";
+        btn.style.zIndex = String(2 + it.col);
       }
       btn.dataset.id = row.id;
       const note = staffNotes(row.notes);
@@ -2932,6 +2805,8 @@ bookingForm?.addEventListener("submit", async (event) => {
     bkSubmitBtn.disabled = false;
   }
 });
+
+calBoardEl()?.addEventListener("scroll", () => syncCabinPager(), { passive: true });
 
 let searchTimer = 0;
 searchInput?.addEventListener("focus", () => {

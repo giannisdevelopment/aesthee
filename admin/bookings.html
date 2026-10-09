@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=no-drag" />
+  <link rel="stylesheet" href="/css/admin.css?v=cal-phone" />
   <script src="/js/admin-auth-hint.js"></script>
 </head>
 <body data-admin-page="bookings">
@@ -100,6 +100,7 @@
           </div>
         </div>
         <div class="cal-days" id="calDayStrip" role="tablist" aria-label="Ημέρες"></div>
+        <div class="cal-cabin-pager" id="calCabinPager" role="tablist" aria-label="Καμπίνες"></div>
       </div>
       <div class="cal-board" id="calBoard">
         <div class="cal-grid" id="calGrid">
@@ -287,6 +288,6 @@
 
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
-  <script type="module" src="/js/admin-bookings.js?v=one-email"></script>
+  <script type="module" src="/js/admin-bookings.js?v=cal-phone"></script>
 </body>
 </html>
