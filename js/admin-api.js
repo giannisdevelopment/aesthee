@@ -644,6 +644,102 @@ export async function deleteAppointment(id) {
   return getSupabase().from("appointments").delete().eq("id", id);
 }
 
+function slotTimeKey(value) {
+  const match = String(value || "").match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return "";
+  return `${match[1].padStart(2, "0")}:${match[2]}:00`;
+}
+
+/** Later copies of the same weekly slot: phone, service, time, duration, cabin. */
+export async function listFollowingSameSlot(row) {
+  const date = String(row?.appointment_date || "").slice(0, 10);
+  const time = slotTimeKey(row?.appointment_time);
+  const phone = String(row?.guest_phone || "").trim();
+  if (!row?.id || !date || !time || !phone || !row?.service) {
+    return { data: [], error: null };
+  }
+  let request = getSupabase()
+    .from("appointments")
+    .select("id, appointment_date")
+    .eq("guest_phone", phone)
+    .eq("service", row.service)
+    .eq("appointment_time", time)
+    .gt("appointment_date", date)
+    .neq("id", row.id)
+    .order("appointment_date", { ascending: true })
+    .limit(80);
+  if (row.cabin_id == null || row.cabin_id === "") {
+    request = request.is("cabin_id", null);
+  } else {
+    request = request.eq("cabin_id", Number(row.cabin_id));
+  }
+  return request;
+}
+
+export async function deleteAppointments(ids) {
+  const unique = [...new Set((ids || []).filter(Boolean))];
+  if (!unique.length) return { error: null };
+  return getSupabase().from("appointments").delete().in("id", unique);
+}
+
+/** @returns {Promise<"one" | "following" | null>} */
+export function askDeleteFollowing(count) {
+  const n = Number(count) || 0;
+  const nextLabel = n === 1 ? "το 1 επόμενο" : `τα ${n} επόμενα`;
+  return new Promise((resolve) => {
+    const backdrop = document.createElement("div");
+    backdrop.className = "series-delete-backdrop";
+    const sheet = document.createElement("div");
+    sheet.className = "series-delete";
+    sheet.setAttribute("role", "dialog");
+    sheet.setAttribute("aria-modal", "true");
+    sheet.setAttribute("aria-labelledby", "seriesDeleteTitle");
+    sheet.innerHTML = `
+      <h3 id="seriesDeleteTitle">Επαναλαμβανόμενο ραντεβού</h3>
+      <p>Να σβηστεί μόνο αυτό, ή και ${nextLabel}; Ίδια ώρα, υπηρεσία και καμπίνα.</p>
+      <div class="series-delete-actions">
+        <button type="button" class="btn btn-danger" data-choice="one">Μόνο αυτό</button>
+        <button type="button" class="btn btn-danger" data-choice="following">Αυτό και τα επόμενα</button>
+        <button type="button" class="btn btn-ghost" data-choice="cancel">Άκυρο</button>
+      </div>
+    `;
+    const finish = (choice) => {
+      document.removeEventListener("keydown", onKey);
+      backdrop.remove();
+      sheet.remove();
+      resolve(choice);
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape") finish(null);
+    };
+    backdrop.addEventListener("click", () => finish(null));
+    sheet.querySelector("[data-choice='one']")?.addEventListener("click", () => finish("one"));
+    sheet.querySelector("[data-choice='following']")?.addEventListener("click", () => finish("following"));
+    sheet.querySelector("[data-choice='cancel']")?.addEventListener("click", () => finish(null));
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(backdrop);
+    document.body.appendChild(sheet);
+  });
+}
+
+/** Deletes one appointment, or that appointment and later copies of the same slot. */
+export async function chooseAndDeleteAppointment(row) {
+  if (!row?.id) return { cancelled: true, count: 0, error: null };
+  const { data, error: listError } = await listFollowingSameSlot(row);
+  if (listError) return { cancelled: false, count: 0, error: listError };
+  const following = data || [];
+  let ids = [row.id];
+  if (following.length) {
+    const choice = await askDeleteFollowing(following.length);
+    if (!choice) return { cancelled: true, count: 0, error: null };
+    if (choice === "following") ids = ids.concat(following.map((item) => item.id));
+  } else if (!confirm("Οριστική διαγραφή αυτού του ραντεβού;")) {
+    return { cancelled: true, count: 0, error: null };
+  }
+  const { error } = await deleteAppointments(ids);
+  return { cancelled: false, count: error ? 0 : ids.length, error: error || null };
+}
+
 export async function listContactMessages() {
   return getSupabase()
     .from("contact_messages")

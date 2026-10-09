@@ -5,7 +5,7 @@ import {
   listAppointments,
   createAppointment,
   updateAppointment,
-  deleteAppointment,
+  chooseAndDeleteAppointment,
   findOrCreateClientFromBooking,
   listCatalogServices,
   listClients,
@@ -19,7 +19,7 @@ import {
   APPOINTMENT_STATUS_LABELS,
   applyAuthShell,
   greekNameToLatin,
-} from "./admin-api.js?v=name-fold";
+} from "./admin-api.js?v=series-del";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   applyCatalogFromRows,
@@ -1117,13 +1117,13 @@ function openCalDetail(row) {
     await renderAppointments();
   });
   el.querySelector("#calDetailDelete")?.addEventListener("click", async () => {
-    if (!confirm("Οριστική διαγραφή αυτού του ραντεβού;")) return;
-    const { error } = await deleteAppointment(row.id);
-    if (error) {
-      showToast(error.message || "Αποτυχία διαγραφής", true);
+    const result = await chooseAndDeleteAppointment(row);
+    if (result.cancelled) return;
+    if (result.error) {
+      showToast(result.error.message || "Αποτυχία διαγραφής", true);
       return;
     }
-    showToast("Διαγράφηκε.");
+    showToast(result.count === 1 ? "Διαγράφηκε." : `Διαγράφηκαν ${result.count} ραντεβού.`);
     closeCalDetail();
     await renderAppointments();
   });
@@ -2191,13 +2191,15 @@ async function renderAppointments() {
 
   rowsBody.querySelectorAll("[data-delete]").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      if (!confirm("Οριστική διαγραφή αυτού του ραντεβού;")) return;
-      const { error: delError } = await deleteAppointment(btn.dataset.delete);
-      if (delError) {
-        showToast(delError.message || "Αποτυχία διαγραφής", true);
+      const row = listRows.find((item) => item.id === btn.dataset.delete);
+      if (!row) return;
+      const result = await chooseAndDeleteAppointment(row);
+      if (result.cancelled) return;
+      if (result.error) {
+        showToast(result.error.message || "Αποτυχία διαγραφής", true);
         return;
       }
-      showToast("Διαγράφηκε.");
+      showToast(result.count === 1 ? "Διαγράφηκε." : `Διαγράφηκαν ${result.count} ραντεβού.`);
       await renderAppointments();
     });
   });

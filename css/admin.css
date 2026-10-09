@@ -1753,6 +1753,61 @@ body.is-cal-dragging .cal-board {
   animation: calFadeIn 160ms var(--ease);
 }
 
+.series-delete-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 38;
+  background: rgba(44, 36, 28, 0.35);
+  animation: calFadeIn 160ms var(--ease);
+}
+
+.series-delete {
+  position: fixed;
+  z-index: 39;
+  left: 12px;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  background: var(--white);
+  border: 1px solid rgba(196, 163, 106, 0.3);
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(44, 36, 28, 0.18);
+  padding: 18px 16px 16px;
+  animation: calSheetIn 220ms var(--ease);
+}
+
+.series-delete h3 {
+  margin: 0 0 6px;
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+
+.series-delete p {
+  margin: 0 0 14px;
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.series-delete-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.series-delete-actions .btn {
+  width: 100%;
+  min-height: 44px;
+}
+
+@media (min-width: 861px) {
+  .series-delete {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    width: min(380px, calc(100vw - 48px));
+  }
+}
+
 .cal-detail {
   position: fixed;
   z-index: 27;

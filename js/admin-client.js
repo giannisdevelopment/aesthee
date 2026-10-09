@@ -10,7 +10,7 @@ import {
   listCatalogServices,
   listAppointmentsForClient,
   updateAppointment,
-  deleteAppointment,
+  chooseAndDeleteAppointment,
   showToast,
   formatDate,
   formatTime,
@@ -18,7 +18,7 @@ import {
   readDayFirstDate,
   formatMoney,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=name-fold";
+} from "./admin-api.js?v=series-del";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   filterServiceSuggestions,
@@ -760,14 +760,15 @@ cancelApptBtn?.addEventListener("click", closeApptForm);
 
 deleteApptBtn?.addEventListener("click", async () => {
   const id = document.getElementById("apptId")?.value;
-  if (!id) return;
-  if (!confirm("Οριστική διαγραφή αυτού του ραντεβού;")) return;
-  const { error } = await deleteAppointment(id);
-  if (error) {
-    showToast(error.message || "Αποτυχία διαγραφής", true);
+  const row = appointmentsCache.find((item) => item.id === id);
+  if (!row) return;
+  const result = await chooseAndDeleteAppointment(row);
+  if (result.cancelled) return;
+  if (result.error) {
+    showToast(result.error.message || "Αποτυχία διαγραφής", true);
     return;
   }
-  showToast("Το ραντεβού διαγράφηκε.");
+  showToast(result.count === 1 ? "Το ραντεβού διαγράφηκε." : `Διαγράφηκαν ${result.count} ραντεβού.`);
   closeApptForm();
   await renderVisits();
 });
