@@ -2716,6 +2716,14 @@ bookingForm?.addEventListener("submit", async (event) => {
   try {
     if (editingAppointmentId) {
       const prev = editingSnapshot || {};
+      if (!blockMode && bkLinkClient?.checked && !payload.client_id) {
+        try {
+          payload.client_id = await findOrCreateClientFromBooking(payload);
+        } catch (linkErr) {
+          showToast(linkErr.message || "Αποτυχία σύνδεσης πελάτη", true);
+          return;
+        }
+      }
       const { data, error } = await updateAppointment(editingAppointmentId, payload);
       if (error) {
         showToast(error.message || "Αποτυχία αποθήκευσης", true);
@@ -2737,7 +2745,14 @@ bookingForm?.addEventListener("submit", async (event) => {
         }).catch(() => {});
       }
 
-      showToast(blockMode ? "Το μπλοκάρισμα ενημερώθηκε." : "Το ραντεβού ενημερώθηκε.");
+      const linkedNow = !blockMode && bkLinkClient?.checked && !prev.client_id && payload.client_id;
+      showToast(
+        blockMode
+          ? "Το μπλοκάρισμα ενημερώθηκε."
+          : linkedNow
+            ? "Το ραντεβού συνδέθηκε με κάρτα πελάτη."
+            : "Το ραντεβού ενημερώθηκε."
+      );
     } else {
       let created = 0;
       let skipped = 0;
