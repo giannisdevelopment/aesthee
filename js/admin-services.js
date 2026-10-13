@@ -64,9 +64,14 @@ function slugify(name) {
   return `offer-${base || "new"}-${Date.now().toString(36)}`;
 }
 
+function isDurationCategory(row) {
+  return row.category_id === "duration" || String(row.category_label || "").trim() === "Διάρκεια";
+}
+
 function uniqueCategories() {
   const map = new Map();
   for (const row of cache) {
+    if (isDurationCategory(row)) continue;
     if (!map.has(row.category_id)) {
       map.set(row.category_id, row.category_label);
     }
@@ -95,6 +100,7 @@ function filteredRows() {
   const cat = categoryFilter.value;
   const inactive = showInactive.checked;
   return cache.filter((row) => {
+    if (isDurationCategory(row)) return false;
     if (!inactive && !row.is_active) return false;
     if (cat && row.category_id !== cat) return false;
     if (!q) return true;

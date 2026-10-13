@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=inbox-alert-1" />
+  <link rel="stylesheet" href="/css/admin.css?v=open-green-1" />
 </head>
 <body data-admin-page="client">
   <div class="admin-shell">
@@ -29,6 +29,7 @@
           <a href="/admin/services">Τιμές</a>
           <a href="/admin/messages">Μηνύματα</a>
         </nav>
+        <a class="btn btn-ghost" id="backToBookings" href="/admin/bookings">← Ραντεβού</a>
         <a class="btn btn-ghost" href="/admin/">← Πελάτες</a>
         <button class="btn btn-ghost" type="button" id="signOutBtn">Αποσύνδεση</button>
       </div>
@@ -210,6 +211,6 @@
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
   <script type="module" src="/js/admin-inbox-badge.js?v=inbox-alert-1"></script>
-  <script type="module" src="/js/admin-client.js?v=series-del"></script>
+  <script type="module" src="/js/admin-client.js?v=back-date"></script>
 </body>
 </html>

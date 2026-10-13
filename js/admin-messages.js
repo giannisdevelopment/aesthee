@@ -94,7 +94,7 @@ function renderBookingCard(row) {
         <button class="btn btn-gold btn-sm" type="button" data-approve="${escapeHtml(row.id)}">Έγκριση</button>
         <button class="btn btn-ghost btn-sm" type="button" data-decline="${escapeHtml(row.id)}">Απόρριψη</button>
         <button class="btn btn-ghost btn-sm" type="button" data-to-client="${escapeHtml(row.id)}">Πελάτης</button>
-        <a class="btn btn-ghost btn-sm" href="/admin/bookings">Στο ημερολόγιο</a>
+        <a class="btn btn-ghost btn-sm" href="${/^\d{4}-\d{2}-\d{2}$/.test(String(row.appointment_date || "").slice(0, 10)) ? `/admin/bookings?date=${escapeHtml(String(row.appointment_date).slice(0, 10))}` : "/admin/bookings"}">Στο ημερολόγιο</a>
         <button class="btn btn-danger btn-sm" type="button" data-delete-booking="${escapeHtml(row.id)}">Διαγραφή</button>
       </div>
     </article>
@@ -220,7 +220,10 @@ function bindInboxActions() {
           client_id: clientId,
           status: "confirmed",
         });
-        location.href = `/admin/client?id=${clientId}`;
+        const day = String(row.appointment_date || "").slice(0, 10);
+        const query = new URLSearchParams({ id: clientId });
+        if (/^\d{4}-\d{2}-\d{2}$/.test(day)) query.set("date", day);
+        location.href = `/admin/client?${query}`;
       } catch (err) {
         showToast(err.message || "Αποτυχία δημιουργίας πελάτη", true);
         btn.disabled = false;

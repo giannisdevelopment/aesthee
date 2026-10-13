@@ -527,6 +527,13 @@ function setCalendarSpan(span, { refresh = true } = {}) {
   if (refresh) renderAppointments();
 }
 
+function clientCardHref(clientId, dateKey) {
+  const query = new URLSearchParams({ id: String(clientId) });
+  const day = String(dateKey || calendarDay || "").slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(day)) query.set("date", day);
+  return `/admin/client?${query}`;
+}
+
 function setCalendarDay(key) {
   calendarDay = key;
   setDayFirstDate(fromDate, key);
@@ -1077,7 +1084,7 @@ function openCalDetail(row) {
         ).join("")}
       </select>
       ${blocked ? "" : row.client_id
-        ? `<a class="btn btn-ghost btn-sm" href="/admin/client?id=${escapeHtml(row.client_id)}">Πελάτης</a>`
+        ? `<a class="btn btn-ghost btn-sm" href="${clientCardHref(row.client_id, row.appointment_date)}">Πελάτης</a>`
         : `<button class="btn btn-ghost btn-sm" type="button" id="calDetailToClient">→ Πελάτης</button>`}
       <button class="btn btn-danger btn-sm" type="button" id="calDetailDelete">Διαγραφή</button>
       <button class="btn btn-ghost btn-sm" type="button" id="calDetailClose">Κλείσιμο</button>
@@ -1134,7 +1141,7 @@ function openCalDetail(row) {
         client_id: clientId,
         status: row.status === "pending" ? "confirmed" : row.status,
       });
-      location.href = `/admin/client?id=${clientId}`;
+      location.href = clientCardHref(clientId, row.appointment_date);
     } catch (err) {
       showToast(err.message || "Αποτυχία δημιουργίας πελάτη", true);
     }
@@ -2140,7 +2147,7 @@ async function renderAppointments() {
       <td class="row-actions">
         <button class="btn btn-ghost btn-sm" type="button" data-edit="${escapeHtml(row.id)}">Επεξεργασία</button>
         ${row.client_id
-          ? `<a class="btn btn-ghost btn-sm" href="/admin/client?id=${escapeHtml(row.client_id)}">Πελάτης</a>`
+          ? `<a class="btn btn-ghost btn-sm" href="${clientCardHref(row.client_id, row.appointment_date)}">Πελάτης</a>`
           : `<button class="btn btn-ghost btn-sm" type="button" data-to-client="${escapeHtml(row.id)}">→ Πελάτης</button>`}
         <button class="btn btn-danger btn-sm" type="button" data-delete="${escapeHtml(row.id)}">Διαγραφή</button>
       </td>
@@ -2181,7 +2188,7 @@ async function renderAppointments() {
           status: appointment.status === "pending" ? "confirmed" : appointment.status,
         });
         showToast("Συνδέθηκε με πελάτη.");
-        location.href = `/admin/client?id=${clientId}`;
+        location.href = clientCardHref(clientId, appointment.appointment_date);
       } catch (err) {
         showToast(err.message || "Αποτυχία δημιουργίας πελάτη", true);
         btn.disabled = false;
@@ -2846,11 +2853,19 @@ searchInput?.addEventListener("focus", () => {
 
 bkRepeat?.addEventListener("change", () => syncRepeatUi());
 
+function initialCalendarDay() {
+  const requested = new URLSearchParams(location.search).get("date") || "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(requested) && toDateKey(parseDateKey(requested)) === requested) {
+    return requested;
+  }
+  return toDateKey(new Date());
+}
+
 async function boot() {
-  const today = toDateKey(new Date());
-  calendarDay = today;
-  setDayFirstDate(fromDate, today);
-  setDayFirstDate(toDate, today);
+  const startDay = initialCalendarDay();
+  calendarDay = startDay;
+  setDayFirstDate(fromDate, startDay);
+  setDayFirstDate(toDate, startDay);
   paintSpanToggle();
 
   if (configMissing()) {
