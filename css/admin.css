@@ -677,12 +677,54 @@ html.auth-out #loginView {
 }
 
 .message-card.is-unread {
-  border-color: var(--gold);
-  box-shadow: inset 3px 0 0 var(--gold);
+  border-color: #e3b4b4;
+  background: #fff6f6;
+  box-shadow: inset 4px 0 0 #c23b3b;
+}
+
+.unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #c23b3b;
+  box-shadow: 0 0 0 3px rgba(194, 59, 59, 0.18);
+  vertical-align: 1px;
+}
+
+.inbox-filters em.is-alert {
+  background: #c23b3b;
+  color: #fff;
+}
+
+.admin-nav a.has-alert {
+  position: relative;
+}
+
+.nav-alert {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35em;
+  height: 1.35em;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #c23b3b;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: 1px;
 }
 
 .message-card--booking {
   background: linear-gradient(180deg, #fffaf2 0%, var(--white) 48%);
+}
+
+.message-card--booking.is-unread {
+  background: #fff6f6;
 }
 
 .inbox-kind {

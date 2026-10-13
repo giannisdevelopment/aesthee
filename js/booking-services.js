@@ -126,7 +126,7 @@ export const DEFAULT_BOOKING_CATEGORIES = [
       { id: "micro-dose", name: "Micro Dose", durationMin: 60, priceCents: 6500 },
       { id: "rf-face", name: "RF Microneedling προσώπου", durationMin: 60, priceCents: 9000 },
       { id: "deep-cleanse", name: "Βαθύς καθαρισμός προσώπου", durationMin: 90, priceCents: 5000 },
-      { id: "hydroderm", name: "Υδροδερμοαπόξεση", durationMin: 60, priceCents: 5500 },
+      { id: "hydroderm", name: "Υδροδερμοαπόξεση", durationMin: 60, priceCents: 6000 },
       { id: "photo", name: "Φωτοθεραπεία", durationMin: 30, priceCents: 4000 },
       { id: "meso", name: "Μεσοθεραπεία", durationMin: 45, priceCents: 5500 },
       { id: "vit-c", name: "Θεραπεία βιταμίνης C", durationMin: 45, priceCents: 4500 },

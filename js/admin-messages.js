@@ -75,7 +75,7 @@ function renderBookingCard(row) {
     <article class="message-card message-card--booking is-unread" data-booking-id="${escapeHtml(row.id)}">
       <div class="message-head">
         <div>
-          <p class="inbox-kind">Νέα κράτηση · ${escapeHtml(APPOINTMENT_STATUS_LABELS.pending)}</p>
+          <p class="inbox-kind"><span class="unread-dot" aria-hidden="true"></span>Νέα κράτηση · ${escapeHtml(APPOINTMENT_STATUS_LABELS.pending)}</p>
           <h3>${escapeHtml(row.guest_name)}</h3>
           <p class="message-contact">
             <a href="tel:${escapeHtml(row.guest_phone)}">${escapeHtml(row.guest_phone)}</a>
@@ -106,7 +106,7 @@ function renderMessageCard(row) {
     <article class="message-card ${row.is_read ? "" : "is-unread"}" data-id="${escapeHtml(row.id)}">
       <div class="message-head">
         <div>
-          <p class="inbox-kind">Επικοινωνία</p>
+          <p class="inbox-kind">${row.is_read ? "" : `<span class="unread-dot" aria-hidden="true"></span>`}Επικοινωνία</p>
           <h3>${escapeHtml(row.full_name)}</h3>
           <a href="mailto:${escapeHtml(row.email)}">${escapeHtml(row.email)}</a>
         </div>
@@ -124,9 +124,14 @@ function renderMessageCard(row) {
 }
 
 function updateFilterCounts() {
-  if (pendingCountEl) pendingCountEl.textContent = String(pendingBookings.length);
+  const unread = contactMessages.filter((row) => !row.is_read).length;
+  if (pendingCountEl) {
+    pendingCountEl.textContent = String(pendingBookings.length);
+    pendingCountEl.classList.toggle("is-alert", pendingBookings.length > 0);
+  }
   if (unreadCountEl) {
-    unreadCountEl.textContent = String(contactMessages.filter((row) => !row.is_read).length);
+    unreadCountEl.textContent = String(unread);
+    unreadCountEl.classList.toggle("is-alert", unread > 0);
   }
 }
 
