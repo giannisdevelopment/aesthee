@@ -255,6 +255,21 @@ select {
   flex-wrap: wrap;
 }
 
+.visits-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.visit-total {
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-muted);
+}
+
 .search {
   flex: 1;
   min-width: min(100%, 240px);
@@ -604,8 +619,8 @@ html.auth-out #loginView {
   color: var(--ink-muted);
 }
 
-.badge-pending { background: #e5f6ea; color: #157a36; }
-.badge-confirmed { background: #e8f5ea; color: #2f6b3a; }
+.badge-pending { background: #fde8e8; color: #a32626; }
+.badge-confirmed { background: #fde8e8; color: #a32626; }
 .badge-completed { background: #e5f6ea; color: #157a36; }
 .badge-cancelled { background: var(--danger-soft); color: var(--danger); }
 .badge-no_show { background: #eee; color: #666; }
@@ -1634,7 +1649,7 @@ body.is-cal-dragging .cal-board {
 .cal-block.is-blocked .cal-block-accent { background: #6b5e50; }
 
 .cal-block.is-pending .cal-block-accent,
-.cal-block.is-confirmed .cal-block-accent { background: #1a9b45; }
+.cal-block.is-confirmed .cal-block-accent { background: #c23b3b; }
 .cal-block.is-completed .cal-block-accent {
   flex-basis: 7px;
   background: #1a9b45;
@@ -1643,7 +1658,7 @@ body.is-cal-dragging .cal-board {
 .cal-block.is-cancelled .cal-block-accent { background: #9a9a9a; }
 
 .cal-block.is-pending,
-.cal-block.is-confirmed { background: #e7f6ec; }
+.cal-block.is-confirmed { background: #fff6f6; }
 .cal-block.is-completed { background: #eef8f0; }
 
 .cal-block.is-cancelled,

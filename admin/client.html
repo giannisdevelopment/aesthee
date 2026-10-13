@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/admin.css?v=open-green-1" />
+  <link rel="stylesheet" href="/css/admin.css?v=completed-count" />
 </head>
 <body data-admin-page="client">
   <div class="admin-shell">
@@ -75,7 +75,10 @@
 
       <section class="panel panel-pad" id="visitsPanel">
         <div class="toolbar" style="margin-bottom:12px">
-          <h2 class="section-title" style="margin:0">Θεραπείες / πληρωμές</h2>
+          <div class="visits-heading">
+            <h2 class="section-title" style="margin:0">Θεραπείες / πληρωμές</h2>
+            <span id="completedCount" class="visit-total" hidden></span>
+          </div>
           <button class="btn btn-ghost btn-sm" type="button" id="toggleVisitFormBtn">+ Επίσκεψη</button>
         </div>
 
@@ -211,6 +214,6 @@
   <div class="toast" id="adminToast" role="status"></div>
   <script src="/js/supabase-config.js"></script>
   <script type="module" src="/js/admin-inbox-badge.js?v=inbox-alert-1"></script>
-  <script type="module" src="/js/admin-client.js?v=back-date"></script>
+  <script type="module" src="/js/admin-client.js?v=completed-count"></script>
 </body>
 </html>

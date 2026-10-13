@@ -42,6 +42,7 @@ const clientForm = document.getElementById("clientForm");
 const deleteClientBtn = document.getElementById("deleteClientBtn");
 const signOutBtn = document.getElementById("signOutBtn");
 const visitsList = document.getElementById("visitsList");
+const completedCountEl = document.getElementById("completedCount");
 const visitForm = document.getElementById("visitForm");
 const toggleVisitFormBtn = document.getElementById("toggleVisitFormBtn");
 const cancelVisitBtn = document.getElementById("cancelVisitBtn");
@@ -464,8 +465,21 @@ function openApptForm(row) {
   apptForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function paintCompletedCount(rows) {
+  if (!completedCountEl) return;
+  if (!rows) {
+    completedCountEl.textContent = "";
+    completedCountEl.hidden = true;
+    return;
+  }
+  const total = rows.filter((row) => row.status === "completed").length;
+  completedCountEl.hidden = false;
+  completedCountEl.textContent = total === 1 ? "1 ολοκληρωμένο" : `${total} ολοκληρωμένα`;
+}
+
 async function renderVisits() {
   if (!clientId) {
+    paintCompletedCount(null);
     visitsList.innerHTML = `<p class="empty">Αποθηκεύστε τον πελάτη για να προσθέσετε επισκέψεις.</p>`;
     toggleVisitFormBtn.disabled = true;
     return;
@@ -481,6 +495,7 @@ async function renderVisits() {
   ]);
 
   if (visitErr) {
+    paintCompletedCount(apptErr ? null : (appts || []));
     visitsList.innerHTML = `<p class="empty">Σφάλμα φόρτωσης επισκέψεων.</p>`;
     showToast(visitErr.message || "Αποτυχία φόρτωσης", true);
     return;
@@ -490,6 +505,7 @@ async function renderVisits() {
   }
 
   appointmentsCache = appts || [];
+  paintCompletedCount(apptErr ? null : appointmentsCache);
   const todayKey = new Date().toISOString().slice(0, 10);
   /** @type {Array<{ kind: string, sort: string, html: string, visit?: object }>} */
   const items = [];
