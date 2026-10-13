@@ -31,10 +31,10 @@ const params = new URLSearchParams(location.search);
 let clientId = params.get("id");
 const returnDate = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") || "") ? params.get("date") : "";
 
-const backToBookings = document.getElementById("backToBookings");
-if (backToBookings && returnDate) {
-  backToBookings.href = `/admin/bookings?date=${returnDate}`;
-}
+const bookingsReturnHref = returnDate ? `/admin/bookings?date=${returnDate}` : "/admin/bookings";
+document.querySelectorAll('a[href="/admin/bookings"], #backToBookings').forEach((link) => {
+  link.href = bookingsReturnHref;
+});
 
 const pageTitle = document.getElementById("pageTitle");
 const pageSub = document.getElementById("pageSub");

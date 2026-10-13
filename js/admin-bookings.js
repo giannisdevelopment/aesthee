@@ -534,8 +534,26 @@ function clientCardHref(clientId, dateKey) {
   return `/admin/client?${query}`;
 }
 
+function isDateKey(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && toDateKey(parseDateKey(value)) === value;
+}
+
+function persistCalendarDay(key) {
+  if (!isDateKey(key)) return;
+  try {
+    sessionStorage.setItem("aesthee-cal-day", key);
+  } catch {
+    /* the date still travels in the address when the browser allows it */
+  }
+  const url = new URL(location.href);
+  if (url.searchParams.get("date") === key) return;
+  url.searchParams.set("date", key);
+  history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 function setCalendarDay(key) {
   calendarDay = key;
+  persistCalendarDay(key);
   setDayFirstDate(fromDate, key);
   setDayFirstDate(toDate, key);
   renderDayStrip();
@@ -617,7 +635,7 @@ function renderDayStrip() {
       ? `${from.getDate()}–${to.getDate()} ${MONTH_LABELS[from.getMonth()]} ${from.getFullYear()}`
       : `${from.getDate()} ${MONTH_LABELS[from.getMonth()].slice(0, 3)} – ${to.getDate()} ${MONTH_LABELS[to.getMonth()].slice(0, 3)} ${to.getFullYear()}`;
   } else {
-    calMonthLabel.textContent = `${MONTH_LABELS[selected.getMonth()]} ${selected.getFullYear()}`;
+    calMonthLabel.textContent = `${selected.getDate()} ${MONTH_LABELS[selected.getMonth()]} ${selected.getFullYear()}`;
   }
   monthPickerYear = selected.getFullYear();
   if (calMonthPop && !calMonthPop.classList.contains("hidden")) renderMonthPicker();
@@ -787,7 +805,7 @@ function buildWeekChrome() {
     const date = parseDateKey(key);
     const weekend = date.getDay() === 0 || date.getDay() === 6;
     return `
-      <button type="button" class="cal-cabin-head cal-week-head${key === todayKey ? " is-today" : ""}${weekend ? " is-weekend" : ""}" data-day="${key}">
+      <button type="button" class="cal-cabin-head cal-week-head${key === calendarDay ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}${weekend ? " is-weekend" : ""}" data-day="${key}">
         <span class="dow">${WEEK_HEADS[date.getDay()]}</span>
         <span class="dom">${date.getDate()}</span>
       </button>
@@ -802,7 +820,7 @@ function buildWeekChrome() {
 
   paintTimeGutter(dayHeight);
   calCols.innerHTML = days.map((key) => `
-    <div class="cal-col${key === todayKey ? " is-today" : ""}" data-day="${key}" style="height:${dayHeight}px"></div>
+    <div class="cal-col${key === calendarDay ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}" data-day="${key}" style="height:${dayHeight}px"></div>
   `).join("");
   calCols.querySelectorAll(".cal-col").forEach(bindEmptyColumn);
 }
@@ -851,9 +869,10 @@ function scrollCalToFocus(rows = appointmentsCache, { force = false } = {}) {
   const y = Math.max(0, (focusMins - BOOKING_DAY_START) * ppm - board.clientHeight * 0.28);
   let x = board.scrollLeft;
   if (calendarSpan === "week") {
-    const todayCol = calCols?.querySelector(".cal-col.is-today");
-    if (todayCol) {
-      const colRect = todayCol.getBoundingClientRect();
+    const focusCol = calCols?.querySelector(`.cal-col[data-day="${calendarDay}"]`)
+      || calCols?.querySelector(".cal-col.is-today");
+    if (focusCol) {
+      const colRect = focusCol.getBoundingClientRect();
       const boardRect = board.getBoundingClientRect();
       x = board.scrollLeft + (colRect.left - boardRect.left) - board.clientWidth / 2 + colRect.width / 2;
       x = Math.max(0, x);
@@ -2855,8 +2874,12 @@ bkRepeat?.addEventListener("change", () => syncRepeatUi());
 
 function initialCalendarDay() {
   const requested = new URLSearchParams(location.search).get("date") || "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(requested) && toDateKey(parseDateKey(requested)) === requested) {
-    return requested;
+  if (isDateKey(requested)) return requested;
+  try {
+    const saved = sessionStorage.getItem("aesthee-cal-day") || "";
+    if (isDateKey(saved) && /\/admin\/client/.test(document.referrer || "")) return saved;
+  } catch {
+    /* fall through to today */
   }
   return toDateKey(new Date());
 }
@@ -2864,6 +2887,7 @@ function initialCalendarDay() {
 async function boot() {
   const startDay = initialCalendarDay();
   calendarDay = startDay;
+  persistCalendarDay(startDay);
   setDayFirstDate(fromDate, startDay);
   setDayFirstDate(toDate, startDay);
   paintSpanToggle();

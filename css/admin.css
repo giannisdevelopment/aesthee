@@ -1424,12 +1424,14 @@ button.cal-week-head {
   font-weight: 700;
 }
 
-.cal-week-head.is-today .dom {
+.cal-week-head.is-today .dom,
+.cal-week-head.is-selected .dom {
   background: var(--gold);
   color: var(--ink);
 }
 
-.cal-col.is-today {
+.cal-col.is-today,
+.cal-col.is-selected {
   box-shadow: inset 0 0 0 999px rgba(196, 163, 106, 0.07);
 }
 

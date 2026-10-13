@@ -216,10 +216,7 @@ function bindInboxActions() {
       try {
         btn.disabled = true;
         const clientId = await findOrCreateClientFromBooking(row);
-        await updateAppointment(id, {
-          client_id: clientId,
-          status: "confirmed",
-        });
+        await updateAppointment(id, { client_id: clientId });
         const day = String(row.appointment_date || "").slice(0, 10);
         const query = new URLSearchParams({ id: clientId });
         if (/^\d{4}-\d{2}-\d{2}$/.test(day)) query.set("date", day);
