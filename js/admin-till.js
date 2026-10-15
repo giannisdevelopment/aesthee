@@ -2,7 +2,6 @@ import {
   requireSession,
   signIn,
   signOut,
-  listVisitsInRange,
   listCompletedAppointmentsInRange,
   showToast,
   formatMoney,
@@ -12,8 +11,14 @@ import {
   mapAuthError,
   isSupabaseConfigured,
   applyAuthShell,
-} from "./admin-api.js?v=name-fold";
-import { displayServiceName, splitAppointmentServices } from "./booking-services.js?v=solarium-word";
+} from "./admin-api.js?v=tills-2";
+import {
+  displayServiceName,
+  splitAppointmentServices,
+  resolveCabinForAppointment,
+  isBlockedTimeService,
+  CABIN_SHORT,
+} from "./booking-services.js?v=solarium-word";
 
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
@@ -75,17 +80,20 @@ function eurosFromCents(cents) {
   return n / 100;
 }
 
-function normalizeName(value) {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+function moneyText(amount) {
+  return formatMoney(amount).replace("—", "€ 0");
 }
 
-function moneyKey(amount) {
-  return Number(amount || 0).toFixed(2);
+function countLabel(n) {
+  return n === 1 ? "1 ολοκληρωμένο" : `${n} ολοκληρωμένα`;
+}
+
+/** Ταμείο 1 = Κ1–Κ2. Ταμείο 2 = Κ3–Κ6. */
+function tillForCabin(cabinId) {
+  const id = Number(cabinId);
+  if (id === 1 || id === 2) return 1;
+  if (id >= 3 && id <= 6) return 2;
+  return 0;
 }
 
 function rangeForPeriod() {
@@ -126,94 +134,76 @@ function setToday() {
   tillYear.value = String(now.getFullYear());
 }
 
-/**
- * Prefer CRM visit payments. Completed bookings fill gaps (walk-ins booked in calendar
- * but not yet logged as a client visit) using name + date + amount.
- */
-function mergeRows(visits, bookings) {
-  const visitRows = (visits || []).map((row) => ({
-    id: `v-${row.id}`,
-    date: row.payment_date,
-    name: row.clients?.full_name || "—",
-    service: row.treatment,
-    source: "Επίσκεψη",
-    amount: Number(row.payment_amount) || 0,
-    href: row.client_id ? `/admin/client?id=${row.client_id}` : "",
-  }));
-
-  const covered = new Set(
-    visitRows.map((row) => `${row.date}|${normalizeName(row.name)}|${moneyKey(row.amount)}`),
-  );
-
-  const bookingRows = [];
+/** Completed appointments only. Confirmed, pending, cancelled, and blocked time stay out. */
+function rowsFromCompleted(bookings) {
+  const rows = [];
   for (const row of bookings || []) {
+    if (row.status !== "completed") continue;
+    if (isBlockedTimeService(row.service)) continue;
     const amount = eurosFromCents(row.price_cents);
     if (amount <= 0) continue;
-    const key = `${row.appointment_date}|${normalizeName(row.guest_name)}|${moneyKey(amount)}`;
-    if (covered.has(key)) continue;
-    bookingRows.push({
-      id: `a-${row.id}`,
+    const cabinId = resolveCabinForAppointment(row);
+    const till = tillForCabin(cabinId);
+    if (!till) continue;
+    rows.push({
+      id: row.id,
       date: row.appointment_date,
       name: row.guest_name,
       service: row.service,
-      source: "Ραντεβού",
+      cabinId,
+      cabin: CABIN_SHORT[cabinId]?.code || `Κ${cabinId}`,
+      till,
       amount,
-      href: "",
     });
   }
-
-  return [...visitRows, ...bookingRows].sort((a, b) => {
+  rows.sort((a, b) => {
     if (a.date !== b.date) return String(b.date).localeCompare(String(a.date));
-    return String(b.name).localeCompare(String(a.name), "el");
+    if (a.till !== b.till) return a.till - b.till;
+    return String(a.name).localeCompare(String(b.name), "el");
   });
+  return rows;
 }
 
 async function renderTill() {
   const { fromDate, toDate, label } = rangeForPeriod();
   tillPeriodLabel.textContent = label;
-  tillBody.innerHTML = `<tr><td colspan="5" class="empty">Φόρτωση…</td></tr>`;
+  tillBody.innerHTML = `<tr><td colspan="6" class="empty">Φόρτωση…</td></tr>`;
 
-  const [visitsRes, bookingsRes] = await Promise.all([
-    listVisitsInRange({ fromDate, toDate }),
-    listCompletedAppointmentsInRange({ fromDate, toDate }),
-  ]);
+  const bookingsRes = await listCompletedAppointmentsInRange({ fromDate, toDate });
 
-  if (visitsRes.error) {
-    tillBody.innerHTML = `<tr><td colspan="5" class="empty">Σφάλμα φόρτωσης.</td></tr>`;
-    showToast(visitsRes.error.message || "Αποτυχία φόρτωσης επισκέψεων", true);
-    return;
-  }
   if (bookingsRes.error) {
-    tillBody.innerHTML = `<tr><td colspan="5" class="empty">Σφάλμα φόρτωσης.</td></tr>`;
+    tillBody.innerHTML = `<tr><td colspan="6" class="empty">Σφάλμα φόρτωσης.</td></tr>`;
     showToast(bookingsRes.error.message || "Αποτυχία φόρτωσης ραντεβού", true);
     return;
   }
 
-  const rows = mergeRows(visitsRes.data, bookingsRes.data);
-  const total = rows.reduce((sum, r) => sum + r.amount, 0);
+  const rows = rowsFromCompleted(bookingsRes.data);
+  const till1 = rows.filter((row) => row.till === 1);
+  const till2 = rows.filter((row) => row.till === 2);
+  const sum = (list) => list.reduce((total, row) => total + row.amount, 0);
 
-  document.getElementById("statTotal").textContent = formatMoney(total).replace("—", "€ 0");
-  document.getElementById("statCount").textContent = `${rows.length} εγγραφές`;
+  document.getElementById("statTill1").textContent = moneyText(sum(till1));
+  document.getElementById("statTill1Meta").textContent = `Κ1 · Κ2 · ${countLabel(till1.length)}`;
+  document.getElementById("statTill2").textContent = moneyText(sum(till2));
+  document.getElementById("statTill2Meta").textContent = `Κ3 · Κ4 · Κ5 · Κ6 · ${countLabel(till2.length)}`;
+  document.getElementById("statTotal").textContent = moneyText(sum(rows));
+  document.getElementById("statCount").textContent = countLabel(rows.length);
 
   if (!rows.length) {
-    tillBody.innerHTML = `<tr><td colspan="5" class="empty">Καμία είσπραξη σε αυτή την περίοδο.</td></tr>`;
+    tillBody.innerHTML = `<tr><td colspan="6" class="empty">Κανένα ολοκληρωμένο ραντεβού σε αυτή την περίοδο.</td></tr>`;
     return;
   }
 
-  tillBody.innerHTML = rows.map((row) => {
-    const nameCell = row.href
-      ? `<a class="client-link" href="${escapeHtml(row.href)}">${escapeHtml(row.name)}</a>`
-      : escapeHtml(row.name);
-    return `
+  tillBody.innerHTML = rows.map((row) => `
       <tr>
         <td>${escapeHtml(formatDate(row.date))}</td>
-        <td>${nameCell}</td>
+        <td>${escapeHtml(row.name)}</td>
         <td>${escapeHtml(splitAppointmentServices(row.service).filter(Boolean).map(displayServiceName).join(" + ") || "—")}</td>
-        <td>${escapeHtml(row.source)}</td>
+        <td>${escapeHtml(row.cabin)}</td>
+        <td>Ταμείο ${row.till}</td>
         <td class="till-amount">${escapeHtml(formatMoney(row.amount))}</td>
       </tr>
-    `;
-  }).join("");
+    `).join("");
 }
 
 function bind() {

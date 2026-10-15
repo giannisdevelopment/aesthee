@@ -568,7 +568,7 @@ export async function listCompletedAppointmentsInRange({ fromDate, toDate }) {
   return fetchAllRows(() =>
     getSupabase()
       .from("appointments")
-      .select("id, service, appointment_date, appointment_time, price_cents, guest_name, guest_phone, status")
+      .select("id, service, appointment_date, appointment_time, price_cents, cabin_id, guest_name, guest_phone, status, notes")
       .eq("status", "completed")
       .gte("appointment_date", fromDate)
       .lte("appointment_date", toDate)
