@@ -843,6 +843,39 @@ function buildCalendarChrome() {
 /** @type {string} */
 let lastFocusScrollDay = "";
 
+/** Scroll position to put back after the booking form closes. */
+let panelScroll = null;
+
+function rememberPanelScroll() {
+  const board = calBoardEl();
+  if (!board) return;
+  panelScroll = {
+    top: board.scrollTop,
+    left: board.scrollLeft,
+    day: calendarDay,
+    span: calendarSpan,
+  };
+}
+
+function applyPanelScroll(snap = panelScroll) {
+  const board = calBoardEl();
+  if (!board || !snap) return false;
+  if (snap.day !== calendarDay || snap.span !== calendarSpan) return false;
+  board.scrollTop = snap.top;
+  board.scrollLeft = snap.left;
+  return true;
+}
+
+function restorePanelScrollSoon(snap) {
+  if (!snap) return;
+  const run = () => applyPanelScroll(snap);
+  run();
+  requestAnimationFrame(() => {
+    run();
+    requestAnimationFrame(run);
+  });
+}
+
 function scrollCalToFocus(rows = appointmentsCache, { force = false } = {}) {
   const board = calBoardEl();
   if (!board || activeView !== "calendar") return;
@@ -1321,6 +1354,7 @@ function fillFormFromAppointment(row) {
 }
 
 function openBookingPanel(prefs = {}) {
+  rememberPanelScroll();
   if (prefs.edit) {
     resetBookingForm();
     fillFormFromAppointment(prefs.edit);
@@ -1345,10 +1379,13 @@ function openBookingPanel(prefs = {}) {
   }
 }
 
-function closeBookingPanel() {
+function closeBookingPanel({ preserveScroll = false } = {}) {
+  const snap = panelScroll;
+  if (!preserveScroll) panelScroll = null;
   bookingPanel.hidden = true;
   resetBookingForm();
   syncCalModeClass();
+  restorePanelScrollSoon(snap);
 }
 
 function formatPriceCents(cents) {
@@ -2130,7 +2167,17 @@ async function renderAppointments() {
   }
   renderCalendar(appointmentsCache);
   if (activeView === "calendar") {
-    requestAnimationFrame(() => scrollCalToFocus(appointmentsCache));
+    const snap = panelScroll;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (snap && applyPanelScroll(snap)) {
+          panelScroll = null;
+          lastFocusScrollDay = calendarDay;
+          return;
+        }
+        scrollCalToFocus(appointmentsCache);
+      });
+    });
   }
 
   if (!listRows.length) {
@@ -2841,7 +2888,7 @@ bookingForm?.addEventListener("submit", async (event) => {
       else showToast(`Καταχωρήθηκαν ${created} ραντεβού${skipped ? ` · ${skipped} ημέρες παραλείφθηκαν` : ""}.`);
     }
 
-    closeBookingPanel();
+    closeBookingPanel({ preserveScroll: true });
     await loadCatalogAndClients();
     await renderAppointments();
   } finally {
