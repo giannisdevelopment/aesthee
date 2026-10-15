@@ -9,7 +9,8 @@ import {
   mapAuthError,
   isSupabaseConfigured,
   applyAuthShell,
-} from "./admin-api.js?v=visit-count";
+  isPlaceholderPhone,
+} from "./admin-api.js?v=card-own";
 import { isBlockedTimeService } from "./booking-services.js?v=solarium-word";
 
 const loginView = document.getElementById("loginView");
@@ -56,7 +57,8 @@ function phoneKey(phone) {
   if (digits.startsWith("0030")) digits = digits.slice(4);
   else if (digits.startsWith("30") && digits.length > 10) digits = digits.slice(2);
   if (digits.length > 10) digits = digits.slice(-10);
-  return digits.length >= 8 ? digits : "";
+  if (digits.length < 10 || isPlaceholderPhone(digits)) return "";
+  return digits;
 }
 
 function dayKey(value) {

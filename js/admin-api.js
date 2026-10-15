@@ -610,6 +610,15 @@ export async function listAppointments({ status = "", fromDate = "", toDate = ""
   return request;
 }
 
+/** Shared stand-in numbers (000…, 690000000) must not glue unrelated bookings together. */
+export function isPlaceholderPhone(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (digits.length < 10) return true;
+  if (/^(\d)\1+$/.test(digits)) return true;
+  const zeros = (digits.match(/0/g) || []).length;
+  return zeros >= digits.length - 2;
+}
+
 export async function listAppointmentsForClient({ clientId = "", phone = "" } = {}) {
   let request = getSupabase()
     .from("appointments")
@@ -620,7 +629,7 @@ export async function listAppointmentsForClient({ clientId = "", phone = "" } = 
   const parts = [];
   if (clientId) parts.push(`client_id.eq.${clientId}`);
   const phoneDigits = String(phone || "").replace(/\D/g, "");
-  if (phoneDigits.length >= 8) {
+  if (phoneDigits.length >= 10 && !isPlaceholderPhone(phone)) {
     parts.push(`guest_phone.ilike.%${phoneDigits.slice(-10)}%`);
   }
   if (!parts.length) return { data: [], error: null };

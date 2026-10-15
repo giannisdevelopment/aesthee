@@ -9,6 +9,7 @@ import {
   deleteVisit,
   listCatalogServices,
   listAppointmentsForClient,
+  isPlaceholderPhone,
   updateAppointment,
   chooseAndDeleteAppointment,
   showToast,
@@ -18,13 +19,14 @@ import {
   readDayFirstDate,
   formatMoney,
   APPOINTMENT_STATUS_LABELS,
-} from "./admin-api.js?v=series-del";
+} from "./admin-api.js?v=card-own";
 import {
   DEFAULT_BOOKING_CATEGORIES,
   filterServiceSuggestions,
   displayServiceName,
   splitAppointmentServices,
   joinAppointmentServices,
+  isBlockedTimeService,
 } from "./booking-services.js?v=solarium-word";
 
 const params = new URLSearchParams(location.search);
@@ -465,6 +467,38 @@ function openApptForm(row) {
   apptForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function foldPersonName(value) {
+  return String(value || "")
+    .toLocaleLowerCase("el")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zα-ω0-9\s]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function samePerson(a, b) {
+  const left = foldPersonName(a).split(" ").filter((part) => part.length >= 2).sort().join(" ");
+  const right = foldPersonName(b).split(" ").filter((part) => part.length >= 2).sort().join(" ");
+  return Boolean(left) && left === right;
+}
+
+function isScheduleHold(service) {
+  if (isBlockedTimeService(service)) return true;
+  return splitAppointmentServices(service).some((part) => {
+    const name = foldPersonName(displayServiceName(part) || part);
+    return name === "ωραριο" || name.startsWith("ωραριο ");
+  });
+}
+
+/** Staff schedule blocks and other people's bookings on a shared phone stay off the card. */
+function appointmentOnCard(row, clientName) {
+  if (isScheduleHold(row.service)) return false;
+  const guest = String(row.guest_name || "").trim();
+  if (!guest) return row.client_id === clientId && !isPlaceholderPhone(row.guest_phone);
+  return samePerson(guest, clientName);
+}
+
 function paintCompletedCount(rows) {
   if (!completedCountEl) return;
   if (!rows) {
@@ -504,14 +538,15 @@ async function renderVisits() {
     showToast(apptErr.message || "Αποτυχία φόρτωσης ραντεβού", true);
   }
 
-  appointmentsCache = appts || [];
+  const clientName = document.getElementById("fullName")?.value || pageTitle.textContent || "";
+  appointmentsCache = (appts || []).filter((row) => appointmentOnCard(row, clientName));
   paintCompletedCount(apptErr ? null : appointmentsCache);
   const todayKey = new Date().toISOString().slice(0, 10);
   /** @type {Array<{ kind: string, sort: string, html: string, visit?: object }>} */
   const items = [];
   const appointmentKeys = [];
 
-  for (const row of appts || []) {
+  for (const row of appointmentsCache) {
     const day = String(row.appointment_date || "").slice(0, 10);
     appointmentKeys.push({ day, service: row.service || "" });
     const upcoming = day >= todayKey && row.status !== "cancelled" && row.status !== "completed" && row.status !== "no_show";
